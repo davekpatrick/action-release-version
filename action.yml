@@ -1,0 +1,33 @@
+# BOF 
+name: 'GitHub Action Release Version'
+author: davekpatrick
+description: 'A GitHub Action to create and tag a release version'
+## ------------------------------
+inputs:
+  apiToken:
+   description: 'GitHub API token'
+   required: false
+  tagPrefix:
+    description: 'Release tag prefix charater to use'
+    required: false
+    default: 'v'
+  inceptionVersionTag: 
+    description: 'The inital version tag to use for the first release'
+    required: false
+    default: '0.0.0'
+  version:  # id of input
+    description: 'The semver version to use for the release'
+    required: false
+## ------------------------------
+outputs:
+  versionTag: # id of output
+    description: 'The release tag used'
+## ------------------------------
+branding:
+    icon: 'check-circle'
+    color: 'green'
+## ------------------------------
+runs:
+  using: 'node16'
+  main: './node/dist/index.js'
+# EOF

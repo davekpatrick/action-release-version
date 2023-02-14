@@ -1,0 +1,86 @@
+on:
+  push:
+    branches:    
+      - main
+    paths-ignore:
+      - '**.md'
+env:
+  operatingSystem: "[ubuntu-22.04, macos-12, windows-2022]"
+
+jobs:
+  # --------------------------------------------
+  build:
+    name: Artifact build
+    strategy:
+      matrix:
+        operatingSystem: [ubuntu-22.04, macos-12, windows-2022]
+        nodeVersion: [14,16,18]
+      fail-fast: false
+    runs-on: ${{ matrix.operatingSystem }}
+    # 
+    steps:
+    - uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.nodeVersion }}
+    - uses: actions/checkout@v3
+    - name: Detach HEAD
+      run: |
+         git checkout --detach 
+         echo "--------------------------------------------"
+         git status
+         echo "--------------------------------------------"
+    - name: Install dependencies
+      run: |
+        cd node
+        npm install
+    - name: Install ncc 
+      run: |
+        cd node
+        npm i -g @vercel/ncc
+    - name: Compile 
+      run: |
+        cd node
+        ncc build index.js --license licenses.txt
+    - name: Publish
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ github.event.repository.name }}-${{ matrix.operatingSystem }}-node-${{ matrix.nodeVersion }}
+        path: |
+          node/dist/
+          README.md
+          action.yml
+  # --------------------------------------------
+  test:
+    name: Artifact Test
+    strategy:
+      matrix:
+        operatingSystem: [ubuntu-22.04, macos-12, windows-2022]
+        nodeVersion: [14,16,18]
+    needs: [ build ]
+    runs-on: ${{ matrix.operatingSystem }}
+    # 
+    steps:
+    - uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.nodeVersion }}
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
+      with:
+        name: ${{ github.event.repository.name }}-${{ matrix.operatingSystem }}-node-${{ matrix.nodeVersion }}
+        path: node/dist/
+    - name: Validate
+      if: ${{ runner.os != 'Windows' }}
+      run: |
+        cd node/dist/
+        ls -lR
+    - name: Validate
+      if: ${{ runner.os == 'Windows' }}
+      shell: powershell
+      run: |
+        Set-Location -Path node/dist/
+        Get-ChildItem -Recurse
+    - name: Execute 
+      uses: ./
+      with:
+        apiToken: ${{ secrets.GITHUB_TOKEN }}
+        
