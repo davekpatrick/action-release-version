@@ -1,23 +1,23 @@
-# Learning GitHub Actions: Javascript Hello World
+# GitHub Actions: Release Version
 
-This action prints a greeting message to the log.
+This GitHub Action used to bump the version of a release.
 
 ## Inputs
 
-## `greetingType`
+## `apiToken`
 
-**Optional** The type of the greeting to provided. Default `"Hello"`.
+Required GitHub API token
 
 ## Outputs
 
-## `greetingMessage`
+## `versionTag`
 
-The super cool greeting
+The release version to use
 
 ## Example usage
 
 ```yaml
-uses: davekpatrick/action-learn-javascript-helloworld@0.1.0
+uses: davekpatrick/action-release-version@0.1.0
 with:
-  greetingType: 'Hello'
+  apiToken: ${{ secret.GITHUB_TOKEN }}
 ```

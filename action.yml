@@ -8,11 +8,11 @@ inputs:
    description: 'GitHub API token'
    required: false
   tagPrefix:
-    description: 'Release tag prefix charater to use'
+    description: 'Release tag prefix character(s) to use'
     required: false
     default: 'v'
   inceptionVersionTag: 
-    description: 'The inital version tag to use for the first release'
+    description: 'The initial version tag to use for the first release'
     required: false
     default: '0.0.0'
   version:  # id of input
