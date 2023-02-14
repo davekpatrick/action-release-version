@@ -29,5 +29,5 @@ branding:
 ## ------------------------------
 runs:
   using: 'node16'
-  main: './node/dist/index.js'
+  main: 'node/dist/index.js'
 # EOF
