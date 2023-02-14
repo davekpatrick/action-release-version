@@ -60,6 +60,9 @@ jobs:
     needs: [build]
     #
     steps:
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.nodeVersion }}
       - uses: actions/download-artifact@v3
         with:
           name: ${{ github.event.repository.name }}-build-node
