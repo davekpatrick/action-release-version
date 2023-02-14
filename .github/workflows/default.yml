@@ -68,15 +68,17 @@ jobs:
           name: ${{ github.event.repository.name }}-build-tests
           path: |
             tests/
-      - name: Debug
+      - name: Validate setup
         if: ${{ runner.os != 'Windows' }}
         run: |
+          node --version
           ls -lR
           set
-      - name: Debug
+      - name: Validate setup
         if: ${{ runner.os == 'Windows' }}
         shell: powershell
         run: |
+          & node --version
           Set-Location -Path ./
           Get-ChildItem -Recurse
       - name: Just defaults 
