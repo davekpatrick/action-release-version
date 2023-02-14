@@ -1,7 +1,7 @@
 on:
   push:
     branches:    
-      - main
+      - ignore
     paths-ignore:
       - '**.md'
 env:
@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         operatingSystem: [ubuntu-22.04, macos-12, windows-2022]
-        nodeVersion: [14,16,18]
+        nodeVersion: [12,16,18]
       fail-fast: false
     runs-on: ${{ matrix.operatingSystem }}
     # 
@@ -23,39 +23,38 @@ jobs:
       with:
         node-version: ${{ matrix.nodeVersion }}
     - uses: actions/checkout@v3
-    - name: Detach HEAD
-      run: |
-         git checkout --detach 
-         echo "--------------------------------------------"
-         git status
-         echo "--------------------------------------------"
     - name: Install dependencies
       run: |
         cd node
         npm install
-    - name: Install ncc 
+    - name: Compile
       run: |
         cd node
-        npm i -g @vercel/ncc
-    - name: Compile 
-      run: |
-        cd node
-        ncc build index.js --license licenses.txt
-    - name: Publish
+        npm run build
+    - name: Upload Build artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ github.event.repository.name }}-${{ matrix.operatingSystem }}-node-${{ matrix.nodeVersion }}
+        name: ${{ github.event.repository.name }}-${{ matrix.operatingSystem }}-${{ matrix.nodeVersion }}-build
+        if-no-files-found: error 
         path: |
           node/dist/
+          node/package-lock.json
           README.md
           action.yml
+    - name: Upload Test artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ github.event.repository.name }}-${{ matrix.operatingSystem }}-${{ matrix.nodeVersion }}-tests
+        if-no-files-found: error 
+        path: |
+          tests/
   # --------------------------------------------
   test:
     name: Artifact Test
     strategy:
       matrix:
         operatingSystem: [ubuntu-22.04, macos-12, windows-2022]
-        nodeVersion: [14,16,18]
+        nodeVersion: [12,16,18]
     needs: [ build ]
     runs-on: ${{ matrix.operatingSystem }}
     # 
@@ -71,12 +70,14 @@ jobs:
     - name: Validate
       if: ${{ runner.os != 'Windows' }}
       run: |
+        node --version
         cd node/dist/
         ls -lR
     - name: Validate
       if: ${{ runner.os == 'Windows' }}
       shell: powershell
       run: |
+        & node --version
         Set-Location -Path node/dist/
         Get-ChildItem -Recurse
     - name: Execute 
