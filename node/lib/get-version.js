@@ -63,6 +63,14 @@ module.exports = async function getVersion(apiToken) {
       commit_sha: gitBeforeCommitSha
     })
     core.info('getBeforeCommitBranches[' + JSON.stringify(getBeforeCommitBranches) + ']');
+    //let tagData = github.context.payload.ref;
+    // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-repository-tags
+    //let gitTagData = await octokit.rest.repos.listTags({
+    //  owner: gitOwner,
+    //  repo: gitRepo,
+    //});
+    //core.info('gitTagData[' + JSON.stringify(gitTagData) + ']');
+   
     // lets all matching refs (tags)
     // https://docs.github.com/en/rest/reference/git#list-matching-references
     let matchingTags = await octokit.rest.git.listMatchingRefs({
@@ -71,19 +79,12 @@ module.exports = async function getVersion(apiToken) {
       ref: 'tags/v'
     });
     core.info('matchingTags[' + JSON.stringify(matchingTags) + ']');
-    //let tagData = github.context.payload.ref;
-    // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-repository-tags
-    //let gitTagData = await octokit.rest.repos.listTags({
-    //  owner: gitOwner,
-    //  repo: gitRepo,
-    //});
-    core.info('gitTagData[' + JSON.stringify(gitTagData) + ']');
-    if ( gitTagData.data.length === 0 ) {
+    if ( matchingTags.data.length === 0 ) {
       core.warning('No current version found');
       versionTag = '0.0.0'
     } else {
       // get the latest tag
-      let latestTag = gitTagData.data[0].name;
+      let latestTag = matchingTags.data[0].name;
       core.info('latestTag[' + latestTag + ']');
       // ensure we have a valid semver tag
       let tagSemVer = semverClean(latestTag);
