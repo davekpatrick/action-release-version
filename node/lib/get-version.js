@@ -12,6 +12,7 @@ const semverClean = require('semver/functions/clean');  // Node's semver package
 module.exports = async function getVersion(apiToken) {
   // ------------------------------------
   core.debug('Start getVersion');
+  var versionTag = null
   // doc: https://github.com/actions/toolkit/blob/main/packages/github/README.md
   //      https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#event-object-common-properties
   //
@@ -54,15 +55,44 @@ module.exports = async function getVersion(apiToken) {
       repo: gitRepo,
       commit_sha: gitBeforeCommitSha, // sha of the commit before the push
     });
-    core.info('gitBeforeCommitShaData[' + JSON.stringify(gitBeforeCommitShaData) + ']');
-    //let tagData = github.context.payload.ref;
-
-    // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-repository-tags
-    let gitTagData = await octokit.rest.repos.listTags({
+    core.debug('gitBeforeCommitShaData[' + JSON.stringify(gitBeforeCommitShaData) + ']');
+    // get all branches where the given commit SHA latest commit
+    let getBeforeCommitBranches = await octokit.request('GET /repos/' + gitOwner + '/' + gitRepo + '/commits/' + gitBeforeCommitSha + '/branches-where-head', {
       owner: gitOwner,
       repo: gitRepo,
+      commit_sha: gitBeforeCommitSha
+    })
+    core.info('getBeforeCommitBranches[' + JSON.stringify(getBeforeCommitBranches) + ']');
+    // lets all matching refs (tags)
+    // https://docs.github.com/en/rest/reference/git#list-matching-references
+    let matchingTags = await octokit.rest.git.listMatchingRefs({
+      owner: gitOwner,
+      repo: gitRepo,
+      ref: 'tags/v'
     });
+    core.info('matchingTags[' + JSON.stringify(matchingTags) + ']');
+    //let tagData = github.context.payload.ref;
+    // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-repository-tags
+    //let gitTagData = await octokit.rest.repos.listTags({
+    //  owner: gitOwner,
+    //  repo: gitRepo,
+    //});
     core.info('gitTagData[' + JSON.stringify(gitTagData) + ']');
+    if ( gitTagData.data.length === 0 ) {
+      core.warning('No current version found');
+      versionTag = '0.0.0'
+    } else {
+      // get the latest tag
+      let latestTag = gitTagData.data[0].name;
+      core.info('latestTag[' + latestTag + ']');
+      // ensure we have a valid semver tag
+      let tagSemVer = semverClean(latestTag);
+      if ( tagSemVer === null ) {
+        core.setFailed('Invalid semver tag[' + latestTag + ']');
+      } else {
+        versionTag = tagSemVer;
+      }
+    }
  
   } else if ( github.context.eventName === 'pull_request') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pullrequestevent
@@ -77,7 +107,7 @@ module.exports = async function getVersion(apiToken) {
     core.info(`context[${JSON.stringify(github.context)}}]`)
 
   }
-  let versionTag = 'v0.0.0';
+  
   // ------------------------------------
   core.debug('End getVersion');
   return versionTag;
