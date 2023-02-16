@@ -42,7 +42,7 @@ try {
     versionTag = semver.inc(currentVersion, 'minor'); 
   }
 
-
+  core.info(`version[${versionTag}]`);
   // remember output is defined in action metadata file
   core.setOutput("versionTag", `${versionTag}`);
 } catch (error) {
