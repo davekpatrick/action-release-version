@@ -18,28 +18,36 @@ try {
   // 
   core.debug(`tagPrefix[${argTagPrefix}]`);
   // Ensure we have a usable API token
+  var apiToken = null;
   if ( argApiToken !== null && argApiToken !== '' ) {
     core.debug('API token input provided');
-    var apiToken = argApiToken;
+    apiToken = argApiToken;
   } else if ( envApiToken !== null && envApiToken !== '' ) {
     core.debug('Environment API token found');
-    var apiToken = envApiToken;
+    apiToken = envApiToken;
   } else {
     core.setFailed('No API token found');
-    var apiToken = null;
   }
   core.setSecret(apiToken); // ensure we don't log the token
   // 
-  const versionTag = getVersion(apiToken);
+  const currentVersion = getVersion(apiToken);
+  core.debug(`currentVersion[${currentVersion}]`);
+  // increment the version
+  var versionTag = null;
+  if ( currentVersion === null ) {
+    // no current version, so start at 0.0.0
+    versionTag = semver.inc('0.0.0', 'minor');
+  } else {
+    // increment the current version
+    versionTag = semver.inc(currentVersion, 'minor'); 
+  }
 
 
-
-
-  // Rember the output is defined in action metadata file
+  // remember output is defined in action metadata file
   core.setOutput("versionTag", `${versionTag}`);
 } catch (error) {
   // Should any error occur, the action will fail and the workflow will stop
-  // Using the actions toolkit (core) pacakge to log a message and set exit code
+  // Using the actions toolkit (core) package to log a message and set exit code
   core.setFailed(error.message);
 }
 // EOF
