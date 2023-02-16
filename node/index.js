@@ -30,8 +30,8 @@ try {
   }
   core.setSecret(apiToken); // ensure we don't log the token
   // 
-  const currentVersion = getVersion(apiToken);
-  core.debug(`currentVersion[${currentVersion}]`);
+  var currentVersion = await getVersion(apiToken);
+  core.info(`currentVersion[${currentVersion}]`);
   // increment the version
   var versionTag = null;
   if ( currentVersion === null ) {
