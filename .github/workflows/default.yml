@@ -84,7 +84,12 @@ jobs:
           & node --version
           Set-Location -Path ./
           Get-ChildItem -Recurse
-      - name: Just defaults 
+      - name: Build Test
+        id: build-test
         uses: ./
         with:
           apiToken: ${{ secrets.GITHUB_TOKEN }}
+      - name: Test Output
+        if: ${{ runner.os != 'Windows' }}
+        run: |
+          echo ${{ steps.build-test.output.versionTag }}
