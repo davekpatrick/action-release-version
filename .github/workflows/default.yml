@@ -1,13 +1,8 @@
 name: Default
 on:
-  workflow_dispatch:
-    inputs:
-      commitChanges:
-        description: 'True to commit changes'
-        required: true 
-        type: boolean 
-        default: false
   push:
+    branches-ignore:    
+      - main
   pull_request:
 jobs:
   # --------------------------------------------
@@ -29,6 +24,23 @@ jobs:
       run: |
         cd node
         npm install
+    - name: Validate
+      run: |
+        cd node
+        npm run validate
+    - name: Format
+      run: |
+        cd node
+        npm run format
+    - name: Calculate Version
+      id: build-version
+      uses: ./
+      with:
+        tagPrefix: ''
+    - name: Build Version
+      run: |
+        cd node
+        npm version ${{ steps.build-version.outputs.versionTag }}
     - name: Compile
       run: |
         cd node
@@ -54,7 +66,7 @@ jobs:
     strategy:
       matrix:
         operatingSystem: [ubuntu-22.04, windows-2022]
-        nodeVersion: [12,16]
+        nodeVersion: [12, 16]
       fail-fast: false
     runs-on: ${{ matrix.operatingSystem }}
     needs: [build]
