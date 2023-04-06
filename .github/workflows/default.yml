@@ -32,15 +32,15 @@ jobs:
       run: |
         cd node
         npm run format
-    - name: Calculate Version
-      id: build-version
-      uses: ./
-      with:
-        tagPrefix: ''
+#    - name: Calculate Version
+#      id: build-version
+#      uses: ./
+#      with:
+#        tagPrefix: ''
     - name: Build Version
       run: |
         cd node
-        npm version ${{ steps.build-version.outputs.versionTag }}
+        npm version 0.1.0
     - name: Compile
       run: |
         cd node
