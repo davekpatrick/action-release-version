@@ -8,8 +8,8 @@ const semver = require('semver') // Node's semver package
 // Internal modules
 // ------------------------------------
 const getVersion = require('./lib/get-version')
-//
-;(async () => {
+  //
+( async () => {
   try {
     // Remember that inputs are defined in action metadata file
     const argTagPrefix = core.getInput('tagPrefix')
@@ -50,5 +50,5 @@ const getVersion = require('./lib/get-version')
     // Using the actions toolkit (core) package to log a message and set exit code
     core.setFailed(error.message)
   }
-})()
+} )()
 // EOF
