@@ -3,7 +3,7 @@
   "name": "@davekpatrick/action-release-version",
   "license": "BSD-3-Clause",
   "version": "0.0.0",
-  "description": "GitHub Action used to bump the version of a release",
+  "description": "GitHub Action used to version bump",
   "keywords": [
     "node",
     "github",
