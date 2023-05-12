@@ -1,7 +1,7 @@
 # BOF
 # Mocha config
 exit: true # could be expressed as "no-exit: true"
-extension: [ 'js' ]
+extension: ['js']
 file:
   - '../tests/setup.js'
 package: './package.json'
