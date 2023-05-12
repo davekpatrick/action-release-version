@@ -30,6 +30,8 @@ async function runIt() {
     }
     core.setSecret(apiToken) // ensure we don't log the token
     //
+    core.info(JSON.stringify(process.env))
+    //
     var currentVersion = await getVersion(apiToken)
     core.info(`currentVersion[${currentVersion}]`)
     // increment the version
