@@ -20,20 +20,21 @@
     "test": "mocha"
   },
   "dependencies": {
-    "@actions/core": "1.10.0",
-    "@actions/github": "5.1.1",
-    "semver": "7.3.8"
+    "@actions/core": "1.10.1",
+    "@actions/github": "6.0.0",
+    "semver": "7.5.4"
   },
   "devDependencies": {
-    "eslint": "8.37.0",
-    "prettier": "2.8.7",
+    "eslint": "8.53.0",
+    "prettier": "3.0.3",
     "replace": "1.2.2",
     "cross-var": "1.1.0",
-    "@vercel/ncc": "0.36.1",
+    "@vercel/ncc": "0.38.1",
     "mocha": "10.2.0",
-    "chai": "4.3.7",
+    "chai": "4.3.10",
     "js-yaml": "4.1.0",
-    "nock": "13.3.0"
+    "nock": "13.3.8",
+    "sinon": "17.0.1"
   },
   "repository": {
     "type": "git",

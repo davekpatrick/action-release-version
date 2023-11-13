@@ -1,0 +1,15 @@
+{
+  "release": {
+    "draft": false,
+    "prerelease": false,
+    "tag_name": "v0.1.0"
+  },
+  "repository": {
+    "default_branch": "main",
+    "name": "action-release-version",
+    "owner": {
+      "login": "davekpatrick",
+      "name": "davekpatrick"
+    }
+  }
+}

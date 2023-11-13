@@ -16,7 +16,7 @@ inputs:
     required: false
     default: '0.0.0'
   version: 
-    description: 'The semver version to use for the release'
+    description: 'The semver version to use as the current version'
     required: false
 ## ------------------------------
 outputs:
