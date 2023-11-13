@@ -16,8 +16,6 @@ module.exports = async function releaseVersion() {
     const argInceptionVersionTag = core.getInput('inceptionVersionTag')
     const argVersion = core.getInput('argVersion')
 
-
-
     const argApiToken = core.getInput('apiToken')
     const envApiToken = process.env.GITHUB_TOKEN // doc: https://nodejs.org/dist/latest-v8.x/docs/api/process.html
     //
@@ -67,9 +65,6 @@ module.exports = async function releaseVersion() {
       versionTag = semver.inc(currentVersion, 'minor')
     }
     // ------------------------------------
-    
-
-
 
     core.info(`version[${versionTag}]`)
     // remember output is defined in action metadata file

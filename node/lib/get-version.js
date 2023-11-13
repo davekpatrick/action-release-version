@@ -130,10 +130,6 @@ module.exports = async function getVersion(
         ']'
     )
     core.info(`context[${JSON.stringify(github.context)}}]`)
-
-
-
-
   } else if (github.context.eventName === 'workflow_dispatch') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#workflow_dispatch
     core.info('Workflow Dispatch event detected')
