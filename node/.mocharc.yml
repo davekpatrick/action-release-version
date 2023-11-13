@@ -1,0 +1,14 @@
+# BOF
+# Mocha config
+exit: true # could be expressed as "no-exit: true"
+extension: ['js']
+file:
+  - '../tests/setup.js'
+package: './package.json'
+recursive: true
+reporter: 'spec'
+spec:
+  - '../tests/**/*.spec.js'
+timeout: 2000 # same as "timeout: '2s'"
+ui: 'bdd'
+# EOF

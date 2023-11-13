@@ -1,3 +1,3 @@
 # GitHub configurations
 
-<!--EOF-->
+<!-- EOF -->

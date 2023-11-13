@@ -2,7 +2,7 @@
 # EditorConfig 
 # doc: https://EditorConfig.org
 # ---------------------------------------------------
-#BOF
+# BOF
 # top-most EditorConfig file
 root = true
 # standard file handling
@@ -17,4 +17,4 @@ charset = utf-8
 trim_trailing_whitespace = true
 # ---------------------------------------------------
 # ---------------------------------------------------
-#EOF
+# EOF
