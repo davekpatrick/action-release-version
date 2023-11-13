@@ -1,4 +1,5 @@
-name: Default
+name: default
+run-name: Continuous Integration
 on:
   push:
     branches-ignore:    

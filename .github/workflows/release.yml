@@ -1,7 +1,9 @@
+name: release
+run-name: Continuous Delivery
 on:
   push:
     branches:    
-      - ignore
+      - main
     paths-ignore:
       - '**.md'
 env:

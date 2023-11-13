@@ -10,7 +10,7 @@
 # supported CodeQL languages.
 #
 name: "CodeQL"
-
+run-name: CodeQL Vulnerabitlities Scan
 on:
   push:
     branches: [ "main" ]
