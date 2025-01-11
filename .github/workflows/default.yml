@@ -67,7 +67,7 @@ jobs:
     strategy:
       matrix:
         operatingSystem: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04, macos-13, macos-14, windows-2022, windows-2019]
-        nodeVersion: [14,16,18]
+        nodeVersion: [16,18]
       fail-fast: false
     runs-on: ${{ matrix.operatingSystem }}
     needs: [build]
