@@ -20,7 +20,7 @@ describe("package.json", function () {
   //
   it("Name should start with an asperand (@) character", function () {
     expect(pkg.name).to.be.a("string")
-    //expect(pkg.name).to.match(new RegExp('^@'))
+    expect(pkg.name).to.match(new RegExp('^@'))
   });
   it("Name should be equal to the gitHub owner and repository names", function () {
     expect(pkg.name).to.be.a("string")
