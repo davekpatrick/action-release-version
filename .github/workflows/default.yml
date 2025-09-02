@@ -32,6 +32,10 @@ jobs:
       run: |
         cd node
         npm run format
+    - name: Run Unit Tests
+      run: |
+        cd node
+        npm run test
 #    - name: Calculate Version
 #      id: build-version
 #      uses: ./
