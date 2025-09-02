@@ -309,5 +309,197 @@ describe("get-version.js", async function () {
     expect(result).to.equal(releaseVersion)
     expect(semverValid(result)).to.not.be.null
   })
+
+  it("Should handle push event with existing tags", async function () {
+    // ---------------------------------------------------
+    // Details
+    // ------------
+    // - This test verifies the behavior of the getVersion function when a push event is received
+    // - It ensures that the function can extract the correct version information from existing tags
+    // ---------------------------------------------------
+    // fixture inputs
+    const apiToken = process.env["GITHUB_TOKEN"]
+    const tagPrefix = "v"
+    const inceptionVersion = "0.0.0"
+    //
+    const githubRepository = process.env["GITHUB_REPOSITORY"]
+    const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
+    const githubCommitSha = process.env["GITHUB_SHA"]
+    const beforeCommitSha = "abc123def456"
+    const gitRef = "refs/heads/main"
+    const githubEventName = 'push'
+    const latestTagName = "v1.2.3"
+    const expectedVersion = "1.2.3"
+    
+    // Mock the octokit client with all required API calls
+    const mockOctokit = {
+      rest: {
+        git: {
+          getCommit: async () => ({
+            status: 200,
+            data: {
+              sha: beforeCommitSha,
+              message: "Previous commit"
+            }
+          }),
+          listMatchingRefs: async () => ({
+            status: 200,
+            data: [
+              {
+                ref: "refs/tags/" + latestTagName,
+                name: latestTagName,
+                object: {
+                  sha: beforeCommitSha
+                }
+              }
+            ]
+          })
+        }
+      },
+      request: async () => ({
+        status: 200,
+        data: [
+          {
+            name: "main",
+            commit: {
+              sha: beforeCommitSha
+            }
+          }
+        ]
+      })
+    }
+    
+    // Mock GitHub module
+    const githubMock = {
+      context: {
+        eventName: githubEventName,
+        ref: gitRef,
+        sha: githubCommitSha,
+        payload: {
+          repository: {
+            name: githubRepository,
+            owner: {
+              name: githubRepositoryOwner
+            }
+          },
+          before: beforeCommitSha
+        }
+      },
+      getOctokit: () => mockOctokit
+    }
+    
+    // Mock core module to avoid actual core.info/debug calls
+    const coreMock = {
+      debug: () => {},
+      info: () => {},
+      warning: () => {},
+      setFailed: () => {}
+    }
+    
+    // Use proxyquire to inject mocks
+    const getVersionWithMocks = proxyquire(dirNode + path.sep + "lib/get-version", {
+      '@actions/github': githubMock,
+      '@actions/core': coreMock
+    })
+    
+    // execute the test
+    const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
+    console.log("result:[" + result + "]")
+    
+    // Validate the test result
+    expect(result).to.equal(expectedVersion)
+    expect(semverValid(result)).to.not.be.null
+  })
+
+  it("Should handle push event with no existing tags", async function () {
+    // ---------------------------------------------------
+    // Details
+    // ------------
+    // - This test verifies the behavior of the getVersion function when a push event is received
+    // - but no existing tags are found, so it should return the inception version
+    // ---------------------------------------------------
+    // fixture inputs
+    const apiToken = process.env["GITHUB_TOKEN"]
+    const tagPrefix = "v"
+    const inceptionVersion = "0.0.0"
+    //
+    const githubRepository = process.env["GITHUB_REPOSITORY"]
+    const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
+    const githubCommitSha = process.env["GITHUB_SHA"]
+    const beforeCommitSha = "abc123def456"
+    const gitRef = "refs/heads/main"
+    const githubEventName = 'push'
+    
+    // Mock the octokit client with empty tags response
+    const mockOctokit = {
+      rest: {
+        git: {
+          getCommit: async () => ({
+            status: 200,
+            data: {
+              sha: beforeCommitSha,
+              message: "Previous commit"
+            }
+          }),
+          listMatchingRefs: async () => ({
+            status: 200,
+            data: [] // No tags found
+          })
+        }
+      },
+      request: async () => ({
+        status: 200,
+        data: [
+          {
+            name: "main",
+            commit: {
+              sha: beforeCommitSha
+            }
+          }
+        ]
+      })
+    }
+    
+    // Mock GitHub module
+    const githubMock = {
+      context: {
+        eventName: githubEventName,
+        ref: gitRef,
+        sha: githubCommitSha,
+        payload: {
+          repository: {
+            name: githubRepository,
+            owner: {
+              name: githubRepositoryOwner
+            }
+          },
+          before: beforeCommitSha
+        }
+      },
+      getOctokit: () => mockOctokit
+    }
+    
+    // Mock core module to avoid actual core.info/debug calls
+    const coreMock = {
+      debug: () => {},
+      info: () => {},
+      warning: () => {},
+      setFailed: () => {}
+    }
+    
+    // Use proxyquire to inject mocks
+    const getVersionWithMocks = proxyquire(dirNode + path.sep + "lib/get-version", {
+      '@actions/github': githubMock,
+      '@actions/core': coreMock
+    })
+    
+    // execute the test
+    const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
+    console.log("result:[" + result + "]")
+    
+    // Validate the test result
+    expect(result).to.equal(inceptionVersion)
+    expect(semverValid(result)).to.not.be.null
+  })
 })
 // EOF
