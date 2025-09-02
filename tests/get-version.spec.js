@@ -1,100 +1,263 @@
 // BOF
-const fs = require("node:fs")
-const path = require("node:path")
+const path = require("node:path");
+// project directories
+const dirRoot = path.normalize(__dirname + path.sep + "..");
+const dirNode = path.resolve(dirRoot, "node");
+const dirNodeModules = path.resolve(dirNode, "node_modules");
+// test required modules
 const { describe } = require("node:test")
-const nodeDir = path.resolve(__dirname, "../node")
-const nodeModulesDir = path.resolve(nodeDir, "node_modules")
+// doc: https://www.chaijs.com/guide/styles/  ( BDD 'expect' assertion is being used vs the 'should' assertion style )
+//      https://www.chaijs.com/api/bdd/
+const expect = require(dirNodeModules + path.sep + "chai").expect
+const proxyquire = require(dirNodeModules + path.sep + "proxyquire")
+// ---------------------------------------------------
+// ---------------------------------------------------
 
-const expect = require(nodeModulesDir + path.sep + "chai").expect
-const proxyquire = require(nodeModulesDir + path.sep + "proxyquire")
-
-// Modules under test
-const getVersion = require(nodeDir + path.sep + "lib/get-version")
-const github = require(nodeModulesDir + path.sep + "@actions/github")
-
-describe("get-version.js unit tests", function () {
+describe("get-version.js", async function () {
+  // ---------------------------------------------------
   let originalContext
-  
+  let moduleName = "get-version"
+  // ---------------------------------------------------
+  // Modules under test
+  const github = require(dirNodeModules + path.sep + "@actions/github")
+  // ---------------------------------------------------
+  // utility modules
+  const semverValid = require(dirNodeModules + path.sep + 'semver/functions/valid')
+  // ---------------------------------------------------
   beforeEach(() => {
     // Store original context
     originalContext = Object.assign({}, github.context)
   })
-
+  // ---------------------------------------------------
   afterEach(() => {
-    // Restore context
+    // Restore original context
     Object.assign(github.context, originalContext)
+    proxyquire.preserveCache()
   })
+  // ---------------------------------------------------
+  // ---------------------------------------------------
+  it("Should be a function", async function () {
+    // ---------------------------------------------------
+    // Details
+    // ------------
+    // - 
+    // ---------------------------------------------------
+    let requiredFile = path.resolve(dirNode, "lib/" + moduleName)
+    // execute the test
+    const result = require(requiredFile)
+    console.log("result:[" + typeof result + "]")
+    // Validate the test result
+    expect(result).to.be.a("function")
+  });
 
-  it("Should handle unknown event types", async function () {
-    const apiToken = "fake-token"
-    const tagPrefix = "v"
-    const inceptionVersion = "0.0.0"
-    
-    // Mock GitHub context for unknown event
-    github.context.eventName = "unknown"
-    github.context.payload = {
-      repository: {
-        name: "action-release-version",
-        owner: {
-          name: "davekpatrick"
+  it("Should accept default parameters", async function () {
+    // ---------------------------------------------------
+    // Details
+    // ------------
+    // - This test verifies the behavior of the getVersion function when called with default parameters
+    // - It ensures that the function can handle the absence of optional parameters gracefully
+    // ---------------------------------------------------
+    // fixture inputs
+    const apiToken = process.env["GITHUB_TOKEN"]
+    //
+    const githubRepository = process.env["GITHUB_REPOSITORY"]
+    const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
+    const githubEventName = 'somethingStrange'
+    // Mock GitHub module
+    const githubMock = {
+      context: {
+        eventName: githubEventName,
+        payload: {
+          repository: {
+            name: githubRepository,
+            owner: {
+              name: githubRepositoryOwner
+            }
+          }
         }
       }
     }
-    
-    const result = await getVersion(apiToken, tagPrefix, inceptionVersion)
-    
+    // Mock core module to avoid actual core.info/debug calls
+    const coreMock = {
+      debug: () => {},
+      info: () => {},
+      setFailed: () => {}
+    }
+    // Use proxyquire to inject mocks
+    const getVersionWithMocks = proxyquire(dirNode + path.sep + "lib/" + moduleName, {
+      '@actions/github': githubMock,
+      '@actions/core': coreMock
+    })
+    // execute the test
+    const result = await getVersionWithMocks(apiToken)
+    console.log("result:[" + result + "]")
+    // Validate the test result
+    expect(result).to.be.null
+  })
+
+  it("Should handle unknown event types", async function () {
+    // ---------------------------------------------------
+    // Details
+    // ------------
+    // - This test verifies the behavior of the getVersion function when an unknown event type is received
+    // - It ensures that the function can handle unexpected event types gracefully
+    // ---------------------------------------------------
+    // fixture inputs
+    const apiToken = process.env["GITHUB_TOKEN"]
+    const tagPrefix = process.env["INPUT_TAG_PREFIX"]
+    const inceptionVersion = process.env["INPUT_INCEPTION_VERSION"]
+    // 
+    const githubRepository = process.env["GITHUB_REPOSITORY"]
+    const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
+    const githubEventName = 'somethingStrange'
+    // Mock GitHub module
+    const githubMock = {
+      context: {
+        eventName: githubEventName,
+        payload: {
+          repository: {
+            name: githubRepository,
+            owner: {
+              name: githubRepositoryOwner
+            }
+          }
+        }
+      }
+    }
+    // Mock core module to avoid actual core.info/debug calls
+    const coreMock = {
+      debug: () => {},
+      info: () => {},
+      setFailed: () => {}
+    }
+    // Use proxyquire to inject mocks
+    const getVersionWithMocks = proxyquire(dirNode + path.sep + "lib/get-version", {
+      '@actions/github': githubMock,
+      '@actions/core': coreMock
+    })
+    // execute the test
+    const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
+    console.log("result:[" + result + "]")
+    // Validate the test result
     expect(result).to.be.null
   })
 
   it("Should handle pull_request event", async function () {
-    const apiToken = "fake-token"
-    const tagPrefix = "v"
-    const inceptionVersion = "0.0.0"
-    
-    // Mock GitHub context for pull_request event
-    github.context.eventName = "pull_request"
-    github.context.ref = "refs/pull/123/head"
-    github.context.sha = "fake-commit-sha"
-    github.context.payload = {
-      repository: {
-        name: "action-release-version",
-        owner: {
-          name: "davekpatrick"
+    // ---------------------------------------------------
+    // Details
+    // ------------
+    // - This test verifies the behavior of the getVersion function when a pull_request event is received
+    // - It ensures that the function can extract the correct version information from the event payload
+    // ---------------------------------------------------
+    // fixture inputs
+    const apiToken = process.env["GITHUB_TOKEN"]
+    const tagPrefix = process.env["INPUT_TAG_PREFIX"]
+    const inceptionVersion = process.env["INPUT_INCEPTION_VERSION"]
+    //
+    const githubRepository = process.env["GITHUB_REPOSITORY"]
+    const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
+    const githubCommitSha = process.env["GITHUB_SHA"]
+    const githubPullRequestNumber = 314
+    const githubRef = 'refs/pull/' + githubPullRequestNumber + '/head'
+    const githubEventName = 'pull_request'
+    // Mock GitHub module
+    const githubMock = {
+      context: {
+        eventName: githubEventName,
+        ref: githubRef,
+        sha: githubCommitSha,
+        payload: {
+          repository: {
+            name: githubRepository,
+            owner: {
+              name: githubRepositoryOwner
+            }
+          }
         }
       }
     }
-    
-    const result = await getVersion(apiToken, tagPrefix, inceptionVersion)
-    
+    // Mock core module to avoid actual core.info/debug calls
+    const coreMock = {
+      debug: () => {},
+      info: () => {},
+      setFailed: () => {}
+    }
+    // Use proxyquire to inject mocks
+    const getVersionWithMocks = proxyquire(dirNode + path.sep + "lib/get-version", {
+      '@actions/github': githubMock,
+      '@actions/core': coreMock
+    })
+    // execute the test
+    const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
+    console.log("result:[" + result + "]")
+    // Validate the test result
     expect(result).to.be.null
   })
 
   it("Should handle workflow_dispatch event", async function () {
-    const apiToken = "fake-token"
-    const tagPrefix = "v"
-    const inceptionVersion = "0.0.0"
-    
-    // Mock GitHub context for workflow_dispatch event
-    github.context.eventName = "workflow_dispatch"
-    github.context.payload = {
-      repository: {
-        name: "action-release-version",
-        owner: {
-          name: "davekpatrick"
+    // ---------------------------------------------------
+    // Details
+    // ------------
+    // - This test verifies the behavior of the getVersion function when a workflow_dispatch event is received
+    // - It ensures that the function can extract the correct version information from the event payload
+    // ---------------------------------------------------
+    // fixture inputs
+    const apiToken = process.env["GITHUB_TOKEN"]
+    const tagPrefix = process.env["INPUT_TAG_PREFIX"]
+    const inceptionVersion = process.env["INPUT_INCEPTION_VERSION"]
+    //
+    const githubRepository = process.env["GITHUB_REPOSITORY"]
+    const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
+    const githubEventName = 'workflow_dispatch'
+    // Mock GitHub module
+    const githubMock = {
+      context: {
+        eventName: githubEventName,
+        payload: {
+          repository: {
+            name: githubRepository,
+            owner: {
+              name: githubRepositoryOwner
+            }
+          }
         }
       }
     }
-    
-    const result = await getVersion(apiToken, tagPrefix, inceptionVersion)
-    
+    // Mock core module to avoid actual core.info/debug calls
+    const coreMock = {
+      debug: () => {},
+      info: () => {},
+      setFailed: () => {}
+    }
+    // Use proxyquire to inject mocks
+    const getVersionWithMocks = proxyquire(dirNode + path.sep + "lib/get-version", {
+      '@actions/github': githubMock,
+      '@actions/core': coreMock
+    })
+    // execute the test
+    const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
+    console.log("result:[" + result + "]")
+    // Validate the test result
     expect(result).to.be.null
   })
 
   it("Should handle release event", async function () {
-    const apiToken = "fake-token"
-    const tagPrefix = "v"
-    const inceptionVersion = "0.0.0"
-    
+    // ---------------------------------------------------
+    // Details
+    // ------------
+    // - This test verifies the behavior of the getVersion function when a release event is received
+    // - It ensures that the function can extract the correct version information from the event payload
+    // ---------------------------------------------------
+    // fixture inputs
+    const apiToken = process.env["GITHUB_TOKEN"]
+    const tagPrefix = process.env["INPUT_TAGPREFIX"]
+    const inceptionVersion = process.env["INPUT_INCEPTION_VERSION"]
+    //
+    const githubRepository = process.env["GITHUB_REPOSITORY"]
+    const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
+    const githubCommitSha = process.env["GITHUB_SHA"]
+    const githubEventName = process.env["GITHUB_EVENT_NAME"]
+    const releaseVersion = "1.2.3"
     // Mock the octokit client and getRef response
     const mockOctokit = {
       rest: {
@@ -103,69 +266,48 @@ describe("get-version.js unit tests", function () {
             status: 200,
             data: {
               object: {
-                sha: "fake-commit-sha-for-tag"
+                sha: githubCommitSha
               }
             }
           })
         }
       }
     }
-    
     // Mock GitHub module
     const githubMock = {
       context: {
-        eventName: "release",
+        eventName: githubEventName,
         payload: {
           repository: {
-            name: "action-release-version",
+            name: githubRepository,
             owner: {
-              name: "davekpatrick"
+              name: githubRepositoryOwner
             }
           },
           release: {
-            tag_name: "v1.2.3"
+            tag_name: tagPrefix + releaseVersion
           }
         }
       },
       getOctokit: () => mockOctokit
     }
-    
     // Mock core module to avoid actual core.info/debug calls
     const coreMock = {
       debug: () => {},
       info: () => {},
       setFailed: () => {}
     }
-    
     // Use proxyquire to inject mocks
-    const getVersionWithMocks = proxyquire(nodeDir + path.sep + "lib/get-version", {
+    const getVersionWithMocks = proxyquire(dirNode + path.sep + "lib/get-version", {
       '@actions/github': githubMock,
       '@actions/core': coreMock
     })
-    
+    // execute the test
     const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
-    
-    expect(result).to.equal("1.2.3")
-  })
-
-  it("Should accept default parameters", async function () {
-    const apiToken = "fake-token"
-    
-    // Mock GitHub context for unknown event (simplest case)
-    github.context.eventName = "unknown"
-    github.context.payload = {
-      repository: {
-        name: "action-release-version",
-        owner: {
-          name: "davekpatrick"
-        }
-      }
-    }
-    
-    // Call with only required parameter
-    const result = await getVersion(apiToken)
-    
-    expect(result).to.be.null
+    console.log("result:[" + result + "]")
+    // Validate the test result
+    expect(result).to.equal(releaseVersion)
+    expect(semverValid(result)).to.not.be.null
   })
 })
 // EOF
