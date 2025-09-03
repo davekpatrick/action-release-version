@@ -104,8 +104,8 @@ describe("get-version.js", async function () {
     // ---------------------------------------------------
     // fixture inputs
     const apiToken = process.env["GITHUB_TOKEN"]
-    const tagPrefix = process.env["INPUT_TAG_PREFIX"]
-    const inceptionVersion = process.env["INPUT_INCEPTION_VERSION"]
+    const tagPrefix = process.env["INPUT_TAGPREFIX"]
+    const inceptionVersion = process.env["INPUT_INCEPTIONVERSIONTAG"]
     // 
     const githubRepository = process.env["GITHUB_REPOSITORY"]
     const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
@@ -151,8 +151,8 @@ describe("get-version.js", async function () {
     // ---------------------------------------------------
     // fixture inputs
     const apiToken = process.env["GITHUB_TOKEN"]
-    const tagPrefix = process.env["INPUT_TAG_PREFIX"]
-    const inceptionVersion = process.env["INPUT_INCEPTION_VERSION"]
+    const tagPrefix = process.env["INPUT_TAGPREFIX"]
+    const inceptionVersion = process.env["INPUT_INCEPTIONVERSIONTAG"]
     //
     const githubRepository = process.env["GITHUB_REPOSITORY"]
     const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
@@ -203,8 +203,8 @@ describe("get-version.js", async function () {
     // ---------------------------------------------------
     // fixture inputs
     const apiToken = process.env["GITHUB_TOKEN"]
-    const tagPrefix = process.env["INPUT_TAG_PREFIX"]
-    const inceptionVersion = process.env["INPUT_INCEPTION_VERSION"]
+    const tagPrefix = process.env["INPUT_TAGPREFIX"]
+    const inceptionVersion = process.env["INPUT_INCEPTIONVERSIONTAG"]
     //
     const githubRepository = process.env["GITHUB_REPOSITORY"]
     const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
@@ -251,7 +251,7 @@ describe("get-version.js", async function () {
     // fixture inputs
     const apiToken = process.env["GITHUB_TOKEN"]
     const tagPrefix = process.env["INPUT_TAGPREFIX"]
-    const inceptionVersion = process.env["INPUT_INCEPTION_VERSION"]
+    const inceptionVersion = process.env["INPUT_INCEPTIONVERSIONTAG"]
     //
     const githubRepository = process.env["GITHUB_REPOSITORY"]
     const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
