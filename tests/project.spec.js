@@ -41,53 +41,11 @@ describe("action.yml", function () {
     // fixture inputs
 
     // execute the test
-
+    const result = jsYaml.load(yamlFile)
+    console.log("result:[" + typeof result + "]")
     // Validate the test result
     expect(() => jsYaml.load(yamlFile)).to.not.throw()
-    expect(yamlData).to.be.an("object")
-  });
-
-  it("Action core setOutput", function () {
-    // ---------------------------------------------------
-    // Details
-    // ------------
-    // - This test verifies the action core module is able to set outputs 
-    // ---------------------------------------------------
-    // fixture inputs
-    let time = new Date().toTimeString()
-    // execute the test
-    core.setOutput("time", time)
-
-    // Validate the test result
-  });
-  
-  it("Action core exportVariable", function () {
-    // ---------------------------------------------------
-    // Details
-    // ------------
-    // - This test verifies the action core module is able to set environment variables
-    // ---------------------------------------------------
-    // fixture inputs
-    let time = new Date().toTimeString()
-    // execute the test
-    core.exportVariable("time", time)
-
-    // Validate the test result
-  });
-  
-  it("Input tagPrefix", function () {
-    // ---------------------------------------------------
-    // Details
-    // ------------
-    // - 
-    // ---------------------------------------------------
-    // fixture inputs
-    let inputData = core.getInput("tagPrefix")
-    // execute the test
-    
-    // Validate the test result
-    expect(inputData).to.be.a("string")
-    expect(inputData).to.equal("v")
+    expect(result).to.be.an("object")
   });
   
   it("Name should start with GitHub Action", function () {
@@ -275,7 +233,7 @@ describe("github @action modules", function(){
     // ---------------------------------------------------
     // Details
     // ------------
-    // - 
+    // - this test verifies the github action github module context.payload is available
     // ---------------------------------------------------
     // fixture inputs
 

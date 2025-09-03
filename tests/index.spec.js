@@ -14,8 +14,9 @@ const proxyquire = require(dirNodeModules + path.sep + "proxyquire")
 // ---------------------------------------------------
 describe("index.js", async function () {
   // ---------------------------------------------------
-  
-  
+  let moduleName = "index"
+  let modulePath = path.resolve(dirNode, "lib", moduleName)
+
   
   //let core
   //let github = require(dirNodeModules + path.sep + "@actions/github")
@@ -46,9 +47,10 @@ describe("index.js", async function () {
     // - 
     // ---------------------------------------------------
     // fixture inputs
-    let requiredFile = path.resolve(dirNode, "lib/index")
+    let requiredFile = modulePath
     // execute the test
     const result = require(requiredFile)
+    console.log("result:[" + typeof result + "]")
     // Validate the test result
     expect(result).to.be.a("function")
   });
@@ -61,8 +63,10 @@ describe("index.js", async function () {
     // ---------------------------------------------------
     // fixture inputs
     
-
-    // Mock the octokit client and getRef response
+    //
+    const githubCommitSha = process.env["GITHUB_SHA"]
+    const githubEventName = process.env["GITHUB_EVENT_NAME"]
+    // Mock the octokit client and responses
     const mockOctokit = {
       rest: {
         git: {
@@ -70,18 +74,17 @@ describe("index.js", async function () {
             status: 200,
             data: {
               object: {
-                sha: "fake-commit-sha-for-tag"
+                sha: githubCommitSha
               }
             }
           })
         }
       }
     }
-    
     // Mock GitHub module
     const githubMock = {
       context: {
-        eventName: "release",
+        eventName: githubEventName,
         payload: {
           repository: {
             name: "action-release-version",
@@ -96,24 +99,23 @@ describe("index.js", async function () {
       },
       getOctokit: () => mockOctokit
     }
-    
     // Mock core module to avoid actual core.info/debug calls
     const coreMock = {
       debug: () => {},
       info: () => {},
       setFailed: () => {}
     }
-    
     // Use proxyquire to inject mocks
     const main = proxyquire(dirNode + path.sep + "lib/get-version", {
       '@actions/github': githubMock,
       '@actions/core': coreMock
     })
     // execute the test
-    const returnData = await main();
+    const result = await main();
+    console.log("result:[" + result + "]")
     // Validate the test result
-    expect( returnData ).to.be.a("string");
-    expect( returnData ).to.equal("0.1.0");  // Should be inception version + 1
+    expect( result ).to.be.a("string");
+    expect( result ).to.equal("0.1.0");  // Should be inception version + 1
   });
 
   it("Should increment minor version when no current version exists", async function () {
@@ -145,12 +147,13 @@ describe("index.js", async function () {
       setFailed: () => {}
     }
     
-    const releaseVersion = proxyquire(dirNode + path.sep + "lib/index", {
+    const releaseVersion = proxyquire(modulePath, {
       './get-version': getVersionStub,
       '@actions/core': coreStub
     })
     // execute the test
     const result = await releaseVersion()
+    console.log("result:[" + result + "]")
     // Validate the test result
     expect(result).to.equal('0.1.0') // inception version incremented
   })
@@ -184,12 +187,13 @@ describe("index.js", async function () {
       setFailed: () => {}
     }
     
-    const releaseVersion = proxyquire(dirNode + path.sep + "lib/index", {
+    const releaseVersion = proxyquire(modulePath, {
       './get-version': getVersionStub,
       '@actions/core': coreStub
     })
     // execute the test
     const result = await releaseVersion()
+    console.log("result:[" + result + "]")
     // Validate the test result
     expect(result).to.equal('1.3.0') // current version incremented
   })
@@ -220,11 +224,12 @@ describe("index.js", async function () {
       setFailed: () => {}
     }
     
-    const releaseVersion = proxyquire(dirNode + path.sep + "lib/index", {
+    const releaseVersion = proxyquire(modulePath, {
       '@actions/core': coreStub
     })
     // execute the test
     const result = await releaseVersion()
+    console.log("result:[" + result + "]")
     // Validate the test result
     expect(result).to.equal('2.4.0') // incremented version
   })
@@ -260,12 +265,13 @@ describe("index.js", async function () {
       setFailed: () => {}
     }
     
-    const releaseVersion = proxyquire(dirNode + path.sep + "lib/index", {
+    const releaseVersion = proxyquire(modulePath, {
       './get-version': getVersionStub,
       '@actions/core': coreStub
     })
     // execute the test
     const result = await releaseVersion()
+    console.log("result:[" + result + "]")
     // Validate the test result
     expect(result).to.equal('1.1.0') // incremented version
   })

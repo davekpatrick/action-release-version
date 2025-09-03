@@ -12,11 +12,11 @@ const expect = require(dirNodeModules + path.sep + "chai").expect
 const proxyquire = require(dirNodeModules + path.sep + "proxyquire")
 // ---------------------------------------------------
 // ---------------------------------------------------
-
 describe("get-version.js", async function () {
   // ---------------------------------------------------
-  let originalContext
   let moduleName = "get-version"
+  let modulePath = path.resolve(dirNode, "lib", moduleName)
+  let originalContext
   // ---------------------------------------------------
   // Modules under test
   const github = require(dirNodeModules + path.sep + "@actions/github")
@@ -42,7 +42,7 @@ describe("get-version.js", async function () {
     // ------------
     // - 
     // ---------------------------------------------------
-    let requiredFile = path.resolve(dirNode, "lib/" + moduleName)
+    let requiredFile = modulePath
     // execute the test
     const result = require(requiredFile)
     console.log("result:[" + typeof result + "]")
@@ -84,7 +84,7 @@ describe("get-version.js", async function () {
       setFailed: () => {}
     }
     // Use proxyquire to inject mocks
-    const getVersionWithMocks = proxyquire(dirNode + path.sep + "lib/" + moduleName, {
+    const getVersionWithMocks = proxyquire(modulePath, {
       '@actions/github': githubMock,
       '@actions/core': coreMock
     })
@@ -131,7 +131,7 @@ describe("get-version.js", async function () {
       setFailed: () => {}
     }
     // Use proxyquire to inject mocks
-    const getVersionWithMocks = proxyquire(dirNode + path.sep + "lib/get-version", {
+    const getVersionWithMocks = proxyquire(modulePath, {
       '@actions/github': githubMock,
       '@actions/core': coreMock
     })
@@ -183,7 +183,7 @@ describe("get-version.js", async function () {
       setFailed: () => {}
     }
     // Use proxyquire to inject mocks
-    const getVersionWithMocks = proxyquire(dirNode + path.sep + "lib/get-version", {
+    const getVersionWithMocks = proxyquire(modulePath, {
       '@actions/github': githubMock,
       '@actions/core': coreMock
     })
@@ -230,7 +230,7 @@ describe("get-version.js", async function () {
       setFailed: () => {}
     }
     // Use proxyquire to inject mocks
-    const getVersionWithMocks = proxyquire(dirNode + path.sep + "lib/get-version", {
+    const getVersionWithMocks = proxyquire(modulePath, {
       '@actions/github': githubMock,
       '@actions/core': coreMock
     })
@@ -258,7 +258,7 @@ describe("get-version.js", async function () {
     const githubCommitSha = process.env["GITHUB_SHA"]
     const githubEventName = process.env["GITHUB_EVENT_NAME"]
     const releaseVersion = "1.2.3"
-    // Mock the octokit client and getRef response
+    // Mock the octokit client and responses
     const mockOctokit = {
       rest: {
         git: {
@@ -298,7 +298,7 @@ describe("get-version.js", async function () {
       setFailed: () => {}
     }
     // Use proxyquire to inject mocks
-    const getVersionWithMocks = proxyquire(dirNode + path.sep + "lib/get-version", {
+    const getVersionWithMocks = proxyquire(modulePath, {
       '@actions/github': githubMock,
       '@actions/core': coreMock
     })
@@ -397,7 +397,7 @@ describe("get-version.js", async function () {
     }
     
     // Use proxyquire to inject mocks
-    const getVersionWithMocks = proxyquire(dirNode + path.sep + "lib/get-version", {
+    const getVersionWithMocks = proxyquire(modulePath, {
       '@actions/github': githubMock,
       '@actions/core': coreMock
     })
@@ -488,7 +488,7 @@ describe("get-version.js", async function () {
     }
     
     // Use proxyquire to inject mocks
-    const getVersionWithMocks = proxyquire(dirNode + path.sep + "lib/get-version", {
+    const getVersionWithMocks = proxyquire(modulePath, {
       '@actions/github': githubMock,
       '@actions/core': coreMock
     })

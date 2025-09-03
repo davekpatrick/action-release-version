@@ -1,7 +1,7 @@
 // BOF
 const path = require("node:path");
 // project directories
-const dirRoot = path.normalize(__dirname + path.sep + "..");
+const dirRoot = path.normalize(path.resolve(__dirname, "..", ".."));
 const dirNode = path.resolve(dirRoot, "node");
 const dirNodeModules = path.resolve(dirNode, "node_modules");
 // test required modules
