@@ -55,17 +55,23 @@ describe("index.js", async function () {
     expect(result).to.be.a("function")
   });
 
-  it("Run with default inputs (simplified)", async function () {
+  it("Run with release default inputs (simplified)", async function () {
     // ---------------------------------------------------
     // Details
     // ------------
-    // - 
+    // - This test verifies the behavior of the main function when called with release default inputs
+    // - It ensures that the function can handle the absence of optional parameters gracefully
     // ---------------------------------------------------
     // fixture inputs
-    
+    const inceptionVersion = process.env["INPUT_INCEPTIONVERSIONTAG"]
     //
     const githubCommitSha = process.env["GITHUB_SHA"]
     const githubEventName = process.env["GITHUB_EVENT_NAME"]
+    const githubRepository = process.env["GITHUB_REPOSITORY"]
+    const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
+    const expectedVersion = "0.1.0"
+    // Mock getVersion to return inception version
+    const getVersionStub = () => Promise.resolve(inceptionVersion)
     // Mock the octokit client and responses
     const mockOctokit = {
       rest: {
@@ -87,13 +93,13 @@ describe("index.js", async function () {
         eventName: githubEventName,
         payload: {
           repository: {
-            name: "action-release-version",
+            name: githubRepository,
             owner: {
-              name: "davekpatrick"
+              name: githubRepositoryOwner
             }
           },
           release: {
-            tag_name: "0.1.0"
+            tag_name: expectedVersion
           }
         }
       },
@@ -106,7 +112,8 @@ describe("index.js", async function () {
       setFailed: () => {}
     }
     // Use proxyquire to inject mocks
-    const main = proxyquire(dirNode + path.sep + "lib/get-version", {
+    const main = proxyquire(modulePath, {
+      './get-version': getVersionStub,
       '@actions/github': githubMock,
       '@actions/core': coreMock
     })
@@ -115,7 +122,7 @@ describe("index.js", async function () {
     console.log("result:[" + result + "]")
     // Validate the test result
     expect( result ).to.be.a("string");
-    expect( result ).to.equal("0.1.0");  // Should be inception version + 1
+    expect( result ).to.equal(expectedVersion);  // Should be inception version + 1
   });
 
   it("Should increment minor version when no current version exists", async function () {
@@ -125,7 +132,11 @@ describe("index.js", async function () {
     // - 
     // ---------------------------------------------------
     // fixture inputs
-
+    const apiToken = process.env["GITHUB_TOKEN"]
+    const tagPrefix = process.env["INPUT_TAGPREFIX"]
+    const inceptionVersion = process.env["INPUT_INCEPTIONVERSIONTAG"]
+    //
+    const expectedVersion = "0.1.0"
     // Mock getVersion to return null (no current version)
     const getVersionStub = () => Promise.resolve(null)
     
@@ -133,10 +144,10 @@ describe("index.js", async function () {
     const coreStub = {
       getInput: (input) => {
         switch(input) {
-          case 'tagPrefix': return 'v'
-          case 'inceptionVersionTag': return '0.0.0'
+          case 'tagPrefix': return tagPrefix
+          case 'inceptionVersionTag': return inceptionVersion
           case 'argVersion': return ''
-          case 'apiToken': return 'fake-token'
+          case 'apiToken': return apiToken
           default: return ''
         }
       },
@@ -146,16 +157,16 @@ describe("index.js", async function () {
       setOutput: () => {},
       setFailed: () => {}
     }
-    
-    const releaseVersion = proxyquire(modulePath, {
+    // Use proxyquire to inject mocks
+    const main = proxyquire(modulePath, {
       './get-version': getVersionStub,
       '@actions/core': coreStub
     })
     // execute the test
-    const result = await releaseVersion()
+    const result = await main()
     console.log("result:[" + result + "]")
     // Validate the test result
-    expect(result).to.equal('0.1.0') // inception version incremented
+    expect(result).to.equal(expectedVersion) // inception version incremented
   })
 
   it("Should increment minor version of current version", async function () {
