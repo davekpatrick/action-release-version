@@ -32,7 +32,7 @@ jobs:
         cd node
         npm run build
     - name: Upload Build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ github.event.repository.name }}-${{ matrix.operatingSystem }}-${{ matrix.nodeVersion }}-build
         if-no-files-found: error 
@@ -42,7 +42,7 @@ jobs:
           README.md
           action.yml
     - name: Upload Test artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ github.event.repository.name }}-${{ matrix.operatingSystem }}-${{ matrix.nodeVersion }}-tests
         if-no-files-found: error 

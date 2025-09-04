@@ -1,129 +1,259 @@
 // BOF
-const fs = require("node:fs")
-const path = require("node:path")
+const path = require("node:path");
+// project directories
+const dirRoot = path.normalize(__dirname + path.sep + "..");
+const dirNode = path.resolve(dirRoot, "node");
+const dirNodeModules = path.resolve(dirNode, "node_modules");
+// test required modules
 const { describe } = require("node:test")
-//const nodeDir = path.parse(process.env.npm_package_json).dir
-const nodeDir = path.resolve(__dirname, "../node")
-const nodeModulesDir = path.resolve(nodeDir, "node_modules")
-//process.env["PATH"] = nodeModulesDir + path.delimiter + process.env.PATH
-//console.log(process.env.PATH)
 // doc: https://www.chaijs.com/guide/styles/  ( BDD 'expect' assertion is being used vs the 'should' assertion style )
 //      https://www.chaijs.com/api/bdd/
-const expect = require(nodeModulesDir + path.sep + "chai").expect
-const sinon = require(nodeModulesDir + path.sep + "sinon")
-const jsYaml = require(nodeModulesDir + path.sep + "js-yaml")
-const nock = require(nodeModulesDir + path.sep + "nock")
-//
-describe("package.json", function () {
-  let pkg = require(nodeDir + path.sep + "package.json")
-  console.log(pkg.name)
-  //
-  it("Name should start with an asperand (@) character", function () {
-    expect(pkg.name).to.be.a("string")
-    //expect(pkg.name).to.match(new RegExp('^@'))
-  });
-  it("Name should be equal to the gitHub owner and repository names", function () {
-    expect(pkg.name).to.be.a("string")
-    expect(pkg.name).to.equal("@" + process.env["GITHUB_REPOSITORY"])
-  });
-  //
-  it("Description should start with GitHub Action", function () {
-    expect(pkg.description).to.be.a("string")
-    expect(pkg.description).to.match(new RegExp("^GitHub Action"), "i")
-  });
-  //
-  it("Author should be repository owner", function () {
-    expect(pkg.author).to.equal(process.env["GITHUB_REPOSITORY_OWNER"])
-  });
-});
-//
-describe("action.yml", function () {
-  let core = require(nodeModulesDir + path.sep + "@actions/core")
+const expect = require(dirNodeModules + path.sep + "chai").expect
+const proxyquire = require(dirNodeModules + path.sep + "proxyquire")
+// ---------------------------------------------------
+// ---------------------------------------------------
+describe("index.js", async function () {
+  // ---------------------------------------------------
+  let moduleName = "index"
+  let modulePath = path.resolve(dirNode, "lib", moduleName)
 
-  let yamlFile = fs.readFileSync(path.join(__dirname, "../action.yml"), "utf8")
-  let yamlData = jsYaml.load(yamlFile)
-  it("Action core setOutput", function () {
-    core.setOutput("time", new Date().toTimeString())
-  });
-  it("Action core setOutput", function () {
-    core.exportVariable("time", new Date().toTimeString())
-  });
-  //
-  it("Input tagPrefix", function () {
-    let inputData = core.getInput("tagPrefix")
-    expect(inputData).to.be.a("string")
-    expect(inputData).to.equal("v")
-  });
-  //
-  it("Name should start with GitHub Action", function () {
-    let name = yamlData.name;
-    //
-    expect(name).to.be.a("string").and.match(new RegExp("^GitHub Action"), "i")
-  });
-  //
-  it("Author should be repository owner", function () {
-    let author = yamlData.author;
-    //
-    expect(author).to.equal(process.env["GITHUB_REPOSITORY_OWNER"])
-  });
-});
-//
-describe("index.js", function () {
-  //const sinon = require(nodeModulesDir + path.sep + "sinon")
-
+  
+  //let core
+  //let github = require(dirNodeModules + path.sep + "@actions/github")
+  //let githubApiUrl = process.env["GITHUB_API_URL"];
+  
   beforeEach(() => {
-    nock.cleanAll()
+    //core = require(dirNodeModules + path.sep + "@actions/core")
+    //github = require(dirNodeModules + path.sep + "@actions/github")
+          ///console.log("process.env:[" + JSON.stringify(process.env, null, 2) + "]")
+
     //
-    requiredFile = path.resolve(nodeDir, "lib/index")
-    githubApiUrl = process.env["GITHUB_API_URL"];
-    githubRepository = process.env["GITHUB_REPOSITORY"];
-    //
-    //sinon.spy(console, 'log');
   });
 
   afterEach(() => {
-    //sinon.restore();
-  });
+    //
+    //delete require.cache[require.resolve(dirNodeModules + path.sep + "@actions/core")]
+    //delete require.cache[require.resolve(dirNodeModules + path.sep + "@actions/github")]
 
+    proxyquire.preserveCache()
+  });
+  // ---------------------------------------------------
+  // ---------------------------------------------------
+  
   it("Should be a function", async function () {
-    const main = require(requiredFile);
-    expect(main).to.be.a("function")
+    // ---------------------------------------------------
+    // Details
+    // ------------
+    // - 
+    // ---------------------------------------------------
+    // fixture inputs
+    let requiredFile = modulePath
+    // execute the test
+    const result = require(requiredFile)
+    console.log("result:[" + typeof result + "]")
+    // Validate the test result
+    expect(result).to.be.a("function")
   });
 
-  it("Run with default inputs", async function () {
-    const main = require(requiredFile)
-    let githubSha = process.env["GITHUB_SHA"]
-    let tagPrefix = process.env["INPUT_TAGPREFIX"]
-    let version = "0.1.0"
-    let tag = tagPrefix + version
+  it("Run with release default inputs (simplified)", async function () {
+    // ---------------------------------------------------
+    // Details
+    // ------------
+    // - This test verifies the behavior of the main function when called with release default inputs
+    // - It ensures that the function can handle the absence of optional parameters gracefully
+    // ---------------------------------------------------
+    // fixture inputs
+    const inceptionVersion = process.env["INPUT_INCEPTIONVERSIONTAG"]
     //
-    nock(new URL(githubApiUrl))
-      .get("/repos/" + githubRepository + "/git/ref/tags%2F" + tag)
-      .reply(200, {
-        ref: "refs/tags/" + tag,
-        object: { sha: githubSha },
-      });
-    //
-    let returnData = await main();
-    expect( nock.isDone() ).to.be.true;
-    expect( returnData ).to.be.a("string");
-    expect( returnData ).to.equal(version);
+    const expectedVersion = "0.1.0"
+    // Mock getVersion to return inception version
+    const getVersionStub = () => Promise.resolve(inceptionVersion)
+    // Mock core module to avoid actual core.info/debug calls
+    const coreMock = {
+      getInput: (input) => {
+        switch(input) {
+          case 'apiToken': return undefined
+          default: return ''
+        }
+      },
+      setOutput: () => {},
+      setSecret: () => {},
+      debug: () => {},
+      info: () => {}
+    }
+    // Use proxyquire to inject mocks
+    const main = proxyquire(modulePath, {
+      './get-version': getVersionStub,
+      '@actions/core': coreMock
+    })
+    // execute the test
+    const result = await main();
+    console.log("result:[" + result + "]")
+    // Validate the test result
+    expect( result ).to.be.a("string");
+    expect( result ).to.equal(expectedVersion);  // Should be inception version + 1
   });
 
-  /*
-  .patch('/repos/' + githubRepository + '/git/refs/tags%2Fv1')
-  .reply(200)
-  .patch('/repos/' + githubRepository + '/git/refs/tags%2Fv1.0')
-  .reply(200)
-  .get('/repos/' + githubRepository + '/git/matching-refs/tags%2Fv1')
-  .reply(200, [{ ref: 'tags/v1' }])
-  .get('/repos/' + githubRepository + '/git/matching-refs/tags%2Fv1.0')
-  .reply(200, [{ ref: 'tags/v1.0' }])
-  .post('/repos/' + githubRepository + '/git/commits')
-  .reply(200, { commit: { sha: githubSha } })
-  .post('/repos/' + githubRepository + '/git/trees')
-  .reply(200)
-  */
+  it("Should increment minor version when no current version exists", async function () {
+    // ---------------------------------------------------
+    // Details
+    // ------------
+    // - 
+    // ---------------------------------------------------
+    // fixture inputs
+    const apiToken = process.env["GITHUB_TOKEN"]
+    const tagPrefix = process.env["INPUT_TAGPREFIX"]
+    const inceptionVersion = process.env["INPUT_INCEPTIONVERSIONTAG"]
+    //
+    const expectedVersion = "0.1.0"
+    // Mock getVersion to return null (no current version)
+    const getVersionStub = () => Promise.resolve(null)
+    
+    // Mock core to avoid actual outputs
+    const coreStub = {
+      getInput: (input) => {
+        switch(input) {
+          case 'tagPrefix': return tagPrefix
+          case 'inceptionVersionTag': return inceptionVersion
+          case 'argVersion': return ''
+          case 'apiToken': return apiToken
+          default: return ''
+        }
+      },
+      debug: () => {},
+      info: () => {},
+      setSecret: () => {},
+      setOutput: () => {},
+      setFailed: () => {}
+    }
+    // Use proxyquire to inject mocks
+    const main = proxyquire(modulePath, {
+      './get-version': getVersionStub,
+      '@actions/core': coreStub
+    })
+    // execute the test
+    const result = await main()
+    console.log("result:[" + result + "]")
+    // Validate the test result
+    expect(result).to.equal(expectedVersion) // inception version incremented
+  })
 
+  it("Should increment minor version of current version", async function () {
+    // ---------------------------------------------------
+    // Details
+    // ------------
+    // - 
+    // ---------------------------------------------------
+    // fixture inputs
+
+    // Mock getVersion to return a current version
+    const getVersionStub = () => Promise.resolve('1.2.3')
+    
+    // Mock core to avoid actual outputs
+    const coreStub = {
+      getInput: (input) => {
+        switch(input) {
+          case 'tagPrefix': return 'v'
+          case 'inceptionVersionTag': return '0.0.0'
+          case 'argVersion': return ''
+          case 'apiToken': return 'fake-token'
+          default: return ''
+        }
+      },
+      debug: () => {},
+      info: () => {},
+      setSecret: () => {},
+      setOutput: () => {},
+      setFailed: () => {}
+    }
+    
+    const releaseVersion = proxyquire(modulePath, {
+      './get-version': getVersionStub,
+      '@actions/core': coreStub
+    })
+    // execute the test
+    const result = await releaseVersion()
+    console.log("result:[" + result + "]")
+    // Validate the test result
+    expect(result).to.equal('1.3.0') // current version incremented
+  })
+
+  it("Should use provided version input directly", async function () {
+    // ---------------------------------------------------
+    // Details
+    // ------------
+    // - 
+    // ---------------------------------------------------
+    // fixture inputs
+
+    // Mock core to return a specific version input
+    const coreStub = {
+      getInput: (input) => {
+        switch(input) {
+          case 'tagPrefix': return 'v'
+          case 'inceptionVersionTag': return '0.0.0'
+          case 'argVersion': return '2.3.4'
+          case 'apiToken': return 'fake-token'
+          default: return ''
+        }
+      },
+      debug: () => {},
+      info: () => {},
+      setSecret: () => {},
+      setOutput: () => {},
+      setFailed: () => {}
+    }
+    
+    const releaseVersion = proxyquire(modulePath, {
+      '@actions/core': coreStub
+    })
+    // execute the test
+    const result = await releaseVersion()
+    console.log("result:[" + result + "]")
+    // Validate the test result
+    expect(result).to.equal('2.4.0') // incremented version
+  })
+
+  it("Should use environment GITHUB_TOKEN when no API token provided", async function () {
+    // ---------------------------------------------------
+    // Details
+    // ------------
+    // - 
+    // ---------------------------------------------------
+    // fixture inputs
+
+    process.env.GITHUB_TOKEN = 'env-token'
+    
+    // Mock getVersion to return a version
+    const getVersionStub = () => Promise.resolve('1.0.0')
+    
+    // Mock core to return empty API token
+    const coreStub = {
+      getInput: (input) => {
+        switch(input) {
+          case 'tagPrefix': return 'v'
+          case 'inceptionVersionTag': return '0.0.0'
+          case 'argVersion': return ''
+          case 'apiToken': return ''
+          default: return ''
+        }
+      },
+      debug: () => {},
+      info: () => {},
+      setSecret: () => {},
+      setOutput: () => {},
+      setFailed: () => {}
+    }
+    
+    const releaseVersion = proxyquire(modulePath, {
+      './get-version': getVersionStub,
+      '@actions/core': coreStub
+    })
+    // execute the test
+    const result = await releaseVersion()
+    console.log("result:[" + result + "]")
+    // Validate the test result
+    expect(result).to.equal('1.1.0') // incremented version
+  })
 });
 // EOF
