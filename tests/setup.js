@@ -11,6 +11,33 @@ const packageJsonFile = path.resolve(dirNode, "package.json");
 const fs = require("node:fs");
 const jsYaml = require(dirNodeModules + path.sep + "js-yaml");
 /**
+ * create a random GitHub token
+ */
+function createFakeGitHubToken() {
+  let tokenPrefix = "ghp_"
+  const crypto = require('node:crypto');
+  // create a randomly generated, 36 character long v4 UUID
+  let randomString = crypto.randomUUID().replace(/-/g, '') // remove the dashes
+  for ( i = 0; i < 4; i++ ) {
+    // add some random characters to the end
+    randomString += crypto.randomBytes(4).toString('hex')
+  }
+  let randomStringLength = randomString.length
+  console.log("randomStringLength:[" + randomStringLength + "]")
+  let randomStringRandomIndex = crypto.webcrypto.getRandomValues(new Uint32Array(randomStringLength))
+  let tokenData = ''
+  for ( i = 0; i < randomStringLength; i++ ) {
+    // add some upper and lower case mix
+    if ( randomStringRandomIndex[i] % 2 == 0 ) {
+      tokenData += randomString.charAt(i).toUpperCase() 
+    } else {
+      tokenData += randomString.charAt(i)
+    }
+  }
+  //
+  return tokenPrefix + tokenData
+}
+/**
  * Read the `action.yml` and include the default values for each input
  * as an environment variable, just like the Actions runtime does
  */
@@ -54,7 +81,7 @@ function setLocalTestEnvironmentValues(
       GITHUB_SHA: "ffac537e6cbbf934b08745a378932722df287a53",
       // doc: https://docs.github.com/en/actions/security-guides/automatic-token-authentication
       //      https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
-     GITHUB_TOKEN: createFakeGitHubToken(),
+      GITHUB_TOKEN: createFakeGitHubToken(),
       // The name of the workflow currently being run
       GITHUB_WORKFLOW: "default",
       // The default working directory on the runner for steps in a job
