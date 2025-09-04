@@ -286,5 +286,59 @@ describe("index.js", async function () {
     // Validate the test result
     expect(result).to.equal('1.1.0') // incremented version
   })
+
+  it("Should call core.setOutput with correct versionTag", async function () {
+    // ---------------------------------------------------
+    // Details
+    // ------------
+    // - This test verifies that core.setOutput is called with the correct parameters
+    // - It ensures that the 'versionTag' output is set with the expected version value
+    // ---------------------------------------------------
+    // fixture inputs
+    const expectedVersion = '2.3.0'
+    let setOutputCalled = false
+    let setOutputKey = null
+    let setOutputValue = null
+    
+    // Mock getVersion to return a specific version
+    const getVersionStub = () => Promise.resolve('2.2.0')
+    
+    // Mock core with tracked setOutput calls
+    const coreStub = {
+      getInput: (input) => {
+        switch(input) {
+          case 'tagPrefix': return 'v'
+          case 'inceptionVersionTag': return '0.0.0'
+          case 'argVersion': return ''
+          case 'apiToken': return 'fake-token'
+          default: return ''
+        }
+      },
+      debug: () => {},
+      info: () => {},
+      setSecret: () => {},
+      setOutput: (key, value) => {
+        setOutputCalled = true
+        setOutputKey = key
+        setOutputValue = value
+      },
+      setFailed: () => {}
+    }
+    
+    const releaseVersion = proxyquire(modulePath, {
+      './get-version': getVersionStub,
+      '@actions/core': coreStub
+    })
+    
+    // execute the test
+    const result = await releaseVersion()
+    console.log("result:[" + result + "]")
+    
+    // Validate the test result
+    expect(result).to.equal(expectedVersion)
+    expect(setOutputCalled).to.be.true
+    expect(setOutputKey).to.equal('versionTag')
+    expect(setOutputValue).to.equal(expectedVersion)
+  })
 });
 // EOF
