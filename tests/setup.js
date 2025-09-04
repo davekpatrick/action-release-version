@@ -1,42 +1,15 @@
 // BOF
-const { randomUUID } = require("node:crypto")
-const fs = require("node:fs")
-const path = require("node:path")
-const crypto = require('crypto') 
+const path = require("node:path");
 // project directories
 const dirRoot = path.normalize(__dirname + path.sep + "..")
 const dirNode = path.resolve(dirRoot, "node")
 const dirNodeModules = path.resolve(dirNode, "node_modules")
 // project files
-const actionYamlFile = path.resolve(dirRoot, "action.yml")
-const packageJsonFile = path.resolve(dirNode, "package.json")
-// modules
-const jsYaml = require(dirNodeModules + path.sep + "js-yaml")
-/**
- * create a random GitHub token
- */
-function createFakeGitHubToken() {
-  let tokenPrefix = "ghp_"
-  // create a randomly generated, 36 character long v4 UUID
-  let randomString = crypto.randomUUID().replace(/-/g, '') // remove the dashes
-  for ( i = 0; i < 4; i++ ) {
-    // add some random characters to the end
-    randomString += crypto.randomBytes(4).toString('hex')
-  }
-  let randomStringLength = randomString.length
-  let randomStringRandomIndex = crypto.getRandomValues(new Uint32Array(randomStringLength))
-  let tokenData = ''
-  for ( i = 0; i < randomStringLength; i++ ) {
-    // add some upper and lower case mix
-    if ( randomStringRandomIndex[i] % 2 == 0 ) {
-      tokenData += randomString.charAt(i).toUpperCase() 
-    } else {
-      tokenData += randomString.charAt(i)
-    }
-  }
-  //
-  return tokenPrefix + tokenData
-}
+const actionYamlFile = path.resolve(dirRoot, "action.yml");
+const packageJsonFile = path.resolve(dirNode, "package.json");
+// utility modules
+const fs = require("node:fs");
+const jsYaml = require(dirNodeModules + path.sep + "js-yaml");
 /**
  * Read the `action.yml` and include the default values for each input
  * as an environment variable, just like the Actions runtime does
@@ -54,12 +27,14 @@ function getDefaultEnvironmentValues() {
   )
 }
 /**
- *
+ * 
  */
-function setLocalTestEnvironmentValues(packageJsonData) {
-  const env = process.env
+function setLocalTestEnvironmentValues(
+  data
+) {
+  const env = process.env;
   if (env.CI !== "true") {
-    console.log("Running locally")
+    console.log("runningIn:[localEnvironment]");
     // set local values
     // doc: https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
     return {
@@ -67,14 +42,14 @@ function setLocalTestEnvironmentValues(packageJsonData) {
       GITHUB_ACTION: "run",
       GITHUB_RUN_ID: "5247257767",
       GITHUB_RUN_NUMBER: "28",
-      GITHUB_ACTOR: packageJsonData.author,
+      GITHUB_ACTOR: data.author,
       // The webhook event that triggered the workflow
       GITHUB_EVENT_NAME: "release",
       // The path to a temporary file that contains the JSON payload of the event
       GITHUB_EVENT_PATH: path.join(__dirname, "fixtures", "release.json"),
       GITHUB_REF: "refs/heads/main",
-      GITHUB_REPOSITORY: packageJsonData.name.replace(/^@/, ""),
-      GITHUB_REPOSITORY_OWNER: packageJsonData.author,
+      GITHUB_REPOSITORY: data.name.replace(/@.*\//, ""),
+      GITHUB_REPOSITORY_OWNER: data.author,
       // The commit SHA that triggered the workflow
       GITHUB_SHA: "ffac537e6cbbf934b08745a378932722df287a53",
       // doc: https://docs.github.com/en/actions/security-guides/automatic-token-authentication
@@ -89,22 +64,42 @@ function setLocalTestEnvironmentValues(packageJsonData) {
       ACTIONS_STEP_DEBUG: "true",
     }
   } else {
-    console.log("Running in CI")
-    return {}
+    console.log("runningIn:[continuousIntegration]");
+    return {};
   }
 }
 /**
- *
+ * Setup the test environment
  */
-before(async () => {
-  let packageJsonData = require(packageJsonFile);
 
+// ---------------------------------------------------
+before(async () => {
+  // runs once before the first test
+  console.log("dirRoot:[" + dirRoot + "]")
+  this.packageJsonData = require(packageJsonFile);
   // set the environment variables
   Object.assign(
     process.env,
-    setLocalTestEnvironmentValues(packageJsonData),
-    getDefaultEnvironmentValues(),
+    setLocalTestEnvironmentValues(this.packageJsonData),
+    getDefaultEnvironmentValues()
   );
-  // set the working directory
-  //process.chdir(GITHUB_WORKSPACE);
+  console.log("Unit Tests Starting" )
+  console.log("---------------------------------------------------")
 });
+// ---------------------------------------------------
+beforeEach(function() {
+  // runs before each test in every describe block
+  
+});
+// ---------------------------------------------------
+afterEach(function() {
+  // runs after each test in every describe block
+  
+});
+// ---------------------------------------------------
+after(async () => {
+  // runs once after the last test
+  console.log("---------------------------------------------------")
+  console.log("Unit Tests Finished")
+} );
+// EOF

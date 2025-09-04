@@ -33,6 +33,10 @@ jobs:
       run: |
         cd node
         npm run format
+    - name: Run Unit Tests
+      run: |
+        cd node
+        npm run test
 #    - name: Calculate Version
 #      id: build-version
 #      uses: ./
@@ -46,7 +50,7 @@ jobs:
       run: |
         cd node
         npm run build
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: ${{ github.event.repository.name }}-build-node
         if-no-files-found: error 
@@ -55,7 +59,7 @@ jobs:
           node/package-lock.json
           README.md
           action.yml
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: ${{ github.event.repository.name }}-build-tests
         if-no-files-found: error 
@@ -76,10 +80,10 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.nodeVersion }}
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: ${{ github.event.repository.name }}-build-node
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: ${{ github.event.repository.name }}-build-tests
           path: |

@@ -22,10 +22,10 @@ module.exports = async function releaseVersion() {
     core.debug('tagPrefix[' + argTagPrefix + ']')
     // Ensure we have a usable API token
     var apiToken = null
-    if (argApiToken !== null && argApiToken !== '') {
+    if (argApiToken !== null && argApiToken !== '' && argApiToken !== undefined) {
       core.debug('API token input provided')
       apiToken = argApiToken
-    } else if (envApiToken !== null && envApiToken !== '') {
+    } else if (envApiToken !== null && envApiToken !== '' && envApiToken !== undefined) {
       core.debug('Environment API token found')
       apiToken = envApiToken
     } else {
