@@ -1,4 +1,4 @@
-
+# BOF
 # Add 'repo' label to any root file changes
 repo:
 - '*'
@@ -14,6 +14,9 @@ project:
 #
 code:
 - any: ['actions.yml', 'node/package.json', 'node/**/*']
+#
+test:
+- any: ['.mocharc.yml', 'tests/**/*']
 #
 documentation:
 - any: ['**/*.md']
