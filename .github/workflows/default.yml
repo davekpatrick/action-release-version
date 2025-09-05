@@ -38,7 +38,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         cd node
-        set | grep GITHUB_
         npm run test
 #    - name: Calculate Version
 #      id: build-version
@@ -118,7 +117,12 @@ jobs:
         uses: ./
         with:
           apiToken: ${{ secrets.GITHUB_TOKEN }}
-      - name: Test Output
+      - name: Test Output (non-Windows)
         if: ${{ runner.os != 'Windows' }}
         run: |
           echo ${{ steps.build-test.outputs.versionTag }}
+      - name: Test Output (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        shell: powershell
+        run: |
+          Write-Host "${{ steps.build-test.outputs.versionTag }}"
