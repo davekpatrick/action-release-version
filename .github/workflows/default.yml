@@ -38,6 +38,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         cd node
+        set | grep GITHUB_
         npm run test
     - name: Calculate Version
       id: build-version
