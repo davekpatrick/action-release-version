@@ -3,7 +3,7 @@
 # BOF
 ---
 name: Continuous Integration
-run-name: Continuous Integration
+run-name: Continuous Integration (CI) triggered by ${{ github.event_name }} event 
 on:
   push:
     branches-ignore:
