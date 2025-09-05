@@ -34,14 +34,16 @@ jobs:
         cd node
         npm run format
     - name: Run Unit Tests
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         cd node
         npm run test
-#    - name: Calculate Version
-#      id: build-version
-#      uses: ./
-#      with:
-#        tagPrefix: ''
+    - name: Calculate Version
+      id: build-version
+      uses: ./
+      with:
+        tagPrefix: ''
     - name: Build Version
       run: |
         cd node
