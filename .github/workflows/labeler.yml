@@ -4,9 +4,17 @@
 # BOF
 ---
 
-name: Labeler
+name: "Labeler"
 run-name: Pull Request Labeler
-on: [ pull_request ]
+on: 
+  pull_request:
+    types: 
+    - opened
+    - synchronize
+    - reopened
+    - ready_for_review
+    - labeled
+    - unlabeled
 ## ---------------------------------------------------
 jobs:
   label:

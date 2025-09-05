@@ -1,10 +1,18 @@
-name: default
+# This workflow will run the CI build and tests for the repository
+#
+# BOF
+---
+name: "default"
 run-name: Continuous Integration
 on:
   push:
     branches-ignore:
-      - main
+    - main
+    - development
   pull_request:
+    # The branches below must be a subset of the branches above
+    branches:
+    - main
 jobs:
   # --------------------------------------------
   build:
@@ -73,56 +81,56 @@ jobs:
     strategy:
       matrix:
         operatingSystem:
-          - ubuntu-22.04
-          - ubuntu-24.04
-          - macos-14
-          - macos-15
-          - windows-2022
-          - windows-2025
+        - ubuntu-22.04
+        - ubuntu-24.04
+        - macos-14
+        - macos-15
+        - windows-2022
+        - windows-2025
         nodeVersion:
-          - 18
-          - 20
-          - 22
+        - 18
+        - 20
+        - 22
       fail-fast: false
     runs-on: ${{ matrix.operatingSystem }}
     needs: [build]
     #
     steps:
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.nodeVersion }}
-      - uses: actions/download-artifact@v4.1.7
-        with:
-          name: ${{ github.event.repository.name }}-build-node
-      - uses: actions/download-artifact@v4.1.7
-        with:
-          name: ${{ github.event.repository.name }}-build-tests
-          path: |
-            tests/
-      - name: Validate setup
-        if: ${{ runner.os != 'Windows' }}
-        run: |
-          node --version
-          ls -lR
-          set
-      - name: Validate setup
-        if: ${{ runner.os == 'Windows' }}
-        shell: powershell
-        run: |
-          & node --version
-          Set-Location -Path ./
-          Get-ChildItem -Recurse
-      - name: Build Test
-        id: build-test
-        uses: ./
-        with:
-          apiToken: ${{ secrets.GITHUB_TOKEN }}
-      - name: Test Output (non-Windows)
-        if: ${{ runner.os != 'Windows' }}
-        run: |
-          echo ${{ steps.build-test.outputs.versionTag }}
-      - name: Test Output (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        shell: powershell
-        run: |
-          Write-Host "${{ steps.build-test.outputs.versionTag }}"
+    - uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.nodeVersion }}
+    - uses: actions/download-artifact@v4.1.7
+      with:
+        name: ${{ github.event.repository.name }}-build-node
+    - uses: actions/download-artifact@v4.1.7
+      with:
+        name: ${{ github.event.repository.name }}-build-tests
+        path: |
+          tests/
+    - name: Validate setup
+      if: ${{ runner.os != 'Windows' }}
+      run: |
+        node --version
+        ls -lR
+        set
+    - name: Validate setup
+      if: ${{ runner.os == 'Windows' }}
+      shell: powershell
+      run: |
+        & node --version
+        Set-Location -Path ./
+        Get-ChildItem -Recurse
+    - name: Build Test
+      id: build-test
+      uses: ./
+      with:
+        apiToken: ${{ secrets.GITHUB_TOKEN }}
+    - name: Test Output (non-Windows)
+      if: ${{ runner.os != 'Windows' }}
+      run: |
+        echo ${{ steps.build-test.outputs.versionTag }}
+    - name: Test Output (Windows)
+      if: ${{ runner.os == 'Windows' }}
+      shell: powershell
+      run: |
+        Write-Host "${{ steps.build-test.outputs.versionTag }}"
