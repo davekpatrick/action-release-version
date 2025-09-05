@@ -2,7 +2,7 @@
 #
 # BOF
 ---
-name: "default"
+name: Continuous Integration
 run-name: Continuous Integration
 on:
   push:

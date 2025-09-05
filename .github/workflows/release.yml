@@ -2,7 +2,7 @@
 #
 # BOF
 ---
-name: release
+name: Continuous Delivery
 run-name: Continuous Delivery
 on:
   push:
