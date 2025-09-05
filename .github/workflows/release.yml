@@ -3,7 +3,7 @@
 # BOF
 ---
 name: Continuous Delivery
-run-name: Continuous Delivery (CD)
+run-name: "Continuous Delivery (CD)"
 on:
   push:
     branches:    
