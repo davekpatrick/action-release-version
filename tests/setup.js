@@ -75,7 +75,9 @@ function setLocalTestEnvironmentValues(
       // The path to a temporary file that contains the JSON payload of the event
       GITHUB_EVENT_PATH: path.join(__dirname, "fixtures", "release.json"),
       GITHUB_REF: "refs/heads/main",
-      GITHUB_REPOSITORY: data.name.replace(/@.*\//, ""),
+      // davekpatrick/action-release-version
+      //GITHUB_REPOSITORY: data.name.replace(/@.*\//, ""),
+      GITHUB_REPOSITORY: data.name.replace(/^@/, ""),
       GITHUB_REPOSITORY_OWNER: data.author,
       // The commit SHA that triggered the workflow
       GITHUB_SHA: "ffac537e6cbbf934b08745a378932722df287a53",

@@ -103,12 +103,12 @@ describe("package.json", function () {
     // fixture inputs
     let pkgFile = fs.readFileSync(path.resolve(dirNode, "package.json"), "utf8")
     //
-    expect(() => JSON.parse(pkgFile)).to.not.throw()
-    pkg = JSON.parse(pkgFile)
+    let pkgData = JSON.parse(pkgFile)
     // execute the test
-
+    console.log("result:[" + typeof pkgData + "]")
     // Validate the test result
-    expect(pkg).to.be.an("object")
+    expect(pkgData).to.be.an("object")
+    expect(() => JSON.parse(pkgFile)).to.not.throw()
   });
 
   it("Name should start with an asperand (@) character", function () {
@@ -118,12 +118,12 @@ describe("package.json", function () {
     // - Validate the package name aligns with standards
     // ---------------------------------------------------
     // fixture inputs
-
+    let pkgName = pkg.name;
     // execute the test
-
+    console.log("result:[" + pkgName + "]")
     // Validate the test result
-    expect(pkg.name).to.be.a("string")
-    expect(pkg.name).to.match(new RegExp('^@'))
+    expect(pkgName).to.be.a("string")
+    expect(pkgName).to.match(new RegExp('^@'))
   });
 
   it("Name should be equal to the gitHub owner and repository names", function () {
@@ -133,12 +133,14 @@ describe("package.json", function () {
     // - This test verifies the package name aligns with GitHub's naming conventions
     // ---------------------------------------------------
     // fixture inputs
-
+    let gitHubRepository = process.env["GITHUB_REPOSITORY"].replace(/.*\//, ""); // remove the owner name and the slash
+    let gitHubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"];
+    let expectedName = "@" + gitHubRepositoryOwner + "/" + gitHubRepository;
     // execute the test
-
+    console.log("result:[" + expectedName + "]")
     // Validate the test result
     expect(pkg.name).to.be.a("string")
-    expect(pkg.name).to.equal( "@" + process.env["GITHUB_REPOSITORY_OWNER"] + "/" + process.env["GITHUB_REPOSITORY"])
+    expect(pkg.name).to.equal(expectedName)
   });
   
   it("Description should start with GitHub Action", function () {
