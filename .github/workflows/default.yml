@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         operatingSystem: [ubuntu-24.04]
-        nodeVersion: [18]
+        nodeVersion: [20]
       fail-fast: false
     runs-on: ${{ matrix.operatingSystem }}
     # 
@@ -73,8 +73,17 @@ jobs:
     name: Artifact Test
     strategy:
       matrix:
-        operatingSystem: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04, macos-13, macos-14, windows-2022, windows-2019]
-        nodeVersion: [16,18]
+        operatingSystem:
+          - ubuntu-22.04
+          - ubuntu-24.04
+          - macos-14
+          - macos-15
+          - windows-2022
+          - windows-2025
+        nodeVersion:
+          - 18
+          - 20
+          - 22
       fail-fast: false
     runs-on: ${{ matrix.operatingSystem }}
     needs: [build]
