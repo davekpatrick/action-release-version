@@ -134,3 +134,5 @@ jobs:
       shell: powershell
       run: |
         Write-Host "${{ steps.build-test.outputs.versionTag }}"
+...
+# EOF
