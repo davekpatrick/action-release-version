@@ -5,7 +5,7 @@
 ---
 
 name: Pull Request Labeler
-run-name: Pull Request (PR) ${{ github.event.number }} Labeler
+run-name: Pull Request (PR) #${{ github.event.number }} Labeler
 on: 
   pull_request:
     types: 
