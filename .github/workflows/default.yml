@@ -49,7 +49,7 @@ jobs:
         npm run test
     - name: Calculate Version
       id: build-version
-      uses: davekpatrick/action-release-version@v0.1.0
+      uses: davekpatrick/action-release-version@0.1.0
       with:
         tagPrefix: ''
     - name: Build Version
