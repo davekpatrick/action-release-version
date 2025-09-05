@@ -47,11 +47,11 @@ jobs:
       run: |
         cd node
         npm run test
-#    - name: Calculate Version
-#      id: build-version
-#      uses: ./
-#      with:
-#       tagPrefix: ''
+    - name: Calculate Version
+      id: build-version
+      uses: davekpatrick/action-release-version@v0.1.0
+      with:
+        tagPrefix: ''
     - name: Build Version
       run: |
         cd node
