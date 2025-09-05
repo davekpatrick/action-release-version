@@ -1,9 +1,15 @@
+# This workflow will build and test the repository and create release artifacts
+#
+# BOF
+---
+name: Continuous Delivery
+run-name: "Continuous Delivery (CD)"
 on:
   push:
     branches:    
-      - ignore
+    - main
     paths-ignore:
-      - '**.md'
+    - '**.md'
 env:
   operatingSystem: "[ubuntu-22.04, macos-12, windows-2022]"
 

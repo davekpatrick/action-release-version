@@ -256,7 +256,7 @@ describe("get-version.js", async function () {
     const githubRepository = process.env["GITHUB_REPOSITORY"]
     const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
     const githubCommitSha = process.env["GITHUB_SHA"]
-    const githubEventName = process.env["GITHUB_EVENT_NAME"]
+    const githubEventName = 'release'
     const releaseVersion = "1.2.3"
     // Mock the octokit client and responses
     const mockOctokit = {

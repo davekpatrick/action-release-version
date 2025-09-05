@@ -4,9 +4,17 @@
 # BOF
 ---
 
-name: Labeler
-run-name: Pull Request Labeler
-on: [ pull_request ]
+name: Pull Request Labeler
+run-name: "Pull Request (PR) #${{ github.event.number }} Labeler"
+on: 
+  pull_request:
+    types: 
+    - opened
+    - synchronize
+    - reopened
+    - ready_for_review
+    - labeled
+    - unlabeled
 ## ---------------------------------------------------
 jobs:
   label:
