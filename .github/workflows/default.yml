@@ -40,15 +40,15 @@ jobs:
         cd node
         set | grep GITHUB_
         npm run test
-    - name: Calculate Version
-      id: build-version
-      uses: ./
-      with:
-        tagPrefix: ''
+#    - name: Calculate Version
+#      id: build-version
+#      uses: ./
+#      with:
+#       tagPrefix: ''
     - name: Build Version
       run: |
         cd node
-        npm version 0.1.0
+        npm version 0.2.0
     - name: Compile
       run: |
         cd node
