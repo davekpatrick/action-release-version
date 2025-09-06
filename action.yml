@@ -28,6 +28,6 @@ branding:
     color: 'green'
 ## ------------------------------
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'node/dist/index.js'
 # EOF
