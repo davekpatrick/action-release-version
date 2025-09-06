@@ -32,7 +32,7 @@ jobs:
     - name: Install dependencies
       run: |
         cd node
-        npm install
+        npm ci
     - name: Validate
       run: |
         cd node
@@ -47,11 +47,11 @@ jobs:
       run: |
         cd node
         npm run test
-#    - name: Calculate Version
-#      id: build-version
-#      uses: ./
-#      with:
-#       tagPrefix: ''
+    - name: Calculate Version
+      id: build-version
+      uses: davekpatrick/action-release-version@main # use main branch for latest
+      with:
+        tagPrefix: ''
     - name: Build Version
       run: |
         cd node
@@ -134,3 +134,5 @@ jobs:
       shell: powershell
       run: |
         Write-Host "${{ steps.build-test.outputs.versionTag }}"
+...
+# EOF

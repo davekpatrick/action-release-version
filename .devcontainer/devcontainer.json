@@ -8,7 +8,7 @@
       "installOhMyZsh": false
     },
     "node": {
-      "version": "16",
+      "version": "20",
       "nodeGypDependencies": true
     }
   }

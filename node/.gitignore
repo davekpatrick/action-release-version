@@ -1,5 +1,5 @@
 # Project
-package-lock.json
+#package-lock.json # temporary allow for this file
 yarn.lock
 
 # Logs
@@ -93,7 +93,7 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
+#dist # temporary allow for this file
 
 # Gatsby files
 .cache/
