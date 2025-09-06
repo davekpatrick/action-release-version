@@ -3,7 +3,7 @@
 # BOF
 ---
 name: Continuous Delivery Release
-run-name: "Continuous Delivery (CD) create release"
+run-name: "Continuous Delivery (CD) creating release"
 on:
   push:
     branches:    
@@ -47,6 +47,9 @@ jobs:
     - name: Calculate Version
       id: build-version
       uses: davekpatrick/action-release-version@main # temporary, use main branch for latest
+      with:
+        tagPrefix: ''
+        apiToken: ${{ secrets.GITHUB_TOKEN }}
     - name: Build Version
       run: |
         cd node

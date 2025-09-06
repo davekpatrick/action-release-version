@@ -1,5 +1,5 @@
 name: Continuous Delivery Publish
-run-name: "Continuous Delivery (CD) publish release"
+run-name: "Continuous Delivery (CD) publishing release"
 
 on:
   release:
@@ -15,6 +15,7 @@ jobs:
           ref: ${{ github.event.release.tag_name }}
       - name: Install deps and build
         run: cd node && npm ci && npm run build
-      - uses: JasonEtco/build-and-tag-action@v2
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - name: Publish
+        uses: davekpatrick/action-release-publish@main
+        with:
+          versionTag: ${{ github.event.release.tag_name }}
