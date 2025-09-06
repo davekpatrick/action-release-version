@@ -7,15 +7,44 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: Locate the release artifact Run
+        id: getReleaseRunId
+        uses: actions/github-script@v6
         with:
-          ref: ${{ github.event.release.tag_name }}
-      - name: Install deps and build
-        run: cd node && npm ci && npm run build
-      - name: Publish
+          script: |
+            const { data: runs } = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'release.yml',
+              per_page: 1,
+              page: 1,
+            });
+
+            if (runs.workflow_runs.length > 0) {
+              const lastRunId = runs.workflow_runs[0].id;
+              console.log(`Last run ID of 'release.yml': ${lastRunId}`);
+              core.setOutput('run_id', lastRunId);
+            } else {
+              console.log("No runs found for 'release.yml'");
+              core.setOutput('run_id', '');
+            }
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download Release Artifact
+        if: ${{ steps.getReleaseRunId.outputs.run_id != '' }}
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ github.event.repository.name }}-release-${{ github.event.release.tag_name }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.getReleaseRunId.outputs.run_id }}
+      - name: Validate downloaded artifact
+        if: ${{ steps.getReleaseRunId.outputs.run_id != '' }}
+        run: |
+          ls -lR
+          set
+      - name: Publish Artifact
+        if: ${{ steps.getReleaseRunId.outputs.run_id != '' }}
         uses: davekpatrick/action-release-publish@main
         with:
           versionTag: ${{ github.event.release.tag_name }}
