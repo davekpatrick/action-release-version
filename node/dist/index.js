@@ -114,7 +114,9 @@ module.exports = async function getVersion(
       versionTag = argInceptionVersionTag
     } else {
       // get the latest tag
-      let latestTag = matchingTags.data[0].name
+      let latestTagRef = matchingTags.data[0].ref // e.g. refs/tags/v1.2.3
+      core.debug('latestTagRef[' + latestTagRef + ']')
+      let latestTag = latestTagRef.replace('refs/tags/', '') // e.g. v1.2.3
       core.debug('latestTag[' + latestTag + ']')
       // ensure we have a valid semver tag
       let tagSemVer = semverClean(latestTag)

@@ -79,8 +79,11 @@ describe("get-version.js", async function () {
     }
     // Mock core module to avoid actual core.info/debug calls
     const coreMock = {
+      startGroup: () => {},
+      endGroup: () => {},
       debug: () => {},
       info: () => {},
+      warning: () => {},
       setFailed: () => {}
     }
     // Use proxyquire to inject mocks
@@ -126,8 +129,11 @@ describe("get-version.js", async function () {
     }
     // Mock core module to avoid actual core.info/debug calls
     const coreMock = {
+      startGroup: () => {},
+      endGroup: () => {},
       debug: () => {},
       info: () => {},
+      warning: () => {},
       setFailed: () => {}
     }
     // Use proxyquire to inject mocks
@@ -178,8 +184,11 @@ describe("get-version.js", async function () {
     }
     // Mock core module to avoid actual core.info/debug calls
     const coreMock = {
+      startGroup: () => {},
+      endGroup: () => {},
       debug: () => {},
       info: () => {},
+      warning: () => {},
       setFailed: () => {}
     }
     // Use proxyquire to inject mocks
@@ -225,8 +234,11 @@ describe("get-version.js", async function () {
     }
     // Mock core module to avoid actual core.info/debug calls
     const coreMock = {
+      startGroup: () => {},
+      endGroup: () => {},
       debug: () => {},
       info: () => {},
+      warning: () => {},
       setFailed: () => {}
     }
     // Use proxyquire to inject mocks
@@ -293,8 +305,11 @@ describe("get-version.js", async function () {
     }
     // Mock core module to avoid actual core.info/debug calls
     const coreMock = {
+      startGroup: () => {},
+      endGroup: () => {},
       debug: () => {},
       info: () => {},
+      warning: () => {},
       setFailed: () => {}
     }
     // Use proxyquire to inject mocks
@@ -347,7 +362,6 @@ describe("get-version.js", async function () {
             data: [
               {
                 ref: "refs/tags/" + latestTagName,
-                name: latestTagName,
                 object: {
                   sha: beforeCommitSha
                 }
@@ -390,6 +404,8 @@ describe("get-version.js", async function () {
     
     // Mock core module to avoid actual core.info/debug calls
     const coreMock = {
+      startGroup: () => {},
+      endGroup: () => {},
       debug: () => {},
       info: () => {},
       warning: () => {},
@@ -481,6 +497,8 @@ describe("get-version.js", async function () {
     
     // Mock core module to avoid actual core.info/debug calls
     const coreMock = {
+      startGroup: () => {},
+      endGroup: () => {},
       debug: () => {},
       info: () => {},
       warning: () => {},

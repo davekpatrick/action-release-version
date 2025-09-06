@@ -1,4 +1,5 @@
 // BOF
+const { group } = require("node:console");
 const path = require("node:path");
 // project directories
 const dirRoot = path.normalize(__dirname + path.sep + "..");
@@ -76,10 +77,14 @@ describe("index.js", async function () {
           default: return ''
         }
       },
+      startGroup: () => {},
+      endGroup: () => {},
       setOutput: () => {},
       setSecret: () => {},
       debug: () => {},
-      info: () => {}
+      info: () => {},
+      warning: () => {},
+      setFailed: () => {}
     }
     // Use proxyquire to inject mocks
     const main = proxyquire(modulePath, {
@@ -120,8 +125,11 @@ describe("index.js", async function () {
           default: return ''
         }
       },
+      startGroup: () => {},
+      endGroup: () => {},
       debug: () => {},
       info: () => {},
+      warning: () => {},
       setSecret: () => {},
       setOutput: () => {},
       setFailed: () => {}
@@ -160,8 +168,11 @@ describe("index.js", async function () {
           default: return ''
         }
       },
+      startGroup: () => {},
+      endGroup: () => {},
       debug: () => {},
       info: () => {},
+      warning: () => {},
       setSecret: () => {},
       setOutput: () => {},
       setFailed: () => {}
@@ -197,8 +208,11 @@ describe("index.js", async function () {
           default: return ''
         }
       },
+      startGroup: () => {},
+      endGroup: () => {},
       debug: () => {},
       info: () => {},
+      warning: () => {},
       setSecret: () => {},
       setOutput: () => {},
       setFailed: () => {}
@@ -238,8 +252,11 @@ describe("index.js", async function () {
           default: return ''
         }
       },
+      startGroup: () => {},
+      endGroup: () => {},
       debug: () => {},
       info: () => {},
+      warning: () => {},
       setSecret: () => {},
       setOutput: () => {},
       setFailed: () => {}
