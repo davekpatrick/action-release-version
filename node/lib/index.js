@@ -1,5 +1,8 @@
 // BOF
 // ------------------------------------
+const packageName = '@@NPM_PACKAGE_NAME@@'
+const packageVersion = '@@NPM_PACKAGE_VERSION@@'
+// ------------------------------------
 // External modules
 // ------------------------------------
 const core = require('@actions/core') // Microsoft's actions toolkit
@@ -11,6 +14,10 @@ const getVersion = require('./get-version')
 //
 module.exports = async function releaseVersion() {
   try {
+    core.startGroup('Initialize')
+    core.info(
+      'package[' + packageName + ']' + ' version[' + packageVersion + ']'
+    )
     // Remember that inputs are defined in action metadata file
     const argTagPrefix = core.getInput('tagPrefix')
     const argInceptionVersionTag = core.getInput('inceptionVersionTag')
@@ -40,6 +47,10 @@ module.exports = async function releaseVersion() {
       core.setFailed('No API token found')
     }
     core.setSecret(apiToken) // ensure we don't log the token
+    
+    core.endGroup()
+    // ------------------------------------
+    // ------------------------------------
     //
     //
     //core.info(JSON.stringify(process.env))
