@@ -67,6 +67,8 @@ jobs:
           node/package-lock.json
           README.md
           action.yml
+    outputs:
+      versionTag: ${{ steps.build-version.outputs.versionTag }}
   # --------------------------------------------
   test:
     name: Artifact Release
