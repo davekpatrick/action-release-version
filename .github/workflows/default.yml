@@ -52,6 +52,7 @@ jobs:
       uses: davekpatrick/action-release-version@main # use main branch for latest
       with:
         tagPrefix: ''
+        apiToken: ${{ secrets.GITHUB_TOKEN }}
     - name: Build Version
       run: |
         cd node
