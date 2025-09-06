@@ -60,7 +60,7 @@ jobs:
         npm run build
     - uses: actions/upload-artifact@v4
       with:
-        name: ${{ github.event.repository.name }}-release-${{ steps.build-version.outputs.versionTag }}
+        name: ${{ github.event.repository.name }}_release_${{ steps.build-version.outputs.versionTag }}
         if-no-files-found: error
         path: |
           node/dist/
@@ -83,10 +83,9 @@ jobs:
       with:
         node-version: ${{ matrix.nodeVersion }}
     - uses: actions/checkout@v3
-    - uses: actions/download-artifact@v4.1.7
+    - uses: actions/download-artifact@v5
       with:
-        # name: ${{ github.event.repository.name }}-${{ matrix.operatingSystem }}-release-${{ needs.build.outputs.versionTag }}
-        name: ${{ github.event.repository.name }}-release-${{ needs.build.outputs.versionTag }}
+        name: ${{ github.event.repository.name }}_release_${{ needs.build.outputs.versionTag }}
     - name: Validate
       if: ${{ runner.os != 'Windows' }}
       run: |

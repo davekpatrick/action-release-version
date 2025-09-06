@@ -35,7 +35,7 @@ jobs:
         if: ${{ steps.getReleaseRunId.outputs.run_id != '' }}
         uses: actions/download-artifact@v5
         with:
-          name: ${{ github.event.repository.name }}-release-${{ github.event.release.tag_name }}
+          name: ${{ github.event.repository.name }}_release_${{ github.event.release.tag_name }}
           repository: ${{ github.repository }}
           run-id: ${{ steps.getReleaseRunId.outputs.run_id }}
       - name: Validate downloaded artifact
