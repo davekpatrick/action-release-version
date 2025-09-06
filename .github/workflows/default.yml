@@ -32,7 +32,7 @@ jobs:
     - name: Install dependencies
       run: |
         cd node
-        npm install
+        npm ci
     - name: Validate
       run: |
         cd node
