@@ -47,7 +47,7 @@ module.exports = async function releaseVersion() {
       core.setFailed('No API token found')
     }
     core.setSecret(apiToken) // ensure we don't log the token
-    
+
     core.endGroup()
     // ------------------------------------
     // ------------------------------------
