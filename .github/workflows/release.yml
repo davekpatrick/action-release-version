@@ -2,28 +2,25 @@
 #
 # BOF
 ---
-name: Continuous Delivery
-run-name: "Continuous Delivery (CD)"
+name: Continuous Delivery Release
+run-name: "Continuous Delivery (CD) create release"
 on:
   push:
     branches:    
     - main
     paths-ignore:
     - '**.md'
-env:
-  operatingSystem: "[ubuntu-22.04, macos-12, windows-2022]"
-
 jobs:
   # --------------------------------------------
   build:
     name: Artifact build
     strategy:
       matrix:
-        operatingSystem: [ubuntu-22.04, macos-12, windows-2022]
-        nodeVersion: [12,16,18]
+        operatingSystem: [ubuntu-24.04]
+        nodeVersion: [20]
       fail-fast: false
     runs-on: ${{ matrix.operatingSystem }}
-    # 
+    #
     steps:
     - uses: actions/setup-node@v3
       with:
@@ -32,35 +29,49 @@ jobs:
     - name: Install dependencies
       run: |
         cd node
-        npm install
+        npm ci
+    - name: Validate
+      run: |
+        cd node
+        npm run validate
+    - name: Format
+      run: |
+        cd node
+        npm run format
+    - name: Run Unit Tests
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        cd node
+        npm run test
+    - name: Calculate Version
+      id: build-version
+      uses: davekpatrick/action-release-version@main # temporary, use main branch for latest
+    - name: Build Version
+      run: |
+        cd node
+        npm version ${{ steps.build-version.outputs.versionTag }} 
     - name: Compile
       run: |
         cd node
         npm run build
-    - name: Upload Build artifacts
-      uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v4
       with:
-        name: ${{ github.event.repository.name }}-${{ matrix.operatingSystem }}-${{ matrix.nodeVersion }}-build
-        if-no-files-found: error 
+        name: ${{ github.event.repository.name }}-release-${{ steps.build-version.outputs.versionTag }}
+        if-no-files-found: error
         path: |
           node/dist/
           node/package-lock.json
           README.md
           action.yml
-    - name: Upload Test artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ github.event.repository.name }}-${{ matrix.operatingSystem }}-${{ matrix.nodeVersion }}-tests
-        if-no-files-found: error 
-        path: |
-          tests/
   # --------------------------------------------
   test:
-    name: Artifact Test
+    name: Artifact Release
     strategy:
       matrix:
-        operatingSystem: [ubuntu-22.04, macos-12, windows-2022]
-        nodeVersion: [12,16,18]
+        operatingSystem: [ubuntu-24.04]
+        nodeVersion: [20]
+      fail-fast: false
     needs: [ build ]
     runs-on: ${{ matrix.operatingSystem }}
     # 
@@ -71,24 +82,22 @@ jobs:
     - uses: actions/checkout@v3
     - uses: actions/download-artifact@v4.1.7
       with:
-        name: ${{ github.event.repository.name }}-${{ matrix.operatingSystem }}-node-${{ matrix.nodeVersion }}
-        path: node/dist/
+        # name: ${{ github.event.repository.name }}-${{ matrix.operatingSystem }}-release-${{ needs.build.outputs.versionTag }}
+        name: ${{ github.event.repository.name }}-release-${{ needs.build.outputs.versionTag }}
     - name: Validate
       if: ${{ runner.os != 'Windows' }}
       run: |
         node --version
-        cd node/dist/
         ls -lR
     - name: Validate
       if: ${{ runner.os == 'Windows' }}
       shell: powershell
       run: |
         & node --version
-        Set-Location -Path node/dist/
         Get-ChildItem -Recurse
-    - name: Execute 
-      uses: ./
+    - name: Release
+      uses: davekpatrick/action-release-create@main
       with:
-        apiToken: ${{ secrets.GITHUB_TOKEN }}
+        versionTag: ${{ needs.build.outputs.versionTag }}
 ...
 # EOF
