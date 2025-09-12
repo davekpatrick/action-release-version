@@ -165,7 +165,29 @@ describe("get-version.js", async function () {
     const githubCommitSha = process.env["GITHUB_SHA"]
     const githubPullRequestNumber = 314
     const githubRef = 'refs/pull/' + githubPullRequestNumber + '/head'
+    const beforeCommitSha = "abc123def456"
     const githubEventName = 'pull_request'
+    const latestTagName = "v1.2.3"
+    const expectedVersion = "1.2.3"
+    
+        // Mock the octokit client with all required API calls
+    const mockOctokit = {
+      rest: {
+        git: {
+          listMatchingRefs: async () => ({
+            status: 200,
+            data: [
+              {
+                ref: "refs/tags/" + latestTagName,
+                object: {
+                  sha: beforeCommitSha
+                }
+              }
+            ]
+          })
+        }
+      }
+    }
     // Mock GitHub module
     const githubMock = {
       context: {
@@ -180,7 +202,8 @@ describe("get-version.js", async function () {
             }
           }
         }
-      }
+      },
+      getOctokit: () => mockOctokit
     }
     // Mock core module to avoid actual core.info/debug calls
     const coreMock = {
@@ -200,7 +223,8 @@ describe("get-version.js", async function () {
     const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
     console.log("result:[" + result + "]")
     // Validate the test result
-    expect(result).to.be.null
+    expect(result).to.equal(expectedVersion)
+    expect(semverValid(result)).to.not.be.null
   })
 
   it("Should handle workflow_dispatch event", async function () {
@@ -218,11 +242,15 @@ describe("get-version.js", async function () {
     const githubRepository = process.env["GITHUB_REPOSITORY"]
     const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
     const githubEventName = 'workflow_dispatch'
+    const expectedVersion = "1.2.3"
     // Mock GitHub module
     const githubMock = {
       context: {
         eventName: githubEventName,
         payload: {
+          inputs: {
+            version: expectedVersion
+          },
           repository: {
             name: githubRepository,
             owner: {
@@ -250,7 +278,8 @@ describe("get-version.js", async function () {
     const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
     console.log("result:[" + result + "]")
     // Validate the test result
-    expect(result).to.be.null
+    expect(result).to.equal(expectedVersion)
+    expect(semverValid(result)).to.not.be.null
   })
 
   it("Should handle release event", async function () {
