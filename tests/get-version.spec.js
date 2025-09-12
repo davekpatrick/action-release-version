@@ -71,6 +71,7 @@ describe("get-version.js", async function () {
           repository: {
             name: githubRepository,
             owner: {
+              login: githubRepositoryOwner,
               name: githubRepositoryOwner
             }
           }
@@ -121,6 +122,7 @@ describe("get-version.js", async function () {
           repository: {
             name: githubRepository,
             owner: {
+              login: githubRepositoryOwner,
               name: githubRepositoryOwner
             }
           }
@@ -198,6 +200,7 @@ describe("get-version.js", async function () {
           repository: {
             name: githubRepository,
             owner: {
+              login: githubRepositoryOwner,
               name: githubRepositoryOwner
             }
           }
@@ -254,6 +257,7 @@ describe("get-version.js", async function () {
           repository: {
             name: githubRepository,
             owner: {
+              login: githubRepositoryOwner,
               name: githubRepositoryOwner
             }
           }
@@ -322,6 +326,7 @@ describe("get-version.js", async function () {
           repository: {
             name: githubRepository,
             owner: {
+              login: githubRepositoryOwner,
               name: githubRepositoryOwner
             }
           },
@@ -422,6 +427,7 @@ describe("get-version.js", async function () {
           repository: {
             name: githubRepository,
             owner: {
+              login: githubRepositoryOwner,
               name: githubRepositoryOwner
             }
           },
@@ -515,6 +521,7 @@ describe("get-version.js", async function () {
           repository: {
             name: githubRepository,
             owner: {
+              login: githubRepositoryOwner,
               name: githubRepositoryOwner
             }
           },

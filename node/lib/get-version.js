@@ -29,14 +29,44 @@ module.exports = async function getVersion(
   core.info('contextType[' + github.context.eventName + ']')
   // need to remove the secrets from the context
   core.debug('context[' + JSON.stringify(github.context) + ']')
+  // get the repo owner and name
+  // TODO: 
+  // invesitage github.context.payload.repository.owner.name 
+  // 
+  // github.context.payload.repository.owner.login
+  //  - is the login name
+  //  - can this different from the actual name ?
+  // github.context.payload.repository.owner.name
+  //  - is the actual name
+  //  - as using this but no longer exists in payload for some reason
+  const gitRepoOwnerLogin = github.context.payload.repository.owner.login
+  const gitRepoOwnerName = github.context.payload.repository.owner.name
+  const gitRepo = github.context.payload.repository.name
+  core.debug(
+    'gitRepoOwnerLogin[' +
+      gitRepoOwnerLogin +
+      '] gitRepoOwnerName[' +
+      gitRepoOwnerName +
+      '] gitRepo[' +
+      gitRepo +
+      ']'
+  )
+  if (gitRepoOwnerName === undefined) {
+    core.debug('Undefined GitHub repository owner name')
+  }
+  let gitOwner = gitRepoOwnerLogin
+  // ensure we have valid repository information
+  if (gitOwner === null || gitOwner === '' || gitOwner === undefined) {
+    core.setFailed('Unable to locate the repostiory owner')
+  }
+  if (gitRepo === null || gitRepo === '' || gitRepo === undefined) {
+    core.setFailed('Unable to locate the repostiory name')
+  }
+  core.debug('gitOwner[' + gitOwner + '] gitRepo[' + gitRepo + ']')
   // setup authenticated github client
   // doc: https://github.com/actions/toolkit/blob/main/packages/github/README.md
   //      https://octokit.github.io/rest.js/v18#authentication
   const octokit = github.getOctokit(argApiToken)
-  //
-  let gitOwner = github.context.payload.repository.owner.name
-  let gitRepo = github.context.payload.repository.name
-  core.debug('gitOwner[' + gitOwner + '] gitRepo[' + gitRepo + ']')
   // ------------------------------------
   if (github.context.eventName === 'release') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#releaseevent
@@ -89,16 +119,15 @@ module.exports = async function getVersion(
         '/commits/' +
         gitBeforeCommitSha +
         '/branches-where-head',
-        {
-          owner: gitOwner,
-          repo: gitRepo,
-          commit_sha: gitBeforeCommitSha,
-        }
+      {
+        owner: gitOwner,
+        repo: gitRepo,
+        commit_sha: gitBeforeCommitSha,
+      }
     )
     core.debug(
       'getBeforeCommitBranches[' + JSON.stringify(getBeforeCommitBranches) + ']'
     )
-
 
     // get all matching refs (tags)
     // https://docs.github.com/en/rest/reference/git#list-matching-references
@@ -123,27 +152,29 @@ module.exports = async function getVersion(
         core.debug('tagRef[' + tagRef + ']')
         let tagName = tagRef.replace('refs/tags/', '') // e.g. v1.2.3
         // Attempt to parse a string as a semantic version, returning either a SemVer object or null
-        let tagData =  semverParse(tagName)
+        let tagData = semverParse(tagName)
         // discart null/empty semverTag
-        if ( tagData === null) {
+        if (tagData === null) {
           // invalid semver tag
           core.debug('Invalid semver tagName[' + tagName + '] ')
         } else {
           // check for build version tags e.g v1.2.3+build.1
-          if ( tagData.build.length > 0  ) {
+          if (tagData.build.length > 0) {
             // do not add to the list of semver tags, as this is not a release version
             // TODO: review this .. maybe we should include an option to increment build verions
-            core.debug("detected build[" + tagData.build + "], ignoring this tag")
+            core.debug(
+              'detected build[' + tagData.build + '], ignoring this tag'
+            )
           } else {
             // confirming it does not already exists
-            if ( ! semverTags.includes( tagData.version) ) {
+            if (!semverTags.includes(tagData.version)) {
               semverTags.push(tagData.version)
             }
           }
         }
       }
     }
-    // 
+    //
     let semverTagsSorted = semverRsort(semverTags)
     let latestVersion = semverMaxSatisfying(semverTagsSorted, '*')
     if (latestVersion === null) {
@@ -151,7 +182,6 @@ module.exports = async function getVersion(
     } else {
       versionTag = latestVersion
     }
-
   } else if (github.context.eventName === 'pull_request') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pullrequestevent
     let gitRef = github.context.ref
@@ -215,9 +245,8 @@ module.exports = async function getVersion(
           core.debug('Tag[' + tagName + '] is not part of the pull request branch compareCommitsStatus[' + compareCommits.data.status + ']')
         }
         */
-      
 
-        // 
+        //
       }
 
       // now need to find the latest tag that is part of the current branch
@@ -237,8 +266,6 @@ module.exports = async function getVersion(
         versionTag = tagSemVer
       }
     }
-
-
   } else if (github.context.eventName === 'workflow_dispatch') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#workflow_dispatch
     core.info('Workflow Dispatch event detected')
@@ -259,8 +286,6 @@ module.exports = async function getVersion(
       core.setFailed('Invalid semver version[' + inputVersion + ']')
     }
     versionTag = semVer
-
-
   } else {
     //
     core.info('Unknown event type[' + github.context.eventName + ']')
