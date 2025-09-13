@@ -12,7 +12,7 @@ const semver = require('semver') // Node's semver package
 // ------------------------------------
 const getVersion = require('./get-version')
 //
-module.exports = async function releaseVersion() {
+module.exports = async function main() {
   try {
     core.startGroup('Initialize')
     core.info(

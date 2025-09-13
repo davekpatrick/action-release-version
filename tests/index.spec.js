@@ -177,13 +177,13 @@ describe("index.js", async function () {
       setOutput: () => {},
       setFailed: () => {}
     }
-    
-    const releaseVersion = proxyquire(modulePath, {
+    // Use proxyquire to inject mocks
+    const main = proxyquire(modulePath, {
       './get-version': getVersionStub,
       '@actions/core': coreStub
     })
     // execute the test
-    const result = await releaseVersion()
+    const result = await main()
     console.log("result:[" + result + "]")
     // Validate the test result
     expect(result).to.equal('1.3.0') // current version incremented
@@ -217,12 +217,12 @@ describe("index.js", async function () {
       setOutput: () => {},
       setFailed: () => {}
     }
-    
-    const releaseVersion = proxyquire(modulePath, {
+    // Use proxyquire to inject mocks
+    const main = proxyquire(modulePath, {
       '@actions/core': coreStub
     })
     // execute the test
-    const result = await releaseVersion()
+    const result = await main()
     console.log("result:[" + result + "]")
     // Validate the test result
     expect(result).to.equal('2.4.0') // incremented version
@@ -261,13 +261,13 @@ describe("index.js", async function () {
       setOutput: () => {},
       setFailed: () => {}
     }
-    
-    const releaseVersion = proxyquire(modulePath, {
+    // Use proxyquire to inject mocks
+    const main = proxyquire(modulePath, {
       './get-version': getVersionStub,
       '@actions/core': coreStub
     })
     // execute the test
-    const result = await releaseVersion()
+    const result = await main()
     console.log("result:[" + result + "]")
     // Validate the test result
     expect(result).to.equal('1.1.0') // incremented version

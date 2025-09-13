@@ -30,9 +30,9 @@ module.exports = async function getVersion(
   // need to remove the secrets from the context
   core.debug('context[' + JSON.stringify(github.context) + ']')
   // get the repo owner and name
-  // TODO: 
-  // invesitage github.context.payload.repository.owner.name 
-  // 
+  // TODO:
+  // investigate github.context.payload.repository.owner.name
+  //
   // github.context.payload.repository.owner.login
   //  - is the login name
   //  - can this different from the actual name ?
