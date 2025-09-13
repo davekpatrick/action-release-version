@@ -62,7 +62,27 @@ describe("get-version.js", async function () {
     //
     const githubRepository = process.env["GITHUB_REPOSITORY"]
     const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
-    const githubEventName = 'somethingStrange'
+    const beforeCommitSha = process.env["GITHUB_SHA"]
+    const githubEventName = 'thisWillNotBeHandled'
+    const latestTagName = "1.2.3"
+    // Mock the octokit client with all required API calls
+    const mockOctokit = {
+      rest: {
+        git: {
+          listMatchingRefs: async () => ({
+            status: 200,
+            data: [
+              {
+                ref: "refs/tags/" + latestTagName,
+                object: {
+                  sha: beforeCommitSha
+                }
+              }
+            ]
+          })
+        }
+      }
+    }
     // Mock GitHub module
     const githubMock = {
       context: {
@@ -76,7 +96,8 @@ describe("get-version.js", async function () {
             }
           }
         }
-      }
+      },
+      getOctokit: () => mockOctokit
     }
     // Mock core module to avoid actual core.info/debug calls
     const coreMock = {
@@ -96,7 +117,7 @@ describe("get-version.js", async function () {
     const result = await getVersionWithMocks(apiToken)
     console.log("result:[" + result + "]")
     // Validate the test result
-    expect(result).to.be.null
+    expect(result.currentVersion).to.be.null
   })
 
   it("Should handle unknown event types", async function () {
@@ -113,8 +134,27 @@ describe("get-version.js", async function () {
     // 
     const githubRepository = process.env["GITHUB_REPOSITORY"]
     const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
+    const beforeCommitSha = process.env["GITHUB_SHA"]
     const githubEventName = 'somethingStrange'
+    const latestTagName = "1.2.3"
     // Mock GitHub module
+    const mockOctokit = {
+      rest: {
+        git: {
+          listMatchingRefs: async () => ({
+            status: 200,
+            data: [
+              {
+                ref: "refs/tags/" + latestTagName,
+                object: {
+                  sha: beforeCommitSha
+                }
+              }
+            ]
+          })
+        }
+      }
+    }
     const githubMock = {
       context: {
         eventName: githubEventName,
@@ -127,7 +167,8 @@ describe("get-version.js", async function () {
             }
           }
         }
-      }
+      },
+      getOctokit: () => mockOctokit
     }
     // Mock core module to avoid actual core.info/debug calls
     const coreMock = {
@@ -147,7 +188,7 @@ describe("get-version.js", async function () {
     const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
     console.log("result:[" + result + "]")
     // Validate the test result
-    expect(result).to.be.null
+    expect(result.currentVersion).to.be.null
   })
 
   it("Should handle pull_request event", async function () {
@@ -171,8 +212,7 @@ describe("get-version.js", async function () {
     const githubEventName = 'pull_request'
     const latestTagName = "v1.2.3"
     const expectedVersion = "1.2.3"
-    
-        // Mock the octokit client with all required API calls
+    // Mock the octokit client with all required API calls
     const mockOctokit = {
       rest: {
         git: {
@@ -226,8 +266,8 @@ describe("get-version.js", async function () {
     const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
     console.log("result:[" + result + "]")
     // Validate the test result
-    expect(result).to.equal(expectedVersion)
-    expect(semverValid(result)).to.not.be.null
+    expect(result.currentVersion).to.equal(expectedVersion)
+    expect(semverValid(result.currentVersion)).to.not.be.null
   })
 
   it("Should handle workflow_dispatch event", async function () {
@@ -244,8 +284,28 @@ describe("get-version.js", async function () {
     //
     const githubRepository = process.env["GITHUB_REPOSITORY"]
     const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
+    const beforeCommitSha = process.env["GITHUB_SHA"]
     const githubEventName = 'workflow_dispatch'
+    const latestTagName = "1.2.3"
     const expectedVersion = "1.2.3"
+    // Mock the octokit client and responses
+    const mockOctokit = {
+      rest: {
+        git: {
+          listMatchingRefs: async () => ({
+            status: 200,
+            data: [
+              {
+                ref: "refs/tags/" + latestTagName,
+                object: {
+                  sha: beforeCommitSha
+                }
+              }
+            ]
+          })
+        }
+      }
+    }
     // Mock GitHub module
     const githubMock = {
       context: {
@@ -262,7 +322,8 @@ describe("get-version.js", async function () {
             }
           }
         }
-      }
+      },
+      getOctokit: () => mockOctokit
     }
     // Mock core module to avoid actual core.info/debug calls
     const coreMock = {
@@ -274,16 +335,16 @@ describe("get-version.js", async function () {
       setFailed: () => {}
     }
     // Use proxyquire to inject mocks
-    const getVersionWithMocks = proxyquire(modulePath, {
+    const main = proxyquire(modulePath, {
       '@actions/github': githubMock,
       '@actions/core': coreMock
     })
     // execute the test
-    const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
+    const result = await main(apiToken, tagPrefix, inceptionVersion)
     console.log("result:[" + result + "]")
     // Validate the test result
-    expect(result).to.equal(expectedVersion)
-    expect(semverValid(result)).to.not.be.null
+    expect(result.currentVersion).to.equal(expectedVersion)
+    expect(semverValid(result.currentVersion)).to.not.be.null
   })
 
   it("Should handle release event", async function () {
@@ -307,6 +368,17 @@ describe("get-version.js", async function () {
     const mockOctokit = {
       rest: {
         git: {
+          listMatchingRefs: async () => ({
+            status: 200,
+            data: [
+              {
+                ref: "refs/tags/" + releaseVersion,
+                object: {
+                  sha: githubCommitSha
+                }
+              }
+            ]
+          }),
           getRef: async () => ({
             status: 200,
             data: {
@@ -355,8 +427,8 @@ describe("get-version.js", async function () {
     const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
     console.log("result:[" + result + "]")
     // Validate the test result
-    expect(result).to.equal(releaseVersion)
-    expect(semverValid(result)).to.not.be.null
+    expect(result.currentVersion).to.equal(releaseVersion)
+    expect(semverValid(result.currentVersion)).to.not.be.null
   })
 
   it("Should handle push event with existing tags", async function () {
@@ -458,8 +530,8 @@ describe("get-version.js", async function () {
     console.log("result:[" + result + "]")
     
     // Validate the test result
-    expect(result).to.equal(expectedVersion)
-    expect(semverValid(result)).to.not.be.null
+    expect(result.currentVersion).to.equal(expectedVersion)
+    expect(semverValid(result.currentVersion)).to.not.be.null
   })
 
   it("Should handle push event with no existing tags", async function () {
@@ -552,8 +624,8 @@ describe("get-version.js", async function () {
     console.log("result:[" + result + "]")
     
     // Validate the test result
-    expect(result).to.equal(inceptionVersion)
-    expect(semverValid(result)).to.not.be.null
+    expect(result.currentVersion).to.equal(inceptionVersion)
+    expect(semverValid(result.currentVersion)).to.not.be.null
   })
 })
 // EOF

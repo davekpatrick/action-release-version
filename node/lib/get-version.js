@@ -7,10 +7,7 @@ const github = require('@actions/github') // Microsoft's actions github toolkit
 // semver module
 const semverClean = require('semver/functions/clean')
 const semverParse = require('semver/functions/parse')
-const semverRsort = require('semver/functions/rsort')
 const semverMaxSatisfying = require('semver/ranges/max-satisfying')
-// ------------------------------------
-//
 // ------------------------------------
 module.exports = async function getVersion(
   argApiToken,
@@ -18,8 +15,18 @@ module.exports = async function getVersion(
   argInceptionVersionTag = '0.0.0'
 ) {
   // ------------------------------------
+  // getVersion
+  // Retrieve the current version tag from the repository
+  // based on the event that triggered the workflow
+  //
+  // TODO:
+  // - add exclude filter
+  // - support for Github repository variables , RELEASE_VERSION
+  // - explore github graphQL to retrieve the latest tags
+  // ------------------------------------
   core.debug('Start getVersion')
-  var versionTag = null
+  var versionTagLatest = null
+  var versionTagList = []
   // doc: https://github.com/actions/toolkit/blob/main/packages/github/README.md
   //      https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#event-object-common-properties
   //
@@ -52,22 +59,75 @@ module.exports = async function getVersion(
       ']'
   )
   if (gitRepoOwnerName === undefined) {
-    core.debug('Undefined GitHub repository owner name')
+    core.debug('Undefined GitHub repository.owner.name')
   }
   let gitOwner = gitRepoOwnerLogin
   // ensure we have valid repository information
   if (gitOwner === null || gitOwner === '' || gitOwner === undefined) {
-    core.setFailed('Unable to locate the repostiory owner')
+    core.setFailed('Unable to locate the repository owner')
   }
   if (gitRepo === null || gitRepo === '' || gitRepo === undefined) {
-    core.setFailed('Unable to locate the repostiory name')
+    core.setFailed('Unable to locate the repository name')
   }
   core.debug('gitOwner[' + gitOwner + '] gitRepo[' + gitRepo + ']')
   // setup authenticated github client
   // doc: https://github.com/actions/toolkit/blob/main/packages/github/README.md
   //      https://octokit.github.io/rest.js/v18#authentication
   const octokit = github.getOctokit(argApiToken)
+  if (octokit === null || octokit === undefined) {
+    core.setFailed('Unable to create authenticated GitHub client')
+  }
   // ------------------------------------
+  // build an array of release version tags
+
+  // get all matching refs (tags)
+  // https://docs.github.com/en/rest/reference/git#list-matching-references
+  let matchingTags = await octokit.rest.git.listMatchingRefs({
+    owner: gitOwner,
+    repo: gitRepo,
+    ref: 'tags/' + argTagPrefix,
+  })
+  core.debug('matchingTags[' + JSON.stringify(matchingTags) + ']')
+  if (matchingTags.data.length === 0) {
+    core.warning('No current version found')
+    versionTagList.push(argInceptionVersionTag)
+  } else {
+    // build a list of valid release version tags
+    // i.e. valid semver tags without build metadata
+    // e.g. v1.2.3+build.1 is not a release version
+    //      v1.2.3 is a release version
+    for (let instance of matchingTags.data) {
+      let tagRef = instance.ref // e.g. refs/tags/v1.2.3
+      core.debug('tagRef[' + tagRef + ']')
+      let tagName = tagRef.replace('refs/tags/', '') // e.g. v1.2.3
+      // Attempt to parse a string as a semantic version, returning either a SemVer object or null
+      let tagData = semverParse(tagName)
+      // discard null/empty semverTag
+      if (tagData === null) {
+        // invalid semver tag
+        core.debug('Invalid versionTag[' + tagName + '] ')
+        continue // skip to the next tag
+      } else {
+        // check for build version tags e.g v1.2.3+build.1
+        if (tagData.build.length > 0) {
+          // do not add to the list of semver tags, as this is not a release version
+          // TODO: review this .. maybe we should include an option to increment build versions
+          core.debug(
+            'Ignoring build[' + tagData.build + ']'
+          )
+          continue // skip to the next tag
+        } else {
+          // confirming it does not already exists in the list
+          if (!versionTagList.includes(tagData.version)) {
+            core.debug('Adding versionTag[' + tagData.version + ']')
+            versionTagList.push(tagData.version)
+          }
+        }
+      }
+    }
+  }
+  // ------------------------------------
+  // process the event types
   if (github.context.eventName === 'release') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#releaseevent
     let tagData = github.context.payload.release.tag_name
@@ -89,7 +149,7 @@ module.exports = async function getVersion(
     if (tagSemVer === null) {
       core.setFailed('Invalid semver tag[' + tagData + ']')
     }
-    versionTag = tagSemVer
+    versionTagLatest = tagSemVer
   } else if (github.context.eventName === 'push') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pushevent
     let gitRef = github.context.ref
@@ -125,65 +185,17 @@ module.exports = async function getVersion(
         commit_sha: gitBeforeCommitSha,
       }
     )
-    core.debug(
+    core.info(
       'getBeforeCommitBranches[' + JSON.stringify(getBeforeCommitBranches) + ']'
     )
-
-    // get all matching refs (tags)
-    // https://docs.github.com/en/rest/reference/git#list-matching-references
-    let matchingTags = await octokit.rest.git.listMatchingRefs({
-      owner: gitOwner,
-      repo: gitRepo,
-      ref: 'tags/' + argTagPrefix,
-    })
-    core.info('matchingTags[' + JSON.stringify(matchingTags) + ']')
-    let semverTags = []
-    if (matchingTags.data.length === 0) {
-      core.warning('No current version found')
-      semverTags.push(argInceptionVersionTag)
-    } else {
-      // build a list of valid release version tags
-      // i.e. valid semver tags without build metadata
-      // e.g. v1.2.3+build.1 is not a release version
-      //      v1.2.3 is a release version
-      // TODO:
-      // - add exclude filter
-      // - support for Github repository variables , RELEASE_VERSION
-      // - explore github graphQL to retrieve the latest tags
-      for (let instance of matchingTags.data) {
-        let tagRef = instance.ref // e.g. refs/tags/v1.2.3
-        core.info('tagRef[' + tagRef + ']')
-        let tagName = tagRef.replace('refs/tags/', '') // e.g. v1.2.3
-        // Attempt to parse a string as a semantic version, returning either a SemVer object or null
-        let tagData = semverParse(tagName)
-        // discard null/empty semverTag
-        if (tagData === null) {
-          // invalid semver tag
-          core.info('Invalid semver tagName[' + tagName + '] ')
-        } else {
-          // check for build version tags e.g v1.2.3+build.1
-          if (tagData.build.length > 0) {
-            // do not add to the list of semver tags, as this is not a release version
-            // TODO: review this .. maybe we should include an option to increment build verions
-            core.info(
-              'detected build[' + tagData.build + '], ignoring this tag'
-            )
-          } else {
-            // confirming it does not already exists
-            if (!semverTags.includes(tagData.version)) {
-              semverTags.push(tagData.version)
-            }
-          }
-        }
-      }
-    }
-    //
-    let semverTagsSorted = semverRsort(semverTags)
-    let latestVersion = semverMaxSatisfying(semverTagsSorted, '*')
+    // get the latest version from the versionTagList
+    // using semver maxSatisfying with range *
+    // should return the highest version
+    let latestVersion = semverMaxSatisfying(versionTagList, '*')
     if (latestVersion === null) {
       core.setFailed('unable to locate latest version')
     } else {
-      versionTag = latestVersion
+      versionTagLatest = latestVersion
     }
   } else if (github.context.eventName === 'pull_request') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pullrequestevent
@@ -196,78 +208,14 @@ module.exports = async function getVersion(
         gitSha +
         ']'
     )
-    // get all matching refs (tags)
-    // https://docs.github.com/en/rest/reference/git#list-matching-references
-    let matchingTags = await octokit.rest.git.listMatchingRefs({
-      owner: gitOwner,
-      repo: gitRepo,
-      ref: 'tags/' + argTagPrefix,
-    })
-    core.debug('matchingTags[' + JSON.stringify(matchingTags) + ']')
-    if (matchingTags.data.length === 0) {
-      core.warning('No current version found')
-      versionTag = argInceptionVersionTag
+    // get the latest version from the versionTagList
+    // using semver maxSatisfying with range *
+    // should return the highest version
+    let latestVersion = semverMaxSatisfying(versionTagList, '*')
+    if (latestVersion === null) {
+      core.setFailed('unable to locate latest version')
     } else {
-      // loop through the tags to find one that is part of the current branch
-      for (const tag of matchingTags.data) {
-        // get the tag name
-        let tagName = tag.ref.replace('refs/tags/', '') // e.g. v1.2.3
-        core.debug('tagName[' + tagName + ']')
-        // check if it is a valid semver tag
-        let tagSemVer = semverClean(tagName)
-        if (tagSemVer === null) {
-          core.warning('Invalid semver tag[' + tagName + ']')
-          continue // skip to the next tag
-        }
-        // get the commit sha for the tag
-        let tagCommitSha = tag.object.sha
-        core.debug('tagCommitSha[' + tagCommitSha + ']')
-        /*
-        // check if the tag commit sha is an ancestor of the pull request commit sha
-        // https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#compare-two-commits
-        let compareCommits = await octokit.rest.repos.compareCommits({
-          owner: gitOwner,
-          repo: gitRepo,
-          base: tagCommitSha,
-          head: gitSha,
-        })
-        core.debug('compareCommits[' + JSON.stringify(compareCommits) + ']')
-        if (compareCommits.status !== 200) {
-          core.warning(
-            'Unable to compare commits for tag[' + tagName + '] head[' + gitSha + ']'
-          )
-          continue // skip to the next tag
-        }
-        if (compareCommits.data.status === 'ahead' || compareCommits.data.status === 'identical') {
-          // the tag is an ancestor of the pull request commit
-          core.info('Found matching tag[' + tagName + '] for pull request')
-          // use this tag
-          //versionTag = tagSemVer
-          //break // exit the loop  
-        } else {
-          core.debug('Tag[' + tagName + '] is not part of the pull request branch compareCommitsStatus[' + compareCommits.data.status + ']')
-        }
-        */
-
-        //
-      }
-
-      // now need to find the latest tag that is part of the current branch
-      // for now just use the latest tag
-      // later we need to ensure the tag is part of the current branch
-      // e.g. by using git merge-base --is-ancestor <tag> <branch>
-      // get the latest tag
-      let latestTagRef = matchingTags.data[0].ref // e.g. refs/tags/v1.2.3
-      core.debug('latestTagRef[' + latestTagRef + ']')
-      let latestTag = latestTagRef.replace('refs/tags/', '') // e.g. v1.2.3
-      core.debug('latestTag[' + latestTag + ']')
-      // ensure we have a valid semver tag
-      let tagSemVer = semverClean(latestTag)
-      if (tagSemVer === null) {
-        core.setFailed('Invalid semver tag[' + latestTag + ']')
-      } else {
-        versionTag = tagSemVer
-      }
+      versionTagLatest = latestVersion
     }
   } else if (github.context.eventName === 'workflow_dispatch') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#workflow_dispatch
@@ -288,7 +236,7 @@ module.exports = async function getVersion(
       // strange, the input provided is invalid
       core.setFailed('Invalid semver version[' + inputVersion + ']')
     }
-    versionTag = semVer
+    versionTagLatest = semVer
   } else {
     //
     core.info('Unknown event type[' + github.context.eventName + ']')
@@ -296,6 +244,9 @@ module.exports = async function getVersion(
   }
   // ------------------------------------
   core.debug('End getVersion')
-  return versionTag
+  return {
+    currentVersion: versionTagLatest,
+    versionHistory: versionTagList,
+  }
 } // getVersion
 // EOF

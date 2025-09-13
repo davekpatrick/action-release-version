@@ -68,7 +68,14 @@ describe("index.js", async function () {
     //
     const expectedVersion = "0.1.0"
     // Mock getVersion to return inception version
-    const getVersionStub = () => Promise.resolve(inceptionVersion)
+    const getVersionStub = () => Promise.resolve(
+      {
+        currentVersion: inceptionVersion,
+        versionHistory: [
+          inceptionVersion
+        ]
+      }
+    )
     // Mock core module to avoid actual core.info/debug calls
     const coreMock = {
       getInput: (input) => {
@@ -112,8 +119,13 @@ describe("index.js", async function () {
     //
     const expectedVersion = "0.1.0"
     // Mock getVersion to return null (no current version)
-    const getVersionStub = () => Promise.resolve(null)
-    
+    const getVersionStub = () => Promise.resolve(
+      {
+        currentVersion: null,
+        versionHistory: []
+      }
+    )
+
     // Mock core to avoid actual outputs
     const coreStub = {
       getInput: (input) => {
@@ -153,9 +165,19 @@ describe("index.js", async function () {
     // - 
     // ---------------------------------------------------
     // fixture inputs
-
+    const apiToken = process.env["GITHUB_TOKEN"]
+    //
+    const currentVersion = "1.2.3"
+    const expectedVersion = "1.3.0"
     // Mock getVersion to return a current version
-    const getVersionStub = () => Promise.resolve('1.2.3')
+    const getVersionStub = () => Promise.resolve(
+      {
+        currentVersion: currentVersion,
+        versionHistory: [
+          currentVersion
+        ]
+      }
+    )
     
     // Mock core to avoid actual outputs
     const coreStub = {
@@ -164,7 +186,7 @@ describe("index.js", async function () {
           case 'tagPrefix': return 'v'
           case 'inceptionVersionTag': return '0.0.0'
           case 'argVersion': return ''
-          case 'apiToken': return 'fake-token'
+          case 'apiToken': return apiToken
           default: return ''
         }
       },
@@ -186,7 +208,7 @@ describe("index.js", async function () {
     const result = await main()
     console.log("result:[" + result + "]")
     // Validate the test result
-    expect(result).to.equal('1.3.0') // current version incremented
+    expect(result).to.equal(expectedVersion) // current version incremented
   })
 
   it("Should use provided version input directly", async function () {
@@ -235,11 +257,17 @@ describe("index.js", async function () {
     // - 
     // ---------------------------------------------------
     // fixture inputs
-
-    process.env.GITHUB_TOKEN = 'env-token'
-    
+    const currentVersion = "1.0.0"
+    const expectedVersion = "1.1.0"
     // Mock getVersion to return a version
-    const getVersionStub = () => Promise.resolve('1.0.0')
+    const getVersionStub = () => Promise.resolve(
+      {
+        currentVersion: currentVersion,
+        versionHistory: [
+          currentVersion
+        ]
+      }
+    )
     
     // Mock core to return empty API token
     const coreStub = {
@@ -270,7 +298,7 @@ describe("index.js", async function () {
     const result = await main()
     console.log("result:[" + result + "]")
     // Validate the test result
-    expect(result).to.equal('1.1.0') // incremented version
+    expect(result).to.equal(expectedVersion) // incremented version
   })
 });
 // EOF
