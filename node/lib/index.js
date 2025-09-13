@@ -12,7 +12,7 @@ const semver = require('semver') // Node's semver package
 // ------------------------------------
 const getVersion = require('./get-version')
 //
-module.exports = async function releaseVersion() {
+module.exports = async function main() {
   try {
     core.startGroup('Initialize')
     core.info(
@@ -55,7 +55,16 @@ module.exports = async function releaseVersion() {
     //
     //core.info(JSON.stringify(process.env))
     // ------------------------------------
-    // get the "current" version, using the version input if provided
+    // get the "current" version
+    // methods
+    // - via argVersion input
+    // - on release event, use the tag that triggered the workflow
+    // - on workflow_dispatch event, use the input version
+    // - get the latest tag from the repo
+    // - Repository action variable, RELEASE_VERSION
+    // - if no version found, use argInceptionVersionTag
+    // ------------------------------------
+    var versionData = {}
     var currentVersion = null
     if (argVersion !== null && argVersion !== '') {
       core.debug('argVersion[' + argVersion + ']')
@@ -66,15 +75,68 @@ module.exports = async function releaseVersion() {
       }
       currentVersion = semVer
     } else {
-      currentVersion = await getVersion(
+      versionData = await getVersion(
         apiToken,
         argTagPrefix,
         argInceptionVersionTag
       )
+      currentVersion = versionData.currentVersion
     }
+
+    core.debug('versionData[' + JSON.stringify(versionData) + ']')
     core.info('currentVersion[' + currentVersion + ']')
     // ------------------------------------
+    // determine the increment type
+    //  types:
+    //   - major
+    //     methods
+    //      - pull request with "BREAKING CHANGE" in the body
+    //      - pull request title contains "[major]"
+    //      - pull request label "major"
+    //      - branch prefix "major/"
+    //   - minor
+    //     methods
+    //      - default if no other type matched
+    //      - pull request title contains "[minor]"
+    //      - pull request title contains "[feature]"
+    //      - pull request label "minor"
+    //      - pull request label "feature"
+    //      - branch prefix "feature/"
+    //   - patch
+    //     methods
+    //      - pull request title contains "[patch]"
+    //      - pull request label "patch"
+    //      - pull request label "fix"
+    //      - branch prefix "fix/"
+    //      - branch prefix "bug/"
+    //   - premajor
+    //     methods
+    //      - pull request title contains "[major][pre|prerequisite]"
+    //      - pull request label "major" & "pre|prerequisite"
+    //      - branch prefix "premajor/"
+    //   - preminor
+    //     methods
+    //      - pull request title contains "[preminor]"
+    //      - pull request label "preminor"
+    //      - branch prefix "preminor/"
+    //   - prepatch
+    //     methods
+    //      - pull request title contains "[prepatch]"
+    //      - pull request label "prepatch"
+    //      - branch prefix "prepatch/"
+    //   - prerelease
+    //     methods
+    //      - pull request title contains "[prerelease]"
+    //      - pull request label "prerelease"
+    //      - branch prefix "prerelease/"
+    // ------------------------------------
     // increment the current version
+    // methods
+    // - if no current version, start at argInceptionVersionTag and increment minor
+    // - if current version is from a release, do not increment
+    // - if current version is from a workflow_dispatch, do not increment
+    // - otherwise increment based on the type determined above
+    // ------------------------------------
     var versionTag = null
     if (currentVersion === null) {
       // no current version, so start at argInceptionVersionTag (aka 0.0.0) and increment

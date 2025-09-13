@@ -1,27 +1,26 @@
-# This workflow will run the CI build and tests for the repository
+# This workflow is used to test workflow action
 #
 # BOF
 ---
-name: Continuous Integration
-run-name: "Continuous Integration (CI) build #${{ github.run_number }}"
+name: Test Action
+run-name:  "Test workflow_action build #${{ github.run_number }}"
 on:
-  push:
-    branches-ignore:
-    - main
-    - development
-  pull_request:
-    # The branches below must be a subset of the branches above
-    branches:
-    - main
+  workflow_dispatch:
+    inputs:
+      versionTag:
+        description: 'The version tag to release'
+        required: true
 jobs:
   # --------------------------------------------
   build:
     name: Artifact build
     strategy:
       matrix:
-        operatingSystem: [ubuntu-24.04]
-        nodeVersion: [20]
-      fail-fast: false
+        operatingSystem:
+        - ubuntu-24.04
+        nodeVersion:
+        - 20
+      fail-fast: true
     runs-on: ${{ matrix.operatingSystem }}
     #
     steps:
@@ -36,20 +35,6 @@ jobs:
       run: |
         cd node
         npm ci
-    - name: Validate
-      run: |
-        cd node
-        npm run validate
-    - name: Format
-      run: |
-        cd node
-        npm run format
-    - name: Run Unit Tests
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        cd node
-        npm run test
     - name: Calculate Version
       id: version
       uses: davekpatrick/action-release-version@main # use main branch for latest
@@ -80,16 +65,9 @@ jobs:
     strategy:
       matrix:
         operatingSystem:
-        - ubuntu-22.04
         - ubuntu-24.04
-        - macos-14
-        - macos-15
-        - windows-2022
-        - windows-2025
         nodeVersion:
-        - 18
         - 20
-        - 22
       fail-fast: false
     runs-on: ${{ matrix.operatingSystem }}
     needs: [build]
@@ -120,11 +98,11 @@ jobs:
     - name: Test Output (non-Windows)
       if: ${{ runner.os != 'Windows' }}
       run: |
-        echo ${{ needs.build.outputs.versionTag }}
+        echo ${{ steps.build-test.outputs.versionTag }}
     - name: Test Output (Windows)
       if: ${{ runner.os == 'Windows' }}
       shell: powershell
       run: |
-        Write-Host "${{ needs.build.outputs.versionTag }}"
+        Write-Host "${{ steps.build-test.outputs.versionTag }}"
 ...
 # EOF
