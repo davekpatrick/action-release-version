@@ -136,33 +136,36 @@ module.exports = async function getVersion(
       repo: gitRepo,
       ref: 'tags/' + argTagPrefix,
     })
-    core.debug('matchingTags[' + JSON.stringify(matchingTags) + ']')
+    core.info('matchingTags[' + JSON.stringify(matchingTags) + ']')
     let semverTags = []
     if (matchingTags.data.length === 0) {
       core.warning('No current version found')
       semverTags.push(argInceptionVersionTag)
     } else {
-      // build a list of valid release verions
+      // build a list of valid release version tags
+      // i.e. valid semver tags without build metadata
+      // e.g. v1.2.3+build.1 is not a release version
+      //      v1.2.3 is a release version
       // TODO:
       // - add exclude filter
       // - support for Github repository variables , RELEASE_VERSION
       // - explore github graphQL to retrieve the latest tags
       for (let instance of matchingTags.data) {
         let tagRef = instance.ref // e.g. refs/tags/v1.2.3
-        core.debug('tagRef[' + tagRef + ']')
+        core.info('tagRef[' + tagRef + ']')
         let tagName = tagRef.replace('refs/tags/', '') // e.g. v1.2.3
         // Attempt to parse a string as a semantic version, returning either a SemVer object or null
         let tagData = semverParse(tagName)
-        // discart null/empty semverTag
+        // discard null/empty semverTag
         if (tagData === null) {
           // invalid semver tag
-          core.debug('Invalid semver tagName[' + tagName + '] ')
+          core.info('Invalid semver tagName[' + tagName + '] ')
         } else {
           // check for build version tags e.g v1.2.3+build.1
           if (tagData.build.length > 0) {
             // do not add to the list of semver tags, as this is not a release version
             // TODO: review this .. maybe we should include an option to increment build verions
-            core.debug(
+            core.info(
               'detected build[' + tagData.build + '], ignoring this tag'
             )
           } else {
