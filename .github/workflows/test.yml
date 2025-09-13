@@ -1,0 +1,108 @@
+# This workflow is used to test workflow action
+#
+# BOF
+---
+name: Test Action
+run-name:  "Test workflow_action build #${{ github.run_number }}"
+on:
+  workflow_dispatch:
+    inputs:
+      versionTag:
+        description: 'The version tag to release'
+        required: true
+jobs:
+  # --------------------------------------------
+  build:
+    name: Artifact build
+    strategy:
+      matrix:
+        operatingSystem:
+        - ubuntu-24.04
+        nodeVersion:
+        - 20
+      fail-fast: true
+    runs-on: ${{ matrix.operatingSystem }}
+    #
+    steps:
+    - uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.nodeVersion }}
+    - uses: actions/checkout@v3
+    - name: Calculate a short git SHA
+      id: git-sha-short
+      run: echo "GITHUB_SHA_SHORT=$(echo ${{ github.sha }} | cut -c1-8)" >> $GITHUB_OUTPUT
+    - name: Install dependencies
+      run: |
+        cd node
+        npm ci
+    - name: Calculate Version
+      id: version
+      uses: davekpatrick/action-release-version@main # use main branch for latest
+      with:
+        apiToken: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build Version
+      run: |
+        cd node
+        npm version ${{ steps.version.outputs.versionTag }}+build-${{ steps.git-sha-short.outputs.GITHUB_SHA_SHORT }}-${{ github.run_number }}${{ github.run_attempt }}
+    - name: Compile
+      run: |
+        cd node
+        npm run build
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ${{ github.event.repository.name }}-build
+        if-no-files-found: error
+        path: |
+          node/dist/
+          node/package-lock.json
+          README.md
+          action.yml
+    outputs:
+      versionTag: ${{ steps.version.outputs.versionTag }}
+  # --------------------------------------------
+  test:
+    name: Artifact Test
+    strategy:
+      matrix:
+        operatingSystem:
+        - ubuntu-24.04
+        nodeVersion:
+        - 20
+      fail-fast: false
+    runs-on: ${{ matrix.operatingSystem }}
+    needs: [build]
+    #
+    steps:
+    - uses: actions/download-artifact@v5
+      with:
+        name: ${{ github.event.repository.name }}-build
+    - name: Validate setup
+      if: ${{ runner.os != 'Windows' }}
+      run: |
+        node --version
+        ls -lR
+        set
+    - name: Validate setup
+      if: ${{ runner.os == 'Windows' }}
+      shell: powershell
+      run: |
+        & node --version
+        Set-Location -Path ./
+        Get-ChildItem -Recurse
+    - name: Build Test
+      id: build-test
+      uses: ./
+      with:
+        apiToken: ${{ secrets.GITHUB_TOKEN }}
+        tagPrefix: ''
+    - name: Test Output (non-Windows)
+      if: ${{ runner.os != 'Windows' }}
+      run: |
+        echo ${{ steps.build-test.outputs.versionTag }}
+    - name: Test Output (Windows)
+      if: ${{ runner.os == 'Windows' }}
+      shell: powershell
+      run: |
+        Write-Host "${{ steps.build-test.outputs.versionTag }}"
+...
+# EOF
