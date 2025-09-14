@@ -79,7 +79,4 @@ jobs:
       uses: github/codeql-action/analyze@v3
       with:
         category: "/language:${{matrix.language}}"
-    - name: Static Analysis Results Interchange Format (SARIF) identifier
-      run: |
-        echo "SARIF_ID: ${{ steps.analyze.outputs.sarif_id }}"
 # EOF
