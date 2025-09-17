@@ -7,7 +7,7 @@ run-name:  "Test workflow_action build #${{ github.run_number }}"
 on:
   workflow_dispatch:
     inputs:
-      versionTag:
+      version:
         description: 'The version tag to release'
         required: true
 jobs:
