@@ -117,7 +117,7 @@ describe("get-version.js", async function () {
     const result = await getVersionWithMocks(apiToken)
     console.log("result:[" + result + "]")
     // Validate the test result
-    expect(result.currentVersion).to.be.null
+    expect(result.version).to.be.null
   })
 
   it("Should handle unknown event types", async function () {
@@ -188,7 +188,7 @@ describe("get-version.js", async function () {
     const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
     console.log("result:[" + result + "]")
     // Validate the test result
-    expect(result.currentVersion).to.be.null
+    expect(result.version).to.be.null
   })
 
   it("Should handle pull_request event", async function () {
@@ -266,8 +266,8 @@ describe("get-version.js", async function () {
     const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
     console.log("result:[" + result + "]")
     // Validate the test result
-    expect(result.currentVersion).to.equal(expectedVersion)
-    expect(semverValid(result.currentVersion)).to.not.be.null
+    expect(result.version).to.equal(expectedVersion)
+    expect(semverValid(result.version)).to.not.be.null
   })
 
   it("Should handle workflow_dispatch event", async function () {
@@ -343,8 +343,8 @@ describe("get-version.js", async function () {
     const result = await main(apiToken, tagPrefix, inceptionVersion)
     console.log("result:[" + result + "]")
     // Validate the test result
-    expect(result.currentVersion).to.equal(expectedVersion)
-    expect(semverValid(result.currentVersion)).to.not.be.null
+    expect(result.version).to.equal(expectedVersion)
+    expect(semverValid(result.version)).to.not.be.null
   })
 
   it("Should handle release event", async function () {
@@ -427,8 +427,8 @@ describe("get-version.js", async function () {
     const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
     console.log("result:[" + result + "]")
     // Validate the test result
-    expect(result.currentVersion).to.equal(releaseVersion)
-    expect(semverValid(result.currentVersion)).to.not.be.null
+    expect(result.version).to.equal(releaseVersion)
+    expect(semverValid(result.version)).to.not.be.null
   })
 
   it("Should handle push event with existing tags", async function () {
@@ -530,8 +530,8 @@ describe("get-version.js", async function () {
     console.log("result:[" + result + "]")
     
     // Validate the test result
-    expect(result.currentVersion).to.equal(expectedVersion)
-    expect(semverValid(result.currentVersion)).to.not.be.null
+    expect(result.version).to.equal(expectedVersion)
+    expect(semverValid(result.version)).to.not.be.null
   })
 
   it("Should handle push event with no existing tags", async function () {
@@ -624,8 +624,8 @@ describe("get-version.js", async function () {
     console.log("result:[" + result + "]")
     
     // Validate the test result
-    expect(result.currentVersion).to.equal(inceptionVersion)
-    expect(semverValid(result.currentVersion)).to.not.be.null
+    expect(result.version).to.equal(inceptionVersion)
+    expect(semverValid(result.version)).to.not.be.null
   })
 })
 // EOF

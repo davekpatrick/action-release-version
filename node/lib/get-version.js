@@ -25,8 +25,8 @@ module.exports = async function getVersion(
   // - explore github graphQL to retrieve the latest tags
   // ------------------------------------
   core.debug('Start getVersion')
-  var versionTagLatest = null
-  var versionTagList = []
+  var outVersion = null
+  var outHistory = []
   // doc: https://github.com/actions/toolkit/blob/main/packages/github/README.md
   //      https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#event-object-common-properties
   //
@@ -90,7 +90,7 @@ module.exports = async function getVersion(
   core.debug('matchingTags[' + JSON.stringify(matchingTags) + ']')
   if (matchingTags.data.length === 0) {
     core.warning('No current version found')
-    versionTagList.push(argInceptionVersionTag) // starting point
+    outHistory.push(argInceptionVersionTag) // starting point
   } else {
     // build a list of valid release version tags
     // i.e. valid semver tags without build metadata
@@ -116,9 +116,9 @@ module.exports = async function getVersion(
           continue // skip to the next tag
         } else {
           // confirming it does not already exists in the list
-          if (!versionTagList.includes(tagData.version)) {
+          if (!outHistory.includes(tagData.version)) {
             core.debug('Adding versionTag[' + tagData.version + ']')
-            versionTagList.push(tagData.version)
+            outHistory.push(tagData.version)
           }
         }
       }
@@ -147,7 +147,7 @@ module.exports = async function getVersion(
     if (tagSemVer === null) {
       core.setFailed('Invalid semver tag[' + tagData + ']')
     }
-    versionTagLatest = tagSemVer
+    outVersion = tagSemVer
   } else if (github.context.eventName === 'push') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pushevent
     let gitRef = github.context.ref
@@ -186,14 +186,16 @@ module.exports = async function getVersion(
     core.info(
       'getBeforeCommitBranches[' + JSON.stringify(getBeforeCommitBranches) + ']'
     )
-    // get the latest version from the versionTagList
+    // get the latest version from the outHistory
     // using semver maxSatisfying with range *
     // should return the highest version
-    let latestVersion = semverMaxSatisfying(versionTagList, '*', { includePrerelease: true })
+    let latestVersion = semverMaxSatisfying(outHistory, '*', {
+      includePrerelease: true,
+    })
     if (latestVersion === null) {
       core.setFailed('unable to locate latest version')
     } else {
-      versionTagLatest = latestVersion
+      outVersion = latestVersion
     }
   } else if (github.context.eventName === 'pull_request') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pullrequestevent
@@ -206,14 +208,16 @@ module.exports = async function getVersion(
         gitSha +
         ']'
     )
-    // get the latest version from the versionTagList
+    // get the latest version from the outHistory
     // using semver maxSatisfying with range *
     // should return the highest version
-    let latestVersion = semverMaxSatisfying(versionTagList, '*', { includePrerelease: true })
+    let latestVersion = semverMaxSatisfying(outHistory, '*', {
+      includePrerelease: true,
+    })
     if (latestVersion === null) {
       core.setFailed('unable to locate latest version')
     } else {
-      versionTagLatest = latestVersion
+      outVersion = latestVersion
     }
   } else if (github.context.eventName === 'workflow_dispatch') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#workflow_dispatch
@@ -234,7 +238,7 @@ module.exports = async function getVersion(
       // strange, the input provided is invalid
       core.setFailed('Invalid semver version[' + inputVersion + ']')
     }
-    versionTagLatest = semVer
+    outVersion = semVer
   } else {
     //
     core.info('Unknown event type[' + github.context.eventName + ']')
@@ -243,8 +247,8 @@ module.exports = async function getVersion(
   // ------------------------------------
   core.debug('End getVersion')
   return {
-    currentVersion: versionTagLatest,
-    versionHistory: versionTagList,
+    version: outVersion,
+    history: outHistory,
   }
 } // getVersion
 // EOF

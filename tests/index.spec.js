@@ -67,12 +67,18 @@ describe("index.js", async function () {
     const inceptionVersion = process.env["INPUT_INCEPTIONVERSIONTAG"]
     //
     const expectedVersion = "0.1.0"
+    // Mock getReleaseType to always return 'minor' type
+    const getReleaseTypeStub = () => Promise.resolve(
+      {
+        event: 'push'
+      }
+    )
     // Mock getVersion to return inception version
     const getVersionStub = () => Promise.resolve(
       {
-        currentVersion: inceptionVersion,
-        versionHistory: [
-          inceptionVersion
+        version: inceptionVersion,
+        history: [
+          inceptionVersion,
         ]
       }
     )
@@ -96,6 +102,7 @@ describe("index.js", async function () {
     // Use proxyquire to inject mocks
     const main = proxyquire(modulePath, {
       './get-version': getVersionStub,
+      './get-release-type': getReleaseTypeStub,
       '@actions/core': coreMock
     })
     // execute the test
@@ -121,8 +128,8 @@ describe("index.js", async function () {
     // Mock getVersion to return null (no current version)
     const getVersionStub = () => Promise.resolve(
       {
-        currentVersion: null,
-        versionHistory: []
+        version: null,
+        history: []
       }
     )
 
@@ -172,13 +179,25 @@ describe("index.js", async function () {
     // Mock getVersion to return a current version
     const getVersionStub = () => Promise.resolve(
       {
-        currentVersion: currentVersion,
-        versionHistory: [
+        version: currentVersion,
+        history: [
+          '0.1.0',
+          '0.2.0',
+          '1.0.0',
+          '1.1.0',
+          '1.2.0',
+          '1.2.1',
+          '1.2.2',
           currentVersion
         ]
       }
     )
-    
+    // Mock getReleaseType to return 'minor' type
+    const getReleaseTypeStub = () => Promise.resolve(
+      {
+        event: 'push'
+      }
+    )
     // Mock core to avoid actual outputs
     const coreStub = {
       getInput: (input) => {
@@ -202,6 +221,7 @@ describe("index.js", async function () {
     // Use proxyquire to inject mocks
     const main = proxyquire(modulePath, {
       './get-version': getVersionStub,
+      './get-release-type': getReleaseTypeStub,
       '@actions/core': coreStub
     })
     // execute the test
@@ -218,15 +238,18 @@ describe("index.js", async function () {
     // - 
     // ---------------------------------------------------
     // fixture inputs
-
+    const apiToken = process.env["GITHUB_TOKEN"]
+    //
+    const currentVersion = '2.3.4'
+    const expectedVersion = currentVersion
     // Mock core to return a specific version input
     const coreStub = {
       getInput: (input) => {
         switch(input) {
           case 'tagPrefix': return 'v'
           case 'inceptionVersionTag': return '0.0.0'
-          case 'argVersion': return '2.3.4'
-          case 'apiToken': return 'fake-token'
+          case 'argVersion': return currentVersion
+          case 'apiToken': return apiToken
           default: return ''
         }
       },
@@ -247,7 +270,7 @@ describe("index.js", async function () {
     const result = await main()
     console.log("result:[" + result + "]")
     // Validate the test result
-    expect(result).to.equal('2.4.0') // incremented version
+    expect(result).to.equal(expectedVersion) // incremented version
   })
 
   it("Should use environment GITHUB_TOKEN when no API token provided", async function () {
@@ -262,8 +285,8 @@ describe("index.js", async function () {
     // Mock getVersion to return a version
     const getVersionStub = () => Promise.resolve(
       {
-        currentVersion: currentVersion,
-        versionHistory: [
+        version: currentVersion,
+        history: [
           currentVersion
         ]
       }

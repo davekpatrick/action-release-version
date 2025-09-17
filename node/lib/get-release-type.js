@@ -17,6 +17,9 @@ module.exports = async function getReleaseType(
 ) {
   // ------------------------------------
   core.debug('Start getReleaseType')
+  var outEvent = null
+  var outType = null
+  var outChange = null
   // ------------------------------------
   // declare return variables
   // event
@@ -41,10 +44,7 @@ module.exports = async function getReleaseType(
   //  - minor       e.g. 0.2.0
   //  - prepatch    e.g. 0.1.1-rc.1
   //  - patch       e.g. 0.1.1
-  // 
-  var returnEvent = null
-  var returnType = null
-  var returnChange = null
+  //
   // ------------------------------------
   core.info('contextType[' + github.context.eventName + ']')
   core.debug('context[' + JSON.stringify(github.context) + ']')
@@ -107,90 +107,110 @@ module.exports = async function getReleaseType(
   if (github.context.eventName === 'release') {
     // ------------------------------------
     // a release event has occurred - use the tag that triggered the workflow
-    returnEvent = github.context.eventName
+    outEvent = github.context.eventName
     // check how much version history we have
     if (versionHistory.length === 0) {
-      returnType = 'initial'
-      returnChange = null
+      outType = 'initial'
+      outChange = null
       core.info('Initial release version detected')
     } else {
       core.debug('Locating previous version')
       // locate the previous version
-      let previousVersion = semverMaxSatisfying(versionHistory, '<' + argCurrentVersion, { includePrerelease: true })
+      let previousVersion = semverMaxSatisfying(
+        versionHistory,
+        '<' + argCurrentVersion,
+        { includePrerelease: true }
+      )
       if (previousVersion === null || previousVersion === undefined) {
         // this should not happen as we have version history
         // TODO:  ... should we fail here ?
-        returnType = 'initial'
-        returnChange = null
+        outType = 'initial'
+        outChange = null
         core.warning('No previous versions found')
       } else {
         // determine the release type based on the difference between the current and previous version
         core.info('Previous version located [' + previousVersion + ']')
-        let versionDiff = semverDiff(previousVersion, argCurrentVersion, { includePrerelease: true })
+        let versionDiff = semverDiff(previousVersion, argCurrentVersion, {
+          includePrerelease: true,
+        })
         core.info('versionDiff[' + versionDiff + ']')
         if (versionDiff === null || versionDiff === undefined) {
           // no difference found between the current and previous version
-          core.setFailed('No difference between current[' + argCurrentVersion + '] and previous[' + previousVersion + '] versions')
+          core.setFailed(
+            'No difference between current[' +
+              argCurrentVersion +
+              '] and previous[' +
+              previousVersion +
+              '] versions'
+          )
         } else {
           // this is a release event ... so we have an already released version
-          returnType = 'released' 
-          returnChange = versionDiff
+          outType = 'released'
+          outChange = versionDiff
         }
       }
     }
-    core.info('returnType[' + returnType + ']')
+    core.info('outType[' + outType + ']')
   } else if (github.context.eventName === 'workflow_dispatch') {
     // ------------------------------------
     // a workflow_dispatch event has occurred - do not increment the version
-    returnEvent = 'manual'
+    outEvent = 'manual'
     // check how much version history we have
     if (versionHistory.length === 0) {
-      returnType = 'initial'
-      returnChange = null
+      outType = 'initial'
+      outChange = null
       core.info('Initial release version detected')
     } else {
       // locate the previous version
-      let previousVersion = semverMaxSatisfying(versionHistory, '<' + argCurrentVersion, { includePrerelease: true })
+      let previousVersion = semverMaxSatisfying(
+        versionHistory,
+        '<' + argCurrentVersion,
+        { includePrerelease: true }
+      )
       if (previousVersion === null || previousVersion === undefined) {
         // this should not happen as we have version history
         core.setFailed('No previous versions found')
       } else {
         // determine the release type based on the difference between the current and previous version
         core.info('Previous version located [' + previousVersion + ']')
-        let versionDiff = semverDiff(previousVersion, argCurrentVersion, { includePrerelease: true })
+        let versionDiff = semverDiff(previousVersion, argCurrentVersion, {
+          includePrerelease: true,
+        })
         core.info('versionDiff[' + versionDiff + ']')
         if (versionDiff === null || versionDiff === undefined) {
           // no difference found between the current and previous version
-          core.setFailed('No difference between current[' + argCurrentVersion + '] and previous[' + previousVersion + '] versions')
+          core.setFailed(
+            'No difference between current[' +
+              argCurrentVersion +
+              '] and previous[' +
+              previousVersion +
+              '] versions'
+          )
         } else {
           // determine the type of change
-          returnType = 'releasing'
-          returnChange = versionDiff
+          outType = 'releasing'
+          outChange = versionDiff
         }
       }
     }
-    core.info('returnType[' + returnType + ']')
+    core.info('outType[' + outType + ']')
   } else if (github.context.eventName === 'push') {
     // ------------------------------------
     // a push event has occurred - determine the type based on commit messages since the last tag
-    returnEvent = github.context.eventName
-    returnType = 'push'
-    core.info('returnType[' + returnType + ']')
-    
-
-
-
+    outEvent = github.context.eventName
+    outType = 'push'
+    core.info('outType[' + outType + ']')
   } else {
-    returnEvent = 'unknown'
-    returnType = null
-    returnChange = null
+    outEvent = 'unknown'
+    outType = null
+    outChange = null
   }
   // ------------------------------------
   core.debug('End getReleaseType')
   return {
-    event: returnEvent,
-    type: returnType,
-    change: returnChange,
+    event: outEvent,
+    type: outType,
+    change: outChange,
   }
 } // getReleaseType
 // EOF
