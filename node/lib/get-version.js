@@ -90,7 +90,7 @@ module.exports = async function getVersion(
   core.debug('matchingTags[' + JSON.stringify(matchingTags) + ']')
   if (matchingTags.data.length === 0) {
     core.warning('No current version found')
-    versionTagList.push(argInceptionVersionTag)
+    versionTagList.push(argInceptionVersionTag) // starting point
   } else {
     // build a list of valid release version tags
     // i.e. valid semver tags without build metadata
@@ -112,9 +112,7 @@ module.exports = async function getVersion(
         if (tagData.build.length > 0) {
           // do not add to the list of semver tags, as this is not a release version
           // TODO: review this .. maybe we should include an option to increment build versions
-          core.debug(
-            'Ignoring build[' + tagData.build + ']'
-          )
+          core.debug('Ignoring build[' + tagData.build + ']')
           continue // skip to the next tag
         } else {
           // confirming it does not already exists in the list
@@ -133,13 +131,13 @@ module.exports = async function getVersion(
     let tagData = github.context.payload.release.tag_name
     let getRef = 'tags/' + tagData
     core.info('Release event detected, with tag[' + tagData + ']')
-    // validate the tag exists
+    // ensure the tag exists
     let getRefData = await octokit.rest.git.getRef({
       owner: gitOwner,
       repo: gitRepo,
       ref: getRef,
     })
-    core.debug('returnData[' + JSON.stringify(getRefData) + ']')
+    core.debug('getRefData[' + JSON.stringify(getRefData) + ']')
     if (getRefData.status !== 200) {
       core.setFailed('Unable to retrieve ref[' + getRef + '] data')
     }
@@ -191,7 +189,7 @@ module.exports = async function getVersion(
     // get the latest version from the versionTagList
     // using semver maxSatisfying with range *
     // should return the highest version
-    let latestVersion = semverMaxSatisfying(versionTagList, '*')
+    let latestVersion = semverMaxSatisfying(versionTagList, '*', { includePrerelease: true })
     if (latestVersion === null) {
       core.setFailed('unable to locate latest version')
     } else {
@@ -211,7 +209,7 @@ module.exports = async function getVersion(
     // get the latest version from the versionTagList
     // using semver maxSatisfying with range *
     // should return the highest version
-    let latestVersion = semverMaxSatisfying(versionTagList, '*')
+    let latestVersion = semverMaxSatisfying(versionTagList, '*', { includePrerelease: true })
     if (latestVersion === null) {
       core.setFailed('unable to locate latest version')
     } else {
