@@ -2,6 +2,6 @@
 // ------------------------------------
 //
 // ------------------------------------
-const releaseVersion = require('./lib/index')
-releaseVersion()
+const main = require('./lib/index')
+main()
 // EOF
