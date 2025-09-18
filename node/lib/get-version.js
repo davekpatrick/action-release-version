@@ -60,7 +60,7 @@ module.exports = async function getVersion(
         ']'
     )
     if (gitRepoOwnerName === undefined) {
-      throw new Error('Undefined GitHub repository.owner.name');
+      core.debug('Undefined GitHub repository.owner.name')
     }
     let gitOwner = gitRepoOwnerLogin
     // ensure we have valid repository information
