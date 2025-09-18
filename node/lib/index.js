@@ -47,8 +47,10 @@ module.exports = async function main() {
     } else {
       throw new Error('No API token found')
     }
-    core.setSecret(apiToken) // ensure we don't log the token
-
+    // ensure we mask the token in logs
+    core.info('token length[' + apiToken.length + ']')
+    core.setSecret(apiToken)
+    
     core.endGroup()
     // ------------------------------------
     // ------------------------------------
