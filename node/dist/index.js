@@ -86,10 +86,10 @@ module.exports = async function getReleaseType(
     let gitOwner = gitRepoOwnerLogin
     // ensure we have valid repository information
     if (gitOwner === null || gitOwner === '' || gitOwner === undefined) {
-      core.setFailed('Unable to locate the repository owner')
+      throw new Error('Unable to locate the repository owner')
     }
     if (gitRepo === null || gitRepo === '' || gitRepo === undefined) {
-      core.setFailed('Unable to locate the repository name')
+      throw new Error('Unable to locate the repository name')
     }
     core.debug('gitOwner[' + gitOwner + '] gitRepo[' + gitRepo + ']')
     // ------------------------------------
@@ -98,7 +98,7 @@ module.exports = async function getReleaseType(
     //      https://octokit.github.io/rest.js/v18#authentication
     const octokit = github.getOctokit(argApiToken)
     if (octokit === null || octokit === undefined) {
-      core.setFailed('Unable to create authenticated GitHub client')
+      throw new Error('Unable to create authenticated GitHub client')
     }
     // ------------------------------------
     // remove the current version from the version history
@@ -143,7 +143,7 @@ module.exports = async function getReleaseType(
           core.info('versionDiff[' + versionDiff + ']')
           if (versionDiff === null || versionDiff === undefined) {
             // no difference found between the current and previous version
-            core.setFailed(
+            throw new Error(
               'No difference between current[' +
                 argCurrentVersion +
                 '] and previous[' +
@@ -176,7 +176,7 @@ module.exports = async function getReleaseType(
         )
         if (previousVersion === null || previousVersion === undefined) {
           // this should not happen as we have version history
-          core.setFailed('No previous versions found')
+          throw new Error('No previous versions found')
         } else {
           // determine the release type based on the difference between the current and previous version
           core.info('Previous version located [' + previousVersion + ']')
@@ -186,7 +186,7 @@ module.exports = async function getReleaseType(
           core.info('versionDiff[' + versionDiff + ']')
           if (versionDiff === null || versionDiff === undefined) {
             // no difference found between the current and previous version
-            core.setFailed(
+            throw new Error(
               'No difference between current[' +
                 argCurrentVersion +
                 '] and previous[' +
@@ -223,6 +223,7 @@ module.exports = async function getReleaseType(
     // Should any error occur, the action will fail and the workflow will stop
     // Using the actions toolkit (core) package to log a message and set exit code
     core.setFailed(error.message)
+    process.exit(core.ExitCode.Failure)
   }
 } // getReleaseType
 // EOF
@@ -249,7 +250,6 @@ module.exports = async function getVersion(
   argTagPrefix = 'v',
   argInceptionVersionTag = '0.0.0'
 ) {
-  try {
     // ------------------------------------
     // getVersion
     // Retrieve the current version tag from the repository
@@ -300,10 +300,10 @@ module.exports = async function getVersion(
     let gitOwner = gitRepoOwnerLogin
     // ensure we have valid repository information
     if (gitOwner === null || gitOwner === '' || gitOwner === undefined) {
-      core.setFailed('Unable to locate the repository owner')
+      throw new Error('Unable to locate the repository owner')
     }
     if (gitRepo === null || gitRepo === '' || gitRepo === undefined) {
-      core.setFailed('Unable to locate the repository name')
+      throw new Error('Unable to locate the repository name')
     }
     core.debug('gitOwner[' + gitOwner + '] gitRepo[' + gitRepo + ']')
     // setup authenticated github client
@@ -311,7 +311,7 @@ module.exports = async function getVersion(
     //      https://octokit.github.io/rest.js/v18#authentication
     const octokit = github.getOctokit(argApiToken)
     if (octokit === null || octokit === undefined) {
-      core.setFailed('Unable to create authenticated GitHub client')
+      throw new Error('Unable to create authenticated GitHub client')
     }
     // ------------------------------------
     // build an array of release version tags
@@ -375,13 +375,13 @@ module.exports = async function getVersion(
       })
       core.debug('getRefData[' + JSON.stringify(getRefData) + ']')
       if (getRefData.status !== 200) {
-        core.setFailed('Unable to retrieve ref[' + getRef + '] data')
+        throw new Error('Unable to retrieve ref[' + getRef + '] data')
       }
       core.info('tagSha[' + getRefData.data.object.sha + ']')
       // ensure we have a valid semver tag
       let tagSemVer = semverClean(tagData)
       if (tagSemVer === null) {
-        core.setFailed('Invalid semver tag[' + tagData + ']')
+        throw new Error('Invalid semver tag[' + tagData + ']')
       }
       outVersion = tagSemVer
     } else if (github.context.eventName === 'push') {
@@ -435,7 +435,7 @@ module.exports = async function getVersion(
         includePrerelease: true,
       })
       if (latestVersion === null) {
-        core.setFailed('unable to locate latest version')
+        throw new Error('unable to locate latest version')
       } else {
         outVersion = latestVersion
       }
@@ -457,7 +457,7 @@ module.exports = async function getVersion(
         includePrerelease: true,
       })
       if (latestVersion === null) {
-        core.setFailed('unable to locate latest version')
+        throw new Error('unable to locate latest version')
       } else {
         outVersion = latestVersion
       }
@@ -471,14 +471,14 @@ module.exports = async function getVersion(
         github.context.payload.inputs.version === undefined ||
         github.context.payload.inputs.version === ''
       ) {
-        core.setFailed('No version input provided for workflow_dispatch event')
+        throw new Error('No version input provided for workflow_dispatch event')
       }
       let inputVersion = github.context.payload.inputs.version
       core.info('inputVersion[' + inputVersion + ']')
       let semVer = semverClean(inputVersion)
       if (semVer === null) {
         // strange, the input provided is invalid
-        core.setFailed('Invalid semver version[' + inputVersion + ']')
+        throw new Error('Invalid semver version[' + inputVersion + ']')
       }
       outVersion = semVer
     } else {
@@ -492,11 +492,6 @@ module.exports = async function getVersion(
       version: outVersion,
       history: outHistory,
     }
-  } catch (error) {
-    // Should any error occur, the action will fail and the workflow will stop
-    // Using the actions toolkit (core) package to log a message and set exit code
-    core.setFailed(error.message)
-  }
 } // getVersion
 // EOF
 
@@ -509,7 +504,7 @@ module.exports = async function getVersion(
 // BOF
 // ------------------------------------
 const packageName = '@davekpatrick/action-release-version'
-const packageVersion = '0.2.0'
+const packageVersion = '0.0.0'
 // ------------------------------------
 // External modules
 // ------------------------------------
@@ -553,7 +548,7 @@ module.exports = async function main() {
       core.debug('Environment API token found')
       apiToken = envApiToken
     } else {
-      core.setFailed('No API token found')
+      throw new Error('No API token found')
     }
     core.setSecret(apiToken) // ensure we don't log the token
 
@@ -581,7 +576,7 @@ module.exports = async function main() {
       let semVer = semver.clean(argVersion)
       if (semVer === null || semVer === '' || semVer === undefined) {
         // strange, the input provided is invalid
-        core.setFailed('Invalid semver version[' + argVersion + ']')
+        throw new Error('Invalid semver version[' + argVersion + ']')
       }
       currentVersion = semVer
       core.info(
@@ -687,6 +682,7 @@ module.exports = async function main() {
     // Should any error occur, the action will fail and the workflow will stop
     // Using the actions toolkit (core) package to log a message and set exit code
     core.setFailed(error.message)
+    process.exit(core.ExitCode.Failure)
   }
 }
 // EOF
