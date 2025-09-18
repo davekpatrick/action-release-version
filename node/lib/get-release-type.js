@@ -80,10 +80,10 @@ module.exports = async function getReleaseType(
     let gitOwner = gitRepoOwnerLogin
     // ensure we have valid repository information
     if (gitOwner === null || gitOwner === '' || gitOwner === undefined) {
-      core.setFailed('Unable to locate the repository owner')
+      throw new Error('Unable to locate the repository owner')
     }
     if (gitRepo === null || gitRepo === '' || gitRepo === undefined) {
-      core.setFailed('Unable to locate the repository name')
+      throw new Error('Unable to locate the repository name')
     }
     core.debug('gitOwner[' + gitOwner + '] gitRepo[' + gitRepo + ']')
     // ------------------------------------
@@ -92,7 +92,7 @@ module.exports = async function getReleaseType(
     //      https://octokit.github.io/rest.js/v18#authentication
     const octokit = github.getOctokit(argApiToken)
     if (octokit === null || octokit === undefined) {
-      core.setFailed('Unable to create authenticated GitHub client')
+      throw new Error('Unable to create authenticated GitHub client')
     }
     // ------------------------------------
     // remove the current version from the version history
@@ -137,7 +137,7 @@ module.exports = async function getReleaseType(
           core.info('versionDiff[' + versionDiff + ']')
           if (versionDiff === null || versionDiff === undefined) {
             // no difference found between the current and previous version
-            core.setFailed(
+            throw new Error(
               'No difference between current[' +
                 argCurrentVersion +
                 '] and previous[' +
@@ -170,7 +170,7 @@ module.exports = async function getReleaseType(
         )
         if (previousVersion === null || previousVersion === undefined) {
           // this should not happen as we have version history
-          core.setFailed('No previous versions found')
+          throw new Error('No previous versions found')
         } else {
           // determine the release type based on the difference between the current and previous version
           core.info('Previous version located [' + previousVersion + ']')
@@ -180,7 +180,7 @@ module.exports = async function getReleaseType(
           core.info('versionDiff[' + versionDiff + ']')
           if (versionDiff === null || versionDiff === undefined) {
             // no difference found between the current and previous version
-            core.setFailed(
+            throw new Error(
               'No difference between current[' +
                 argCurrentVersion +
                 '] and previous[' +

@@ -45,7 +45,7 @@ module.exports = async function main() {
       core.debug('Environment API token found')
       apiToken = envApiToken
     } else {
-      core.setFailed('No API token found')
+      throw new Error('No API token found')
     }
     core.setSecret(apiToken) // ensure we don't log the token
 
@@ -73,7 +73,7 @@ module.exports = async function main() {
       let semVer = semver.clean(argVersion)
       if (semVer === null || semVer === '' || semVer === undefined) {
         // strange, the input provided is invalid
-        core.setFailed('Invalid semver version[' + argVersion + ']')
+        throw new Error('Invalid semver version[' + argVersion + ']')
       }
       currentVersion = semVer
       core.info(
