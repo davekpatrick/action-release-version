@@ -179,7 +179,7 @@ module.exports = async function main() {
     // Should any error occur, the action will fail and the workflow will stop
     // Using the actions toolkit (core) package to log a message and set exit code
     core.setFailed(error.message)
-    return null
+    process.exit(core.ExitCode.Failure)
   }
 }
 // EOF

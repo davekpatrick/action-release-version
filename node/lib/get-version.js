@@ -64,10 +64,10 @@ module.exports = async function getVersion(
     let gitOwner = gitRepoOwnerLogin
     // ensure we have valid repository information
     if (gitOwner === null || gitOwner === '' || gitOwner === undefined) {
-      new Error('Unable to locate the repository owner')
+      throw new Error('Unable to locate the repository owner')
     }
     if (gitRepo === null || gitRepo === '' || gitRepo === undefined) {
-      new Error('Unable to locate the repository name')
+      throw new Error('Unable to locate the repository name')
     }
     core.debug('gitOwner[' + gitOwner + '] gitRepo[' + gitRepo + ']')
     // setup authenticated github client
@@ -75,7 +75,7 @@ module.exports = async function getVersion(
     //      https://octokit.github.io/rest.js/v18#authentication
     const octokit = github.getOctokit(argApiToken)
     if (octokit === null || octokit === undefined) {
-      new Error('Unable to create authenticated GitHub client')
+      throw new Error('Unable to create authenticated GitHub client')
     }
     // ------------------------------------
     // build an array of release version tags
@@ -139,13 +139,13 @@ module.exports = async function getVersion(
       })
       core.debug('getRefData[' + JSON.stringify(getRefData) + ']')
       if (getRefData.status !== 200) {
-        new Error('Unable to retrieve ref[' + getRef + '] data')
+        throw new Error('Unable to retrieve ref[' + getRef + '] data')
       }
       core.info('tagSha[' + getRefData.data.object.sha + ']')
       // ensure we have a valid semver tag
       let tagSemVer = semverClean(tagData)
       if (tagSemVer === null) {
-        new Error('Invalid semver tag[' + tagData + ']')
+        throw new Error('Invalid semver tag[' + tagData + ']')
       }
       outVersion = tagSemVer
     } else if (github.context.eventName === 'push') {
@@ -199,7 +199,7 @@ module.exports = async function getVersion(
         includePrerelease: true,
       })
       if (latestVersion === null) {
-        new Error('unable to locate latest version')
+        throw new Error('unable to locate latest version')
       } else {
         outVersion = latestVersion
       }
@@ -221,7 +221,7 @@ module.exports = async function getVersion(
         includePrerelease: true,
       })
       if (latestVersion === null) {
-        new Error('unable to locate latest version')
+        throw new Error('unable to locate latest version')
       } else {
         outVersion = latestVersion
       }
@@ -235,14 +235,14 @@ module.exports = async function getVersion(
         github.context.payload.inputs.version === undefined ||
         github.context.payload.inputs.version === ''
       ) {
-        new Error('No version input provided for workflow_dispatch event')
+        throw new Error('No version input provided for workflow_dispatch event')
       }
       let inputVersion = github.context.payload.inputs.version
       core.info('inputVersion[' + inputVersion + ']')
       let semVer = semverClean(inputVersion)
       if (semVer === null) {
         // strange, the input provided is invalid
-        new Error('Invalid semver version[' + inputVersion + ']')
+        throw new Error('Invalid semver version[' + inputVersion + ']')
       }
       outVersion = semVer
     } else {
