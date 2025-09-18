@@ -82,11 +82,15 @@ module.exports = async function main() {
       outVersionTag = currentVersion
       return outVersionTag
     } else {
-      getVersionData = await getVersion(
-        apiToken,
-        argTagPrefix,
-        argInceptionVersionTag
+      try {
+        getVersionData = await getVersion(
+          apiToken,
+          argTagPrefix,
+          argInceptionVersionTag
       )
+      } catch (error) { 
+        throw error
+      }
       currentVersion = getVersionData.version
     }
     core.debug('getVersionData[' + JSON.stringify(getVersionData) + ']')
