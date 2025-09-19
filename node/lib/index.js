@@ -156,8 +156,6 @@ module.exports = async function main() {
     core.endGroup()
     core.startGroup('Execution')
 
-    
-
     if (currentVersion === null) {
       // TODO: review logic here
       // no current version, so start at argInceptionVersionTag (aka 0.0.0) and increment
@@ -178,7 +176,6 @@ module.exports = async function main() {
     }
     // ------------------------------------
     core.endGroup()
-
 
     core.info(`version[${outVersionTag}]`)
     // remember output is defined in action metadata file
