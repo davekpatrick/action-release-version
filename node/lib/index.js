@@ -42,16 +42,16 @@ module.exports = async function main() {
       envApiToken !== '' &&
       envApiToken !== undefined
     ) {
-      core.debug('Environment API token found')
+      core.debug('API token Environment variable found')
       apiToken = envApiToken
     } else {
       throw new Error('No API token found')
     }
     // ensure we mask the token in logs
-    core.info('token length[' + apiToken.length + ']')
+    core.debug('API token length[' + apiToken.length + ']')
     core.setSecret(apiToken)
-    
     core.endGroup()
+    core.startGroup('Setup')
     // ------------------------------------
     // ------------------------------------
     //
@@ -153,6 +153,11 @@ module.exports = async function main() {
       getVersionData.history
     )
     core.info('getReleaseTypeData[' + JSON.stringify(getReleaseTypeData) + ']')
+    core.endGroup()
+    core.startGroup('Execute')
+
+    
+
     if (currentVersion === null) {
       // TODO: review logic here
       // no current version, so start at argInceptionVersionTag (aka 0.0.0) and increment
@@ -172,6 +177,8 @@ module.exports = async function main() {
       }
     }
     // ------------------------------------
+    core.endGroup()
+
 
     core.info(`version[${outVersionTag}]`)
     // remember output is defined in action metadata file
