@@ -117,8 +117,6 @@ jobs:
       with:
         # apiToken: ${{ secrets.GITHUB_TOKEN }}
         tagPrefix: ''
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Test Output (non-Windows)
       if: ${{ runner.os != 'Windows' }}
       run: |
