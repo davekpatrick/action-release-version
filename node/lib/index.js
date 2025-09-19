@@ -15,7 +15,7 @@ const getReleaseType = require('./get-release-type')
 //
 module.exports = async function main() {
   try {
-    core.startGroup('Initialize')
+    core.startGroup('Initialization')
     core.info(
       'package[' + packageName + ']' + ' version[' + packageVersion + ']'
     )
@@ -42,14 +42,16 @@ module.exports = async function main() {
       envApiToken !== '' &&
       envApiToken !== undefined
     ) {
-      core.debug('Environment API token found')
+      core.debug('API token Environment variable found')
       apiToken = envApiToken
     } else {
       throw new Error('No API token found')
     }
-    core.setSecret(apiToken) // ensure we don't log the token
-
+    // ensure we mask the token in logs
+    core.debug('API token length[' + apiToken.length + ']')
+    core.setSecret(apiToken)
     core.endGroup()
+    core.startGroup('Preparation')
     // ------------------------------------
     // ------------------------------------
     //
@@ -151,6 +153,9 @@ module.exports = async function main() {
       getVersionData.history
     )
     core.info('getReleaseTypeData[' + JSON.stringify(getReleaseTypeData) + ']')
+    core.endGroup()
+    core.startGroup('Execution')
+
     if (currentVersion === null) {
       // TODO: review logic here
       // no current version, so start at argInceptionVersionTag (aka 0.0.0) and increment
@@ -170,6 +175,7 @@ module.exports = async function main() {
       }
     }
     // ------------------------------------
+    core.endGroup()
 
     core.info(`version[${outVersionTag}]`)
     // remember output is defined in action metadata file
