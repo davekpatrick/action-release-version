@@ -15,7 +15,7 @@ const getReleaseType = require('./get-release-type')
 //
 module.exports = async function main() {
   try {
-    core.startGroup('Initialize')
+    core.startGroup('Initialization')
     core.info(
       'package[' + packageName + ']' + ' version[' + packageVersion + ']'
     )
@@ -51,7 +51,7 @@ module.exports = async function main() {
     core.debug('API token length[' + apiToken.length + ']')
     core.setSecret(apiToken)
     core.endGroup()
-    core.startGroup('Setup')
+    core.startGroup('Preparation')
     // ------------------------------------
     // ------------------------------------
     //
@@ -154,7 +154,7 @@ module.exports = async function main() {
     )
     core.info('getReleaseTypeData[' + JSON.stringify(getReleaseTypeData) + ']')
     core.endGroup()
-    core.startGroup('Execute')
+    core.startGroup('Execution')
 
     
 
