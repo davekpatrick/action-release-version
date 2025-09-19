@@ -29,9 +29,6 @@ jobs:
       with:
         node-version: ${{ matrix.nodeVersion }}
     - uses: actions/checkout@v3
-    - name: Calculate a short git SHA
-      id: git-sha-short
-      run: echo "GITHUB_SHA_SHORT=$(echo ${{ github.sha }} | cut -c1-8)" >> $GITHUB_OUTPUT
     - name: Install dependencies
       run: |
         cd node
@@ -44,7 +41,7 @@ jobs:
       run: |
         cd node
         npm run format
-    - name: Run Unit Tests
+    - name: Unit Tests
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -52,10 +49,15 @@ jobs:
         npm run test
     - name: Calculate Version
       id: version
-      uses: davekpatrick/action-release-version@main # use main branch for latest
+      # use main branch for latest for now
+      uses: davekpatrick/action-release-version@main 
       with:
         apiToken: ${{ secrets.GITHUB_TOKEN }}
-    - name: Build Version
+    - name: Calculate a short git SHA
+      id: git-sha-short
+      # temporary, will be replaced with action-create-version later
+      run: echo "GITHUB_SHA_SHORT=$(echo ${{ github.sha }} | cut -c1-8)" >> $GITHUB_OUTPUT
+    - name: Set Version
       run: |
         cd node
         npm version ${{ steps.version.outputs.versionTag }}+build-${{ steps.git-sha-short.outputs.GITHUB_SHA_SHORT }}-${{ github.run_number }}${{ github.run_attempt }}
@@ -63,6 +65,10 @@ jobs:
       run: |
         cd node
         npm run build
+    - name: Smoke Test
+      uses: ./
+      with:
+        apiToken: ${{ secrets.GITHUB_TOKEN }}
     - uses: actions/upload-artifact@v4
       with:
         name: ${{ github.event.repository.name }}-build
@@ -90,7 +96,7 @@ jobs:
         - 18
         - 20
         - 22
-      fail-fast: false
+      fail-fast: false # do not cancel other jobs if one fails
     runs-on: ${{ matrix.operatingSystem }}
     needs: [build]
     #
@@ -102,22 +108,23 @@ jobs:
       if: ${{ runner.os != 'Windows' }}
       run: |
         node --version
-        ls -lR
         set
+        ls -lR
     - name: Validate setup
       if: ${{ runner.os == 'Windows' }}
       shell: powershell
       run: |
         & node --version
+        Get-ChildItem Env:
         Set-Location -Path ./
         Get-ChildItem -Recurse
-    - name: Build Test
+    - name: Smoke Test
       id: build-test
       uses: ./
       with:
-        # apiToken: ${{ secrets.GITHUB_TOKEN }}
+        apiToken: ${{ secrets.GITHUB_TOKEN }}
         tagPrefix: ''
-    - name: Test Output (non-Windows)
+    - name: Test Output
       if: ${{ runner.os != 'Windows' }}
       run: |
         echo ${{ needs.build.outputs.versionTag }}
