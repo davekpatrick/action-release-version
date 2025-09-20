@@ -41,7 +41,7 @@ jobs:
       run: |
         cd node
         npm run format
-    - name: Unit Tests
+    - name: Unit Test
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -69,7 +69,9 @@ jobs:
       uses: ./
       with:
         apiToken: ${{ secrets.GITHUB_TOKEN }}
-    - uses: actions/upload-artifact@v4
+        tagPrefix: ''
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ github.event.repository.name }}-build
         if-no-files-found: error

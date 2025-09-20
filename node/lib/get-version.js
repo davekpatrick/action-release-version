@@ -164,7 +164,7 @@ module.exports = async function getVersion(
       repo: gitRepo,
       commit_sha: gitBeforeCommitSha, // sha of the commit before the push
     })
-    core.debug(
+    core.info(
       'gitBeforeCommitShaData[' + JSON.stringify(gitBeforeCommitShaData) + ']'
     )
     // get all branches where the given commit SHA is the latest commit
@@ -186,6 +186,10 @@ module.exports = async function getVersion(
     core.info(
       'getBeforeCommitBranches[' + JSON.stringify(getBeforeCommitBranches) + ']'
     )
+
+
+
+    
     // get the latest version from the outHistory
     // using semver maxSatisfying with range *
     // should return the highest version
