@@ -103,6 +103,21 @@ module.exports = async function getReleaseType(
   }
   core.debug('versionHistory[' + JSON.stringify(versionHistory) + ']')
   // ------------------------------------
+  // get default branch name
+  var gitDefaultBranch = null
+  try {
+    const gitRepoData = await octokit.rest.repos.get({
+      owner: gitOwner,
+      repo: gitRepo,
+    })
+    core.debug('gitRepoData[' + JSON.stringify(gitRepoData) + ']')
+    gitDefaultBranch = gitRepoData.data.default_branch
+    core.debug('gitDefaultBranch[' + gitDefaultBranch + ']')
+  } catch (error) {
+    throw new Error('Unable to locate the repository default branch')
+  }
+
+  // ------------------------------------
   // process the event types
   if (github.context.eventName === 'release') {
     // ------------------------------------
@@ -199,6 +214,76 @@ module.exports = async function getReleaseType(
     // a push event has occurred - determine the type based on commit messages since the last tag
     outEvent = github.context.eventName
     outType = 'push'
+    core.info('outType[' + outType + ']')
+  } else if (github.context.eventName === 'pull_request') {
+    // ------------------------------------
+    // a pull_request event has occurred
+    outEvent = github.context.eventName
+
+    // determine the type of change
+    if (versionHistory.length === 0) {
+      outType = 'initial'
+      outChange = null
+      core.info('Initial release version detected')
+    } else {
+      //
+      outType = 'build'
+      let gitHeadRef = github.context.payload.pull_request.head.ref
+      let gitBaseRef = github.context.payload.pull_request.base.ref
+      core.info(
+        'gitHeadRef[' + gitHeadRef + '] => gitBaseRef[' + gitBaseRef + ']'
+      )
+      //
+      if (gitBaseRef === gitDefaultBranch) {
+        core.info('Pull request to default branch detected')
+        // fix branch
+        // e.g. fix/issue-123
+        if (gitHeadRef.startsWith('fix/')) {
+          outChange = 'prepatch'
+          core.info('Patch change detected')
+        }
+        // feature branch
+        // e.g. feature/issue-123
+        else if (gitHeadRef.startsWith('feature/')) {
+          outChange = 'preminor'
+          core.info('Minor change detected')
+        }
+        // major branch
+        // e.g. major/issue-123
+        else if (gitHeadRef.startsWith('major/')) {
+          outChange = 'premajor'
+          core.info('Major change detected')
+        } else {
+          // default to patch change
+          outChange = 'preminor'
+          core.info('default to minor change')
+        }
+      } else {
+        core.info('Pull request to non-default branch detected')
+        // fix branch
+        // e.g. fix/issue-123
+        if (gitHeadRef.startsWith('fix/')) {
+          outChange = 'patch'
+          core.info('Patch change detected')
+        }
+        // feature branch
+        // e.g. feature/issue-123
+        else if (gitHeadRef.startsWith('feature/')) {
+          outChange = 'minor'
+          core.info('Minor change detected')
+        }
+        // major branch
+        // e.g. major/issue-123
+        else if (gitHeadRef.startsWith('major/')) {
+          outChange = 'major'
+          core.info('Major change detected')
+        } else {
+          // default to patch change
+          outChange = 'minor'
+          core.info('default to minor change')
+        }
+      }
+    }
     core.info('outType[' + outType + ']')
   } else {
     outEvent = 'unknown'
