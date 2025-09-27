@@ -1,10 +1,10 @@
 name: Continuous Delivery Publish
 run-name: "Continuous Delivery (CD) publishing release"
-
+## ---------------------------------------------------
 on:
   release:
     types: [published, edited]
-
+## ---------------------------------------------------
 jobs:
   build:
     runs-on: ubuntu-24.04

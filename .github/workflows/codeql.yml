@@ -13,6 +13,7 @@
 ---
 name: CodeQL Scan
 run-name: "CodeQL Vulnerabilities Scan"
+## ---------------------------------------------------
 on:
   push:
     branches:
@@ -23,7 +24,11 @@ on:
     - main
   schedule:
   - cron: '39 19 * * 6'
-
+## ---------------------------------------------------
+concurrency:
+  group: codeQLScan-${{ github.ref }}
+  cancel-in-progress: true
+## ---------------------------------------------------
 jobs:
   analyze:
     name: Analyze
