@@ -113,15 +113,17 @@ module.exports = async function getReleaseType(
     core.debug('gitRepoData[' + JSON.stringify(gitRepoData) + ']')
     gitDefaultBranch = gitRepoData.data.default_branch
     if (
-      gitDefaultBranch === null || 
+      gitDefaultBranch === null ||
       gitDefaultBranch === '' ||
       gitDefaultBranch === undefined
-    ) { 
+    ) {
       throw new Error('Unable to locate the repository default branch')
     }
     core.info('gitDefaultBranch[' + gitDefaultBranch + ']')
   } catch (error) {
-    throw new Error('Failed to get repository information[' + error.message + ']')
+    throw new Error(
+      'Failed to get repository information[' + error.message + ']'
+    )
   }
   // ------------------------------------
   // process the event types
@@ -218,9 +220,6 @@ module.exports = async function getReleaseType(
     outEvent = github.context.eventName
     outType = 'push'
     core.info('outType[' + outType + ']')
-
-
-    
   } else if (github.context.eventName === 'pull_request') {
     // ------------------------------------
     // a pull_request event has occurred
@@ -233,7 +232,7 @@ module.exports = async function getReleaseType(
     } else {
       //
       outType = 'build'
-      // 
+      //
       let gitHeadRef = github.context.payload.pull_request.head.ref
       let gitBaseRef = github.context.payload.pull_request.base.ref
       core.info(
@@ -246,15 +245,15 @@ module.exports = async function getReleaseType(
       core.debug('pullRequestTitle[' + pullRequestTitle + ']')
       core.debug('pullRequestBody[' + pullRequestBody + ']')
       core.debug('pullRequestLabels[' + JSON.stringify(pullRequestLabels) + ']')
-      // 
+      //
       // determine the type of change
       // fix branch
       // e.g. fix/issue-123
       if (
-          gitHeadRef.startsWith('fix/') ||
-          pullRequestTitle.includes('[fix]') ||
-          (pullRequestLabels.some(label => label.name === 'fix'))
-        ) {
+        gitHeadRef.startsWith('fix/') ||
+        pullRequestTitle.includes('[fix]') ||
+        pullRequestLabels.some((label) => label.name === 'fix')
+      ) {
         outChange = 'patch'
         core.info('Patch change detected')
       }
@@ -263,8 +262,8 @@ module.exports = async function getReleaseType(
       else if (
         gitHeadRef.startsWith('feature/') ||
         pullRequestTitle.includes('[feature]') ||
-        (pullRequestLabels.some(label => label.name === 'feature'))
-        ) {
+        pullRequestLabels.some((label) => label.name === 'feature')
+      ) {
         outChange = 'minor'
         core.info('Minor change detected')
       }
@@ -273,8 +272,8 @@ module.exports = async function getReleaseType(
       else if (
         gitHeadRef.startsWith('major/') ||
         pullRequestTitle.includes('[major]') ||
-        (pullRequestLabels.some(label => label.name === 'major'))
-        ) {
+        pullRequestLabels.some((label) => label.name === 'major')
+      ) {
         outChange = 'major'
         core.info('Major change detected')
       } else {
@@ -285,7 +284,7 @@ module.exports = async function getReleaseType(
       // check if the pull request is to the default branch
       if (gitBaseRef === gitDefaultBranch) {
         core.info('Pull request to default branch detected')
-        outChange = "pre" + outChange
+        outChange = 'pre' + outChange
         core.info('Pre-release change detected')
       } else {
         core.info('Pull request to non-default branch detected')

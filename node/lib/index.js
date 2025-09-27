@@ -3,7 +3,7 @@
 const packageName = '@@NPM_PACKAGE_NAME@@'
 const packageVersion = '@@NPM_PACKAGE_VERSION@@'
 // ------------------------------------
-const process = require("node:process");
+const process = require('node:process')
 // ------------------------------------
 // External modules
 // ------------------------------------
