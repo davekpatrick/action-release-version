@@ -12,8 +12,8 @@ const semverDiff = require('semver/functions/diff')
 // ------------------------------------
 module.exports = async function getReleaseType(
   argApiToken,
-  argCurrentVersion,
-  argVersionHistory
+  argCurrentVersion = '0.0.0',
+  argVersionHistory = []
 ) {
   // ------------------------------------
   core.debug('Start getReleaseType')
@@ -112,11 +112,17 @@ module.exports = async function getReleaseType(
     })
     core.debug('gitRepoData[' + JSON.stringify(gitRepoData) + ']')
     gitDefaultBranch = gitRepoData.data.default_branch
-    core.debug('gitDefaultBranch[' + gitDefaultBranch + ']')
+    if (
+      gitDefaultBranch === null || 
+      gitDefaultBranch === '' ||
+      gitDefaultBranch === undefined
+    ) { 
+      throw new Error('Unable to locate the repository default branch')
+    }
+    core.info('gitDefaultBranch[' + gitDefaultBranch + ']')
   } catch (error) {
-    throw new Error('Unable to locate the repository default branch')
+    throw new Error('Failed to get repository information[' + error.message + ']')
   }
-
   // ------------------------------------
   // process the event types
   if (github.context.eventName === 'release') {
@@ -126,7 +132,7 @@ module.exports = async function getReleaseType(
     // check how much version history we have
     if (versionHistory.length === 0) {
       outType = 'initial'
-      outChange = null
+      outChange = 'none'
       core.info('Initial release version detected')
     } else {
       core.debug('Locating previous version')
@@ -138,10 +144,7 @@ module.exports = async function getReleaseType(
       )
       if (previousVersion === null || previousVersion === undefined) {
         // this should not happen as we have version history
-        // TODO:  ... should we fail here ?
-        outType = 'initial'
-        outChange = null
-        core.warning('No previous versions found')
+        throw new Error('No previous versions found')
       } else {
         // determine the release type based on the difference between the current and previous version
         core.info('Previous version located [' + previousVersion + ']')
@@ -159,7 +162,7 @@ module.exports = async function getReleaseType(
               '] versions'
           )
         } else {
-          // this is a release event ... so we have an already released version
+          // this is a release event ... so we have an already released the version
           outType = 'released'
           outChange = versionDiff
         }
@@ -173,7 +176,7 @@ module.exports = async function getReleaseType(
     // check how much version history we have
     if (versionHistory.length === 0) {
       outType = 'initial'
-      outChange = null
+      outChange = 'none'
       core.info('Initial release version detected')
     } else {
       // locate the previous version
@@ -215,73 +218,77 @@ module.exports = async function getReleaseType(
     outEvent = github.context.eventName
     outType = 'push'
     core.info('outType[' + outType + ']')
+
+
+    
   } else if (github.context.eventName === 'pull_request') {
     // ------------------------------------
     // a pull_request event has occurred
     outEvent = github.context.eventName
-
-    // determine the type of change
+    // check how much version history we have
     if (versionHistory.length === 0) {
       outType = 'initial'
-      outChange = null
+      outChange = 'none'
       core.info('Initial release version detected')
     } else {
       //
       outType = 'build'
+      // 
       let gitHeadRef = github.context.payload.pull_request.head.ref
       let gitBaseRef = github.context.payload.pull_request.base.ref
       core.info(
-        'gitHeadRef[' + gitHeadRef + '] => gitBaseRef[' + gitBaseRef + ']'
+        'gitHeadRef[' + gitHeadRef + '] -> gitBaseRef[' + gitBaseRef + ']'
       )
-      //
+      // get pull request information
+      let pullRequestTitle = github.context.payload.pull_request.title
+      let pullRequestBody = github.context.payload.pull_request.body
+      let pullRequestLabels = github.context.payload.pull_request.labels
+      core.debug('pullRequestTitle[' + pullRequestTitle + ']')
+      core.debug('pullRequestBody[' + pullRequestBody + ']')
+      core.debug('pullRequestLabels[' + JSON.stringify(pullRequestLabels) + ']')
+      // 
+      // determine the type of change
+      // fix branch
+      // e.g. fix/issue-123
+      if (
+          gitHeadRef.startsWith('fix/') ||
+          pullRequestTitle.includes('[fix]') ||
+          (pullRequestLabels.some(label => label.name === 'fix'))
+        ) {
+        outChange = 'patch'
+        core.info('Patch change detected')
+      }
+      // feature branch
+      // e.g. feature/issue-123
+      else if (
+        gitHeadRef.startsWith('feature/') ||
+        pullRequestTitle.includes('[feature]') ||
+        (pullRequestLabels.some(label => label.name === 'feature'))
+        ) {
+        outChange = 'minor'
+        core.info('Minor change detected')
+      }
+      // major branch
+      // e.g. major/issue-123
+      else if (
+        gitHeadRef.startsWith('major/') ||
+        pullRequestTitle.includes('[major]') ||
+        (pullRequestLabels.some(label => label.name === 'major'))
+        ) {
+        outChange = 'major'
+        core.info('Major change detected')
+      } else {
+        // default to patch change
+        outChange = 'minor'
+        core.info('default to minor change')
+      }
+      // check if the pull request is to the default branch
       if (gitBaseRef === gitDefaultBranch) {
         core.info('Pull request to default branch detected')
-        // fix branch
-        // e.g. fix/issue-123
-        if (gitHeadRef.startsWith('fix/')) {
-          outChange = 'prepatch'
-          core.info('Patch change detected')
-        }
-        // feature branch
-        // e.g. feature/issue-123
-        else if (gitHeadRef.startsWith('feature/')) {
-          outChange = 'preminor'
-          core.info('Minor change detected')
-        }
-        // major branch
-        // e.g. major/issue-123
-        else if (gitHeadRef.startsWith('major/')) {
-          outChange = 'premajor'
-          core.info('Major change detected')
-        } else {
-          // default to patch change
-          outChange = 'preminor'
-          core.info('default to minor change')
-        }
+        outChange = "pre" + outChange
+        core.info('Pre-release change detected')
       } else {
         core.info('Pull request to non-default branch detected')
-        // fix branch
-        // e.g. fix/issue-123
-        if (gitHeadRef.startsWith('fix/')) {
-          outChange = 'patch'
-          core.info('Patch change detected')
-        }
-        // feature branch
-        // e.g. feature/issue-123
-        else if (gitHeadRef.startsWith('feature/')) {
-          outChange = 'minor'
-          core.info('Minor change detected')
-        }
-        // major branch
-        // e.g. major/issue-123
-        else if (gitHeadRef.startsWith('major/')) {
-          outChange = 'major'
-          core.info('Major change detected')
-        } else {
-          // default to patch change
-          outChange = 'minor'
-          core.info('default to minor change')
-        }
       }
     }
     core.info('outType[' + outType + ']')
