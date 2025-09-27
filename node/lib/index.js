@@ -3,6 +3,8 @@
 const packageName = '@@NPM_PACKAGE_NAME@@'
 const packageVersion = '@@NPM_PACKAGE_VERSION@@'
 // ------------------------------------
+const process = require("node:process");
+// ------------------------------------
 // External modules
 // ------------------------------------
 const core = require('@actions/core') // Microsoft's actions toolkit
@@ -65,7 +67,7 @@ module.exports = async function main() {
     // - on workflow_dispatch event, use the input version
     // - get the latest tag from the repo
     // - Repository action variable, RELEASE_VERSION
-    // - if no version found, use argInceptionoutVersionTag
+    // - if no version found, use argInceptionVersionTag
     // ------------------------------------
     var getVersionData = {}
     var currentVersion = null
