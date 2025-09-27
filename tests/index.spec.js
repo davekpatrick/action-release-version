@@ -261,7 +261,7 @@ describe("index.js", async function () {
     expect(result).to.equal(expectedVersion) // current version incremented
   })
 
-  it("Should use provided version input directly", async function () {
+  it("Should use provided version input as release version directly", async function () {
     // ---------------------------------------------------
     // Details
     // ------------
@@ -270,16 +270,31 @@ describe("index.js", async function () {
     // fixture inputs
     const apiToken = process.env["GITHUB_TOKEN"]
     //
-    const currentVersion = '2.3.4'
+    const currentVersion = '1.3.0'
     const expectedVersion = currentVersion
+    // Mock getVersion to return a current version
+    const getVersionStub = () => Promise.resolve(
+      {
+        version: currentVersion,
+        history: [
+          '0.1.0',
+          '0.2.0',
+          '1.0.0',
+          '1.1.0',
+          '1.2.0',
+          '1.2.1',
+          '1.2.2',
+          currentVersion
+        ]
+      }
+    )
     // Mock core to return a specific version input
     const coreStub = {
       getInput: (input) => {
         switch(input) {
-          case 'tagPrefix': return 'v'
-          case 'inceptionVersionTag': return '0.0.0'
-          case 'argVersion': return currentVersion
           case 'apiToken': return apiToken
+          case 'argVersion': return currentVersion
+          case 'versionInputAsReleaseVersion': return 'true'
           default: return ''
         }
       },
@@ -294,6 +309,7 @@ describe("index.js", async function () {
     }
     // Use proxyquire to inject mocks
     const main = proxyquire(modulePath, {
+      './get-version': getVersionStub,
       '@actions/core': coreStub,
       'node:process': processMock
     })

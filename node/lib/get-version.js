@@ -4,7 +4,7 @@
 // ------------------------------------
 const core = require('@actions/core') // Microsoft's actions toolkit
 const github = require('@actions/github') // Microsoft's actions github toolkit
-// semver module
+// semver module requirements
 const semverClean = require('semver/functions/clean')
 const semverParse = require('semver/functions/parse')
 const semverMaxSatisfying = require('semver/ranges/max-satisfying')
@@ -12,7 +12,8 @@ const semverMaxSatisfying = require('semver/ranges/max-satisfying')
 module.exports = async function getVersion(
   argApiToken,
   argTagPrefix = 'v',
-  argInceptionVersionTag = '0.0.0'
+  argInceptionVersionTag = '0.0.0',
+  argCurrentVersion = null
 ) {
   // ------------------------------------
   // getVersion
@@ -32,10 +33,10 @@ module.exports = async function getVersion(
   //
   // https://github.com/actions/toolkit/blob/main/packages/github/src/context.ts
   // https://docs.github.com/en/actions/learn-github-actions/variables
-  // env.GITHUB_EVENT_NAME
-  core.info('contextType[' + github.context.eventName + ']')
+  // env.GITHUB_EVENT_NAM
   // need to remove the secrets from the context
   core.debug('context[' + JSON.stringify(github.context) + ']')
+  core.info('contextType[' + github.context.eventName + ']')
   // get the repo owner and name
   // TODO:
   // investigate github.context.payload.repository.owner.name
@@ -126,7 +127,16 @@ module.exports = async function getVersion(
   }
   // ------------------------------------
   // process the event types
-  if (github.context.eventName === 'release') {
+  if ( argCurrentVersion !== null && argCurrentVersion !== '') {
+    // use the provided current version
+    core.info('Version specified as action input[' + argCurrentVersion + ']')
+    let semVer = semverClean(argCurrentVersion)
+    if (semVer === null || semVer === '' || semVer === undefined) {
+      // strange, the input provided is invalid
+      throw new Error('Invalid semver version[' + argCurrentVersion + ']')
+    }
+    outVersion = semVer
+  } else if (github.context.eventName === 'release') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#releaseevent
     let tagData = github.context.payload.release.tag_name
     let getRef = 'tags/' + tagData
@@ -187,9 +197,6 @@ module.exports = async function getVersion(
       'getBeforeCommitBranches[' + JSON.stringify(getBeforeCommitBranches) + ']'
     )
 
-
-
-    
     // get the latest version from the outHistory
     // using semver maxSatisfying with range *
     // should return the highest version

@@ -18,6 +18,14 @@ inputs:
   version: 
     description: 'The semver version to use as the current version'
     required: false
+  versionInputAsReleaseVersion:
+    description: 'Use the current version input as the release version (true|false)'
+    required: false
+    default: 'false'
+  keywords:
+    description: 'A comma-separated list of keywords to identify the type of release'
+    required: false
+    default: 'major,minor,patch,premajor,preminor,prepatch,prerelease'
 ## ------------------------------
 outputs:
   versionTag: # id of output
