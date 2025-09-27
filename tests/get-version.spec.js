@@ -16,7 +16,6 @@ describe("get-version.js", async function () {
   // ---------------------------------------------------
   let moduleName = "get-version"
   let modulePath = path.resolve(dirNode, "lib", moduleName)
-  let originalContext
   // ---------------------------------------------------
   // Modules under test
   const github = require(dirNodeModules + path.sep + "@actions/github")
@@ -24,14 +23,22 @@ describe("get-version.js", async function () {
   // utility modules
   const semverValid = require(dirNodeModules + path.sep + 'semver/functions/valid')
   // ---------------------------------------------------
+  // Mocks
+  const exitStub = (code) => {
+    // Mock process.exit to prevent actual exit during tests
+    throw new Error("Exiting with code[" + code + "]");
+  }
+  const processMock = {
+    //
+    exit: exitStub
+  }
+  // ---------------------------------------------------
   beforeEach(() => {
-    // Store original context
-    originalContext = Object.assign({}, github.context)
+    //
   })
   // ---------------------------------------------------
   afterEach(() => {
-    // Restore original context
-    Object.assign(github.context, originalContext)
+    // 
     proxyquire.preserveCache()
   })
   // ---------------------------------------------------
@@ -48,7 +55,7 @@ describe("get-version.js", async function () {
     console.log("result:[" + typeof result + "]")
     // Validate the test result
     expect(result).to.be.a("function")
-  });
+  })
 
   it("Should accept default parameters", async function () {
     // ---------------------------------------------------
@@ -111,11 +118,12 @@ describe("get-version.js", async function () {
     // Use proxyquire to inject mocks
     const getVersionWithMocks = proxyquire(modulePath, {
       '@actions/github': githubMock,
-      '@actions/core': coreMock
+      '@actions/core': coreMock,
+      'node:process': processMock
     })
     // execute the test
     const result = await getVersionWithMocks(apiToken)
-    console.log("result:[" + result + "]")
+    console.log("result:[" + JSON.stringify(result) + "]")
     // Validate the test result
     expect(result.version).to.be.null
   })
@@ -182,11 +190,12 @@ describe("get-version.js", async function () {
     // Use proxyquire to inject mocks
     const getVersionWithMocks = proxyquire(modulePath, {
       '@actions/github': githubMock,
-      '@actions/core': coreMock
+      '@actions/core': coreMock,
+      'node:process': processMock
     })
     // execute the test
     const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
-    console.log("result:[" + result + "]")
+    console.log("result:[" + JSON.stringify(result) + "]")
     // Validate the test result
     expect(result.version).to.be.null
   })
@@ -260,11 +269,12 @@ describe("get-version.js", async function () {
     // Use proxyquire to inject mocks
     const getVersionWithMocks = proxyquire(modulePath, {
       '@actions/github': githubMock,
-      '@actions/core': coreMock
+      '@actions/core': coreMock,
+      'node:process': processMock
     })
     // execute the test
     const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
-    console.log("result:[" + result + "]")
+    console.log("result:[" + JSON.stringify(result) + "]")
     // Validate the test result
     expect(result.version).to.equal(expectedVersion)
     expect(semverValid(result.version)).to.not.be.null
@@ -337,11 +347,12 @@ describe("get-version.js", async function () {
     // Use proxyquire to inject mocks
     const main = proxyquire(modulePath, {
       '@actions/github': githubMock,
-      '@actions/core': coreMock
+      '@actions/core': coreMock,
+      'node:process': processMock
     })
     // execute the test
     const result = await main(apiToken, tagPrefix, inceptionVersion)
-    console.log("result:[" + result + "]")
+    console.log("result:[" + JSON.stringify(result) + "]")
     // Validate the test result
     expect(result.version).to.equal(expectedVersion)
     expect(semverValid(result.version)).to.not.be.null
@@ -421,11 +432,12 @@ describe("get-version.js", async function () {
     // Use proxyquire to inject mocks
     const getVersionWithMocks = proxyquire(modulePath, {
       '@actions/github': githubMock,
-      '@actions/core': coreMock
+      '@actions/core': coreMock,
+      'node:process': processMock
     })
     // execute the test
     const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
-    console.log("result:[" + result + "]")
+    console.log("result:[" + JSON.stringify(result) + "]")
     // Validate the test result
     expect(result.version).to.equal(releaseVersion)
     expect(semverValid(result.version)).to.not.be.null
@@ -522,12 +534,13 @@ describe("get-version.js", async function () {
     // Use proxyquire to inject mocks
     const getVersionWithMocks = proxyquire(modulePath, {
       '@actions/github': githubMock,
-      '@actions/core': coreMock
+      '@actions/core': coreMock,
+      'node:process': processMock
     })
     
     // execute the test
     const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
-    console.log("result:[" + result + "]")
+    console.log("result:[" + JSON.stringify(result) + "]")
     
     // Validate the test result
     expect(result.version).to.equal(expectedVersion)
@@ -616,12 +629,13 @@ describe("get-version.js", async function () {
     // Use proxyquire to inject mocks
     const getVersionWithMocks = proxyquire(modulePath, {
       '@actions/github': githubMock,
-      '@actions/core': coreMock
+      '@actions/core': coreMock,
+      'node:process': processMock
     })
     
     // execute the test
     const result = await getVersionWithMocks(apiToken, tagPrefix, inceptionVersion)
-    console.log("result:[" + result + "]")
+    console.log("result:[" + JSON.stringify(result) + "]")
     
     // Validate the test result
     expect(result.version).to.equal(inceptionVersion)

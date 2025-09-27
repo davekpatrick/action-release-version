@@ -1,5 +1,4 @@
 // BOF
-const { group } = require("node:console");
 const path = require("node:path");
 // project directories
 const dirRoot = path.normalize(__dirname + path.sep + "..");
@@ -17,6 +16,15 @@ describe("index.js", async function () {
   // ---------------------------------------------------
   let moduleName = "index"
   let modulePath = path.resolve(dirNode, "lib", moduleName)
+  // ---------------------------------------------------
+  // Mock process.exit to prevent actual exit during tests
+  const exitStub = (code) => {
+    throw new Error("Exiting with code[" + code + "]")
+  }
+  const processMock = {
+    exit: exitStub
+  }
+
 
   
   //let core
@@ -29,7 +37,7 @@ describe("index.js", async function () {
           ///console.log("process.env:[" + JSON.stringify(process.env, null, 2) + "]")
 
     //
-  });
+  })
 
   afterEach(() => {
     //
@@ -37,7 +45,7 @@ describe("index.js", async function () {
     //delete require.cache[require.resolve(dirNodeModules + path.sep + "@actions/github")]
 
     proxyquire.preserveCache()
-  });
+  })
   // ---------------------------------------------------
   // ---------------------------------------------------
   
@@ -54,7 +62,7 @@ describe("index.js", async function () {
     console.log("result:[" + typeof result + "]")
     // Validate the test result
     expect(result).to.be.a("function")
-  });
+  })
 
   it("Run with release default inputs (simplified)", async function () {
     // ---------------------------------------------------
@@ -67,12 +75,7 @@ describe("index.js", async function () {
     const inceptionVersion = process.env["INPUT_INCEPTIONVERSIONTAG"]
     //
     const expectedVersion = "0.1.0"
-    // Mock getReleaseType to always return 'minor' type
-    const getReleaseTypeStub = () => Promise.resolve(
-      {
-        event: 'push'
-      }
-    )
+
     // Mock getVersion to return inception version
     const getVersionStub = () => Promise.resolve(
       {
@@ -80,6 +83,14 @@ describe("index.js", async function () {
         history: [
           inceptionVersion,
         ]
+      }
+    )
+    // Mock getReleaseType to always return 'minor' type
+    const getReleaseTypeStub = () => Promise.resolve(
+      {
+        event: 'pull_request',
+        type: 'build',
+        change: 'minor'
       }
     )
     // Mock core module to avoid actual core.info/debug calls
@@ -97,20 +108,28 @@ describe("index.js", async function () {
       debug: () => {},
       info: () => {},
       warning: () => {},
-      setFailed: () => {}
+      //setFailed: () => {}
     }
     // Use proxyquire to inject mocks
     const main = proxyquire(modulePath, {
       './get-version': getVersionStub,
       './get-release-type': getReleaseTypeStub,
-      '@actions/core': coreMock
+      '@actions/core': coreMock,
+      'node:process': processMock
     })
     // execute the test
-    const result = await main();
+    const result = await main()
     console.log("result:[" + result + "]")
+    expect(result)
+      .to.be.a("string")
+      .and.to.equal(expectedVersion)
+      //.to.not.throw()
+
+    //const result = await main();
+    //console.log("result:[" + result + "]")
     // Validate the test result
-    expect( result ).to.be.a("string");
-    expect( result ).to.equal(expectedVersion);  // Should be inception version + 1
+    //expect( result ).to.be.a("string");
+    //expect( result ).to.equal(expectedVersion);  // Should be inception version + 1
   });
 
   it("Should increment minor version when no current version exists", async function () {
@@ -127,12 +146,20 @@ describe("index.js", async function () {
     const expectedVersion = "0.1.0"
     // Mock getVersion to return null (no current version)
     const getVersionStub = () => Promise.resolve(
+      
       {
         version: null,
         history: []
       }
     )
-
+    // Mock getReleaseType to always return 'minor' type
+    const getReleaseTypeStub = () => Promise.resolve(
+      {
+        event: 'pull_request',
+        type: 'build',
+        change: 'minor'
+      }
+    )
     // Mock core to avoid actual outputs
     const coreStub = {
       getInput: (input) => {
@@ -156,7 +183,9 @@ describe("index.js", async function () {
     // Use proxyquire to inject mocks
     const main = proxyquire(modulePath, {
       './get-version': getVersionStub,
-      '@actions/core': coreStub
+      './get-release-type': getReleaseTypeStub,
+      '@actions/core': coreStub,
+      'node:process': processMock
     })
     // execute the test
     const result = await main()
@@ -216,13 +245,14 @@ describe("index.js", async function () {
       warning: () => {},
       setSecret: () => {},
       setOutput: () => {},
-      setFailed: () => {}
+      //setFailed: () => {}
     }
     // Use proxyquire to inject mocks
     const main = proxyquire(modulePath, {
       './get-version': getVersionStub,
       './get-release-type': getReleaseTypeStub,
-      '@actions/core': coreStub
+      '@actions/core': coreStub,
+      'node:process': processMock
     })
     // execute the test
     const result = await main()
@@ -260,11 +290,12 @@ describe("index.js", async function () {
       warning: () => {},
       setSecret: () => {},
       setOutput: () => {},
-      setFailed: () => {}
+      //setFailed: () => {}
     }
     // Use proxyquire to inject mocks
     const main = proxyquire(modulePath, {
-      '@actions/core': coreStub
+      '@actions/core': coreStub,
+      'node:process': processMock
     })
     // execute the test
     const result = await main()
@@ -291,7 +322,12 @@ describe("index.js", async function () {
         ]
       }
     )
-    
+    // Mock getReleaseType to return 'minor' type
+    const getReleaseTypeStub = () => Promise.resolve(
+      {
+        event: 'push'
+      }
+    )
     // Mock core to return empty API token
     const coreStub = {
       getInput: (input) => {
@@ -315,7 +351,9 @@ describe("index.js", async function () {
     // Use proxyquire to inject mocks
     const main = proxyquire(modulePath, {
       './get-version': getVersionStub,
-      '@actions/core': coreStub
+      './get-release-type': getReleaseTypeStub,
+      '@actions/core': coreStub,
+      'node:process': processMock
     })
     // execute the test
     const result = await main()
@@ -323,5 +361,5 @@ describe("index.js", async function () {
     // Validate the test result
     expect(result).to.equal(expectedVersion) // incremented version
   })
-});
+})
 // EOF
