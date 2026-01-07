@@ -11,10 +11,16 @@ const semverMaxSatisfying = require('semver/ranges/max-satisfying')
 // ------------------------------------
 module.exports = async function getVersion(
   argApiToken,
+  argGithub = {
+    eventType: null,
+    repoOwner: null,
+    repoName: null,
+  },
   argTagPrefix = 'v',
   argInceptionVersionTag = '0.0.0',
-  argCurrentVersion = null
+  argVersion = null // Just use the provided version
 ) {
+  const functionName = getVersion.name
   // ------------------------------------
   // getVersion
   // Retrieve the current version tag from the repository
@@ -22,55 +28,27 @@ module.exports = async function getVersion(
   //
   // TODO:
   // - add exclude filter
-  // - support for Github repository variables , RELEASE_VERSION
+  // - support for Github repository variables, RELEASE_VERSION
+  // - support for configuration file for RELEASE_VERSION
   // - explore github graphQL to retrieve the latest tags
   // ------------------------------------
-  core.debug('Start getVersion')
+  core.debug('Start ' + functionName)
+  var outTrigger = null
   var outVersion = null
   var outHistory = []
-  // doc: https://github.com/actions/toolkit/blob/main/packages/github/README.md
-  //      https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#event-object-common-properties
-  //
-  // https://github.com/actions/toolkit/blob/main/packages/github/src/context.ts
-  // https://docs.github.com/en/actions/learn-github-actions/variables
-  // env.GITHUB_EVENT_NAM
-  // need to remove the secrets from the context
-  core.debug('context[' + JSON.stringify(github.context) + ']')
-  core.info('contextType[' + github.context.eventName + ']')
-  // get the repo owner and name
-  // TODO:
-  // investigate github.context.payload.repository.owner.name
-  //
-  // github.context.payload.repository.owner.login
-  //  - is the login name
-  //  - can this different from the actual name ?
-  // github.context.payload.repository.owner.name
-  //  - is the actual name
-  //  - as using this but no longer exists in payload for some reason
-  const gitRepoOwnerLogin = github.context.payload.repository.owner.login
-  const gitRepoOwnerName = github.context.payload.repository.owner.name
-  const gitRepo = github.context.payload.repository.name
-  core.debug(
-    'gitRepoOwnerLogin[' +
-      gitRepoOwnerLogin +
-      '] gitRepoOwnerName[' +
-      gitRepoOwnerName +
-      '] gitRepo[' +
-      gitRepo +
-      ']'
+
+  // what event triggered this release version action
+  // e.g. push, pull_request, release, workflow_dispatch
+  // DOC: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types
+  outTrigger = argGithub.eventType
+  core.info('Event trigger detected[' + outTrigger + ']')
+  const githubRepoOwner = argGithub.repoOwner
+  const githubRepoName = argGithub.repoName
+  core.info(
+    'Repository detected[' + githubRepoOwner + '/' + githubRepoName + ']'
   )
-  if (gitRepoOwnerName === undefined) {
-    core.debug('Undefined GitHub repository.owner.name')
-  }
-  let gitOwner = gitRepoOwnerLogin
-  // ensure we have valid repository information
-  if (gitOwner === null || gitOwner === '' || gitOwner === undefined) {
-    throw new Error('Unable to locate the repository owner')
-  }
-  if (gitRepo === null || gitRepo === '' || gitRepo === undefined) {
-    throw new Error('Unable to locate the repository name')
-  }
-  core.debug('gitOwner[' + gitOwner + '] gitRepo[' + gitRepo + ']')
+  core.info('Tag prefix detected[' + argTagPrefix + ']')
+  core.info('Inception version tag detected[' + argInceptionVersionTag + ']')
   // setup authenticated github client
   // doc: https://github.com/actions/toolkit/blob/main/packages/github/README.md
   //      https://octokit.github.io/rest.js/v18#authentication
@@ -80,12 +58,11 @@ module.exports = async function getVersion(
   }
   // ------------------------------------
   // build an array of release version tags
-
   // get all matching refs (tags)
   // https://docs.github.com/en/rest/reference/git#list-matching-references
   let matchingTags = await octokit.rest.git.listMatchingRefs({
-    owner: gitOwner,
-    repo: gitRepo,
+    owner: githubRepoOwner,
+    repo: githubRepoName,
     ref: 'tags/' + argTagPrefix,
   })
   core.debug('matchingTags[' + JSON.stringify(matchingTags) + ']')
@@ -127,24 +104,24 @@ module.exports = async function getVersion(
   }
   // ------------------------------------
   // process the event types
-  if ( argCurrentVersion !== null && argCurrentVersion !== '') {
+  if (argVersion !== null && argVersion !== '') {
     // use the provided current version
-    core.info('Version specified as action input[' + argCurrentVersion + ']')
-    let semVer = semverClean(argCurrentVersion)
+    core.info('Version specified as action input[' + argVersion + ']')
+    let semVer = semverClean(argVersion)
     if (semVer === null || semVer === '' || semVer === undefined) {
       // strange, the input provided is invalid
-      throw new Error('Invalid semver version[' + argCurrentVersion + ']')
+      throw new Error('Invalid semver version[' + argVersion + ']')
     }
     outVersion = semVer
-  } else if (github.context.eventName === 'release') {
+  } else if (outTrigger === 'release') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#releaseevent
     let tagData = github.context.payload.release.tag_name
     let getRef = 'tags/' + tagData
     core.info('Release event detected, with tag[' + tagData + ']')
     // ensure the tag exists
     let getRefData = await octokit.rest.git.getRef({
-      owner: gitOwner,
-      repo: gitRepo,
+      owner: githubRepoOwner,
+      repo: githubRepoName,
       ref: getRef,
     })
     core.debug('getRefData[' + JSON.stringify(getRefData) + ']')
@@ -158,7 +135,7 @@ module.exports = async function getVersion(
       throw new Error('Invalid semver tag[' + tagData + ']')
     }
     outVersion = tagSemVer
-  } else if (github.context.eventName === 'push') {
+  } else if (outTrigger === 'push') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pushevent
     let gitRef = github.context.ref
     let gitSha = github.context.sha
@@ -170,8 +147,8 @@ module.exports = async function getVersion(
     // get the commit data before the push
     // https://docs.github.com/en/rest/git/commits?apiVersion=2022-11-28#get-a-commit
     let gitBeforeCommitShaData = await octokit.rest.git.getCommit({
-      owner: gitOwner,
-      repo: gitRepo,
+      owner: githubRepoOwner,
+      repo: githubRepoName,
       commit_sha: gitBeforeCommitSha, // sha of the commit before the push
     })
     core.info(
@@ -181,21 +158,22 @@ module.exports = async function getVersion(
     // DOC: https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-branches-for-head-commit
     let getBeforeCommitBranches = await octokit.request(
       'GET /repos/' +
-        gitOwner +
+        githubRepoOwner +
         '/' +
-        gitRepo +
+        githubRepoName +
         '/commits/' +
         gitBeforeCommitSha +
         '/branches-where-head',
       {
-        owner: gitOwner,
-        repo: gitRepo,
+        owner: githubRepoOwner,
+        repo: githubRepoName,
         commit_sha: gitBeforeCommitSha,
       }
     )
     core.info(
       'getBeforeCommitBranches[' + JSON.stringify(getBeforeCommitBranches) + ']'
     )
+    // TODO: review the branches where the commit exists
 
     // get the latest version from the outHistory
     // using semver maxSatisfying with range *
@@ -208,7 +186,7 @@ module.exports = async function getVersion(
     } else {
       outVersion = latestVersion
     }
-  } else if (github.context.eventName === 'pull_request') {
+  } else if (outTrigger === 'pull_request') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pullrequestevent
     let gitRef = github.context.ref
     let gitSha = github.context.sha
@@ -230,11 +208,12 @@ module.exports = async function getVersion(
     } else {
       outVersion = latestVersion
     }
-  } else if (github.context.eventName === 'workflow_dispatch') {
+  } else if (outTrigger === 'workflow_dispatch') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#workflow_dispatch
     core.info('Workflow Dispatch event detected')
-    core.info(`context[${JSON.stringify(github.context)}}]`)
-    // pull the version from the input
+    // pull the "version" from the input
+    // TODO: should we validate the input name/version exists in the action definition
+    //       should we allow an alternative input name via action input?
     if (
       github.context.payload.inputs.version === null ||
       github.context.payload.inputs.version === undefined ||
@@ -252,12 +231,24 @@ module.exports = async function getVersion(
     outVersion = semVer
   } else {
     //
-    core.info('Unknown event type[' + github.context.eventName + ']')
-    core.info(`context[${JSON.stringify(github.context)}}]`)
+    core.info('Unknown event type[' + outTrigger + ']')
+    // TODO: should this be an error or warning and return null ? e.g. for schedule event
+    // get the latest version from the outHistory
+    // using semver maxSatisfying with range *
+    // should return the highest version
+    let latestVersion = semverMaxSatisfying(outHistory, '*', {
+      includePrerelease: true,
+    })
+    if (latestVersion === null) {
+      throw new Error('unable to locate latest version')
+    } else {
+      outVersion = latestVersion
+    }
   }
   // ------------------------------------
-  core.debug('End getVersion')
+  core.debug('End ' + functionName)
   return {
+    trigger: outTrigger,
     version: outVersion,
     history: outHistory,
   }
