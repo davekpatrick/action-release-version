@@ -1,0 +1,5 @@
+# BOF
+env:
+  mocha: true
+  es2021: true
+# EOF

@@ -10,5 +10,6 @@ reporter: 'spec'
 spec:
   - '../tests/**/*.spec.js'
 timeout: 2000 # same as "timeout: '2s'"
+retries: 1
 ui: 'bdd'
 # EOF
