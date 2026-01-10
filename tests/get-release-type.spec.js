@@ -46,7 +46,7 @@ describe("function: get-release-type.js", async function () {
   // ---------------------------------------------------
   // ---------------------------------------------------
   context(moduleName + " functionality tests", function () {
-    const cfgTrace = false
+    const cfgTrace = true
     it("Should be a function", async function (argTrace = cfgTrace) {
       // ---------------------------------------------------
       // Details
