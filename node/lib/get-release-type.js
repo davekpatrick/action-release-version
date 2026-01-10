@@ -4,7 +4,7 @@
 // ------------------------------------
 const core = require('@actions/core') // Microsoft's actions toolkit
 const github = require('@actions/github') // Microsoft's actions github toolkit
-// semver module
+// semver module requirements
 const semverMaxSatisfying = require('semver/ranges/max-satisfying')
 const semverDiff = require('semver/functions/diff')
 // ------------------------------------
@@ -12,11 +12,15 @@ const semverDiff = require('semver/functions/diff')
 // ------------------------------------
 module.exports = async function getReleaseType(
   argApiToken,
-  argCurrentVersion = '0.0.0',
-  argVersionHistory = []
+  argInceptionVersionTag = '0.0.0',
+  argInceptionVersionIncrement = 'minor',
+  argTrigger = null,
+  argCurrentVersion = argInceptionVersionTag,
+  argVersionHistory = [argCurrentVersion]
 ) {
+  const functionName = getReleaseType.name
   // ------------------------------------
-  core.debug('Start getReleaseType')
+  core.debug('Start ' + functionName)
   var outEvent = null
   var outType = null
   var outChange = null
@@ -46,8 +50,8 @@ module.exports = async function getReleaseType(
   //  - patch       e.g. 0.1.1
   //
   // ------------------------------------
-  core.info('contextType[' + github.context.eventName + ']')
   core.debug('context[' + JSON.stringify(github.context) + ']')
+  core.debug('contextType[' + github.context.eventName + ']')
   // get the repo owner and name
   // TODO:
   // investigate github.context.payload.repository.owner.name vs login
@@ -111,7 +115,7 @@ module.exports = async function getReleaseType(
       repo: gitRepo,
     })
     core.debug('gitRepoData[' + JSON.stringify(gitRepoData) + ']')
-    gitDefaultBranch = gitRepoData.data.default_branch
+    gitDefaultBranch = gitRepoData.data.default_branch //
     if (
       gitDefaultBranch === null ||
       gitDefaultBranch === '' ||
@@ -133,8 +137,8 @@ module.exports = async function getReleaseType(
     outEvent = github.context.eventName
     // check how much version history we have
     if (versionHistory.length === 0) {
-      outType = 'initial'
-      outChange = 'none'
+      outType = 'initial' //
+      outChange = 'none' //
       core.info('Initial release version detected')
     } else {
       core.debug('Locating previous version')
@@ -178,8 +182,19 @@ module.exports = async function getReleaseType(
     // check how much version history we have
     if (versionHistory.length === 0) {
       outType = 'initial'
-      outChange = 'none'
-      core.info('Initial release version detected')
+      if (argCurrentVersion === argInceptionVersionTag) {
+        // we have no version history and the current version is the inception version
+        // which means the user has not set the version correctly
+        outChange = argInceptionVersionIncrement
+        core.warning(
+          'Current version is equal to inception version, ensuring increment to[' +
+            outChange +
+            ']'
+        )
+      } else {
+        outChange = 'none' // no change as first version and set manually
+      }
+      core.info('Manual initial release version detected')
     } else {
       // locate the previous version
       let previousVersion = semverMaxSatisfying(
@@ -216,8 +231,14 @@ module.exports = async function getReleaseType(
     core.info('outType[' + outType + ']')
   } else if (github.context.eventName === 'push') {
     // ------------------------------------
-    // a push event has occurred - determine the type based on commit messages since the last tag
+    // a push event has occurred
+    // TODO: determine the type based on ;
+    //  - commit messages since the last tag
+    //  - branch name
+    //  - files changed
+    //  - other ?
     outEvent = github.context.eventName
+
     outType = 'push'
     core.info('outType[' + outType + ']')
   } else if (github.context.eventName === 'pull_request') {
@@ -226,8 +247,14 @@ module.exports = async function getReleaseType(
     outEvent = github.context.eventName
     // check how much version history we have
     if (versionHistory.length === 0) {
-      outType = 'initial'
-      outChange = 'none'
+      outType = 'build'
+      if (argCurrentVersion === argInceptionVersionTag) {
+        outChange = argInceptionVersionIncrement // first version, so make it at least 0.1.0
+      } else {
+        // current version is not the inception version tag
+        // so do not increment the version, just use the current version
+        outChange = 'none'
+      }
       core.info('Initial release version detected')
     } else {
       //
@@ -297,7 +324,7 @@ module.exports = async function getReleaseType(
     outChange = null
   }
   // ------------------------------------
-  core.debug('End getReleaseType')
+  core.debug('End ' + functionName)
   return {
     event: outEvent,
     type: outType,
