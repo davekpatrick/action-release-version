@@ -37,7 +37,7 @@ describe("module: github @action", function () {
   // ---------------------------------------------------
   // ---------------------------------------------------
   context("Action core functionality tests", function () {
-    const cfgTrace = false
+    const cfgTrace = true
     it("Action core setOutput", function (argTrace = cfgTrace) {
       // ---------------------------------------------------
       // Details
