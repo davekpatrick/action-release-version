@@ -37,5 +37,5 @@ branding:
 ## ------------------------------
 runs:
   using: 'node20'
-  main: 'node/dist/index.js'
+  main: 'dist/index.js'
 # EOF
