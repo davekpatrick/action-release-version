@@ -13,9 +13,9 @@
   ],
   "main": "index.js",
   "scripts": {
-    "format": "prettier --write .",
-    "validate": "eslint .",
-    "add-metadata": "cross-var replace @@NPM_PACKAGE_NAME@@ $npm_package_name dist/index.js && cross-var replace @@NPM_PACKAGE_VERSION@@ $npm_package_version dist/index.js",
+    "format": "prettier --write  --no-semi ../node ../tests",
+    "validate": "eslint ../node ../tests",
+    "add-metadata": "replace @@NPM_PACKAGE_NAME@@ $npm_package_name ../dist/index.js && replace @@NPM_PACKAGE_VERSION@@ $npm_package_version ../dist/index.js",
     "build": "ncc build index.js --license licenses.txt --out dist && npm run add-metadata",
     "test": "mocha"
   },
@@ -27,7 +27,6 @@
   "devDependencies": {
     "@vercel/ncc": "0.38.1",
     "chai": "4.3.10",
-    "cross-var": "1.1.0",
     "eslint": "8.53.0",
     "js-yaml": "4.1.0",
     "mocha": "11.7.2",
