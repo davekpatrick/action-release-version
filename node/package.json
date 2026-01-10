@@ -2,7 +2,7 @@
   "author": "davekpatrick",
   "name": "@davekpatrick/action-release-version",
   "license": "BSD-3-Clause",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "description": "GitHub Action used to version bump",
   "keywords": [
     "node",
@@ -16,7 +16,7 @@
     "format": "prettier --write  --no-semi ../node ../tests",
     "validate": "eslint ../node ../tests",
     "add-metadata": "replace @@NPM_PACKAGE_NAME@@ $npm_package_name ../dist/index.js && replace @@NPM_PACKAGE_VERSION@@ $npm_package_version ../dist/index.js",
-    "build": "ncc build index.js --license licenses.txt --out dist && npm run add-metadata",
+    "build": "ncc build index.js --license licenses.txt --out ../dist && npm run add-metadata",
     "test": "mocha"
   },
   "dependencies": {
