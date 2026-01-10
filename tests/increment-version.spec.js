@@ -12,9 +12,9 @@ const expect = require(dirNodeModules + path.sep + "chai").expect
 const proxyquire = require(dirNodeModules + path.sep + "proxyquire")
 // ---------------------------------------------------
 // ---------------------------------------------------
-describe("function: get-release-type.js", async function () {
+describe("function: increment-version.js", async function () {
   // ---------------------------------------------------
-  let moduleName = "get-release-type"
+  let moduleName = "increment-version"
   let modulePath = path.resolve(dirNode, "lib", moduleName)
   // ---------------------------------------------------
   // Modules under test
@@ -47,6 +47,7 @@ describe("function: get-release-type.js", async function () {
   // ---------------------------------------------------
   context(moduleName + " functionality tests", function () {
     const cfgTrace = false
+
     it("Should be a function", async function (argTrace = cfgTrace) {
       // ---------------------------------------------------
       // Details
@@ -77,39 +78,7 @@ describe("function: get-release-type.js", async function () {
       const githubEventName = process.env["GITHUB_EVENT_NAME"]
       const githubDefaultBranchName =
         process.env["GITHUB_REF"].match(/[^/]+$/g)[0] // get last part of ref only aka branch name
-      // Mock the octokit client with all required API calls
-      const mockOctokit = {
-        rest: {
-          repos: {
-            get: async () => ({
-              status: 200,
-              data: {
-                name: githubRepository,
-                owner: {
-                  login: githubRepositoryOwner,
-                },
-                default_branch: githubDefaultBranchName,
-              },
-            }),
-          },
-        },
-      }
-      // Mock GitHub module
-      const githubMock = {
-        context: {
-          eventName: githubEventName,
-          payload: {
-            repository: {
-              name: githubRepository,
-              owner: {
-                login: githubRepositoryOwner,
-                name: githubRepositoryOwner,
-              },
-            },
-          },
-        },
-        getOctokit: () => mockOctokit,
-      }
+      const currentVersion = "0.0.0"
       // Mock core module to avoid actual core.info/debug calls
       const coreMock = {
         startGroup: () => {},
@@ -120,22 +89,19 @@ describe("function: get-release-type.js", async function () {
       }
       // Use proxyquire to inject mocks
       const main = proxyquire(modulePath, {
-        "@actions/github": githubMock,
         "@actions/core": coreMock,
         "node:process": processMock,
       })
       // execute the test
-      const result = await main(apiToken)
+      const result = await main(currentVersion, "initial", "none")
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
       }
       // Validate the test result
-      expect(result.event).to.be.string
-      expect(result.event).to.equal(githubEventName)
-      expect(result.type).to.be.string
-      expect(result.type).to.equal("initial")
-      expect(result.change).to.be.string
-      expect(result.change).to.equal("none")
+      expect(result.version.old).to.be.string
+      expect(result.version.new).to.be.string
+      expect(result.version.old).to.equal(currentVersion)
+      expect(result.version.new).to.equal(currentVersion)
     })
   })
 })

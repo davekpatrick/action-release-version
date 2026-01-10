@@ -1,35 +1,36 @@
 // BOF
-const path = require("node:path");
+const path = require("node:path")
 // project directories
 const dirRoot = path.normalize(__dirname + path.sep + "..")
 const dirNode = path.resolve(dirRoot, "node")
 const dirNodeModules = path.resolve(dirNode, "node_modules")
 // project files
-const actionYamlFile = path.resolve(dirRoot, "action.yml");
-const packageJsonFile = path.resolve(dirNode, "package.json");
+const actionYamlFile = path.resolve(dirRoot, "action.yml")
+const packageJsonFile = path.resolve(dirNode, "package.json")
 // utility modules
-const fs = require("node:fs");
-const jsYaml = require(dirNodeModules + path.sep + "js-yaml");
+const fs = require("node:fs")
+const jsYaml = require(dirNodeModules + path.sep + "js-yaml")
 /**
  * create a random GitHub token
  */
 function createFakeGitHubToken() {
   let tokenPrefix = "ghp_"
-  const crypto = require('node:crypto');
+  const crypto = require("node:crypto")
   // create a randomly generated, 36 character long v4 UUID
-  let randomString = crypto.randomUUID().replace(/-/g, '') // remove the dashes
-  for ( i = 0; i < 4; i++ ) {
+  let randomString = crypto.randomUUID().replace(/-/g, "") // remove the dashes
+  for (i = 0; i < 4; i++) {
     // add some random characters to the end
-    randomString += crypto.randomBytes(4).toString('hex')
+    randomString += crypto.randomBytes(4).toString("hex")
   }
   let randomStringLength = randomString.length
-  console.log("randomStringLength:[" + randomStringLength + "]")
-  let randomStringRandomIndex = crypto.webcrypto.getRandomValues(new Uint32Array(randomStringLength))
-  let tokenData = ''
-  for ( i = 0; i < randomStringLength; i++ ) {
+  let randomStringRandomIndex = crypto.webcrypto.getRandomValues(
+    new Uint32Array(randomStringLength),
+  )
+  let tokenData = ""
+  for (i = 0; i < randomStringLength; i++) {
     // add some upper and lower case mix
-    if ( randomStringRandomIndex[i] % 2 == 0 ) {
-      tokenData += randomString.charAt(i).toUpperCase() 
+    if (randomStringRandomIndex[i] % 2 == 0) {
+      tokenData += randomString.charAt(i).toUpperCase()
     } else {
       tokenData += randomString.charAt(i)
     }
@@ -48,20 +49,19 @@ function getDefaultEnvironmentValues() {
     (data, key) => ({
       ...data,
       // replace spaces with underscores and make upper case
-      ["INPUT_" + key.replace(/ /g, "_").toUpperCase()]: (inputs[key].default || ""),
+      ["INPUT_" + key.replace(/ /g, "_").toUpperCase()]:
+        inputs[key].default || "",
     }),
-    {}
+    {},
   )
 }
 /**
- * 
+ *
  */
-function setLocalTestEnvironmentValues(
-  data
-) {
-  const env = process.env;
+function setLocalTestEnvironmentValues(data) {
+  const env = process.env
   if (env.CI !== "true") {
-    console.log("runningIn:[localEnvironment]");
+    console.log("runningIn:[localEnvironment]")
     // set local values
     // doc: https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
     return {
@@ -93,8 +93,8 @@ function setLocalTestEnvironmentValues(
       ACTIONS_STEP_DEBUG: "true",
     }
   } else {
-    console.log("runningIn:[continuousIntegration]");
-    return {};
+    console.log("runningIn:[continuousIntegration]")
+    return {}
   }
 }
 /**
@@ -105,30 +105,28 @@ function setLocalTestEnvironmentValues(
 before(async () => {
   // runs once before the first test
   console.log("dirRoot:[" + dirRoot + "]")
-  this.packageJsonData = require(packageJsonFile);
+  this.packageJsonData = require(packageJsonFile)
   // set the environment variables
   Object.assign(
     process.env,
     setLocalTestEnvironmentValues(this.packageJsonData),
-    getDefaultEnvironmentValues()
-  );
-  console.log("Unit Tests Starting" )
+    getDefaultEnvironmentValues(),
+  )
+  console.log("Unit Tests Starting")
   console.log("---------------------------------------------------")
-});
+})
 // ---------------------------------------------------
-beforeEach(function() {
+beforeEach(function () {
   // runs before each test in every describe block
-  
-});
+})
 // ---------------------------------------------------
-afterEach(function() {
+afterEach(function () {
   // runs after each test in every describe block
-  
-});
+})
 // ---------------------------------------------------
 after(async () => {
   // runs once after the last test
   console.log("---------------------------------------------------")
   console.log("Unit Tests Finished")
-} );
+})
 // EOF
