@@ -46,7 +46,7 @@ describe("function: get-release-type.js", async function () {
   // ---------------------------------------------------
   // ---------------------------------------------------
   context(moduleName + " functionality tests", function () {
-    const cfgTrace = true
+    const cfgTrace = false
     it("Should be a function", async function (argTrace = cfgTrace) {
       // ---------------------------------------------------
       // Details
@@ -74,7 +74,7 @@ describe("function: get-release-type.js", async function () {
       //
       const githubRepository = process.env["GITHUB_REPOSITORY"]
       const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
-      const githubEventName = process.env["GITHUB_EVENT_NAME"]
+      const githubEventName = 'release'
       const githubDefaultBranchName =
         process.env["GITHUB_REF"].match(/[^/]+$/g)[0] // get last part of ref only aka branch name
       // Mock the octokit client with all required API calls
@@ -125,7 +125,9 @@ describe("function: get-release-type.js", async function () {
         "node:process": processMock,
       })
       // execute the test
-      const result = await main(apiToken)
+      const result = await main({
+        apiToken: apiToken
+      })
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
       }

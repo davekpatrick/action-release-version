@@ -11,16 +11,19 @@ const semverDiff = require('semver/functions/diff')
 //
 // ------------------------------------
 module.exports = async function getReleaseType(
+  {
   argApiToken,
   argInceptionVersionTag = '0.0.0',
   argInceptionVersionIncrement = 'minor',
-  argTrigger = null,
+  //argTrigger = null,
   argCurrentVersion = argInceptionVersionTag,
   argVersionHistory = [argCurrentVersion]
+  }
 ) {
   const functionName = getReleaseType.name
   // ------------------------------------
   core.debug('Start ' + functionName)
+  core.info('argCurrentVersion[' + argCurrentVersion + ']')
   var outEvent = null
   var outType = null
   var outChange = null
