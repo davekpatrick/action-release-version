@@ -51,6 +51,7 @@ describe("module: github @action", function () {
       let originalWrite = process.stdout.write
       let expected = "\n::set-output name=time::" + time + "\n"
       process.stdout.write = (data) => {
+        console.error(data.toString())
         stdOut += data.toString()
         return true // Writable stream write function must return a boolean
       }
