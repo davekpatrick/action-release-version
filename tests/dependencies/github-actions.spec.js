@@ -46,7 +46,8 @@ describe("module: github @action", function () {
       // ---------------------------------------------------
       // fixture inputs
       let time = new Date().toTimeString()
-      let stdOut = ""
+      var stdOut = ""
+      let result
       let originalWrite = process.stdout.write
       let expected = "\n::set-output name=time::" + time + "\n"
       process.stdout.write = (data) => {
@@ -73,7 +74,8 @@ describe("module: github @action", function () {
       // ---------------------------------------------------
       // fixture inputs
       let time = new Date().toTimeString()
-      let stdOut = ""
+      var stdOut = ""
+      let result
       let originalWrite = process.stdout.write
       let expected = "::set-env name=time::" + time + "\n"
       process.stdout.write = (data) => {
