@@ -51,7 +51,6 @@ describe("module: github @action", function () {
       let originalWrite = process.stdout.write
       let expected = "\n::set-output name=time::" + time + "\n"
       process.stdout.write = (data) => {
-        process.stderr.write(data.toString())
         stdOut += data.toString()
         return true // Writable stream write function must return a boolean
       }
@@ -77,8 +76,10 @@ describe("module: github @action", function () {
       let time = new Date().toTimeString()
       var stdOut = ""
       let result
+      process.stdout.write("Hello World\n");
       let originalWrite = process.stdout.write
       let expected = "::set-env name=time::" + time + "\n"
+      
       process.stdout.write = (data) => {
         stdOut += data.toString()
         return true // Writable stream write function must return a boolean
