@@ -76,12 +76,10 @@ describe("module: github @action", function () {
       let time = new Date().toTimeString()
       var stdOut = ""
       let result
-      process.stdout.write("Hello World\n");
       let originalWrite = process.stdout.write
       let expected = "::set-env name=time::" + time + "\n"
-      
       process.stdout.write = (data) => {
-        stdOut += data.toString()
+        stdOut += data
         return true // Writable stream write function must return a boolean
       }
       // execute the test
