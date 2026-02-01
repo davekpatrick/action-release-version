@@ -92,8 +92,8 @@ describe("module: github @action", async function () {
         result += chunk;
         // Call the original write method to ensure normal console output still works if desired
         // or simply return the chunk if you want to suppress console output during capture
-        //return originalStdoutWrite(chunk, encoding, callback);
-        return true
+        return originalStdoutWrite(chunk, encoding, callback);
+        //return true
         };
       //
       await main.setOutput("time", time)
