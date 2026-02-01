@@ -9,23 +9,31 @@ const { describe } = require("node:test")
 // doc: https://www.chaijs.com/guide/styles/  ( BDD 'expect' assertion is being used vs the 'should' assertion style )
 //      https://www.chaijs.com/api/bdd/
 const expect = require(dirNodeModules + path.sep + "chai").expect
+const proxyquire = require(dirNodeModules + path.sep + "proxyquire")
 // ---------------------------------------------------
 // ---------------------------------------------------
-describe("module: github @action", function () {
+describe("module: github @action", async function () {
   // ---------------------------------------------------
   let core
   let github
-  //let originalContext
+  // ---------------------------------------------------
+  // Mocks
+  const exitStub = (code) => {
+    // Mock process.exit to prevent actual exit during tests
+    throw new Error("Exiting with code[" + code + "]")
+  }
+  const processMock = {
+    //
+    exit: exitStub,
+  }
   // ---------------------------------------------------
   beforeEach(() => {
     //
-    //originalContext = Object.assign({}, github.context)
     core = require(dirNodeModules + path.sep + "@actions/core")
     github = require(dirNodeModules + path.sep + "@actions/github")
   })
   // ---------------------------------------------------
   afterEach(() => {
-    //Object.assign(github.context, originalContext)
     // clear the package.json file from cache
     delete require.cache[
       require.resolve(dirNodeModules + path.sep + "@actions/core")
@@ -37,27 +45,60 @@ describe("module: github @action", function () {
   // ---------------------------------------------------
   // ---------------------------------------------------
   context("Action core functionality tests", function () {
-    const cfgTrace = true
-    it("Action core setOutput", function (argTrace = cfgTrace) {
+    const cfgTrace = false
+    let moduleName = "@actions/core"
+    let modulePath = dirNodeModules + path.sep + moduleName
+    it("Action core setOutput", async function (argTrace = cfgTrace) {
       // ---------------------------------------------------
       // Details
       // ------------
       // - This test verifies the action core module is able to set outputs
       // ---------------------------------------------------
       // fixture inputs
+      var result = ''
       let time = new Date().toTimeString()
-      var stdOut = ""
-      let result
-      let originalWrite = process.stdout.write
+      // e.g. "\n::set-output name=time::21:51:19 GMT+0000 (Coordinated Universal Time)\n"
       let expected = "\n::set-output name=time::" + time + "\n"
-      process.stdout.write = (data) => {
-        stdOut += data.toString()
-        return true // Writable stream write function must return a boolean
-      }
       // execute the test
-      core.setOutput("time", time)
-      result = stdOut
-      process.stdout.write = originalWrite
+      ///core.setOutput("time", time)
+      const originalStdoutWrite = process.stdout.write.bind(process.stdout);
+
+      // Mock core module to avoid actual core.info/debug calls
+ 
+      const coreMock = {
+        startGroup: () => {},
+        endGroup: () => {},
+        debug: () => {},
+        info: () => {},
+        warning: () => {},
+        setOutput: () => {},
+      }
+      
+      // Use proxyquire to inject mocks
+      const main = proxyquire(modulePath, {
+        debug: () => {},
+        info: () => {},
+        warning: () => {},
+      })
+      // execute the test
+/*
+      await main({
+        apiToken: apiToken
+      })
+        */
+      process.stdout.write = (chunk, encoding, callback) => {
+        // Only capture if it's a string (which console.log and most writes are)
+
+        result += chunk;
+        // Call the original write method to ensure normal console output still works if desired
+        // or simply return the chunk if you want to suppress console output during capture
+        //return originalStdoutWrite(chunk, encoding, callback);
+        return true
+        };
+      //
+      await main.setOutput("time", time)
+      // 3. Restore the original method
+      process.stdout.write = originalStdoutWrite;
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
       }
