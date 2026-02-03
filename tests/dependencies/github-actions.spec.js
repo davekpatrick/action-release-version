@@ -57,7 +57,7 @@ describe("module: github @action", async function () {
       // ---------------------------------------------------
       // fixture inputs
       var result = ''
-      var GITHUB_OUTPUT = process.env.GITHUB_OUTPUT
+      //var GITHUB_OUTPUT = process.env.GITHUB_OUTPUT
       let time = new Date().toTimeString()
       // e.g. "\n::set-output name=time::21:51:19 GMT+0000 (Coordinated Universal Time)\n"
       let expected = "\n::set-output name=time::" + time + "\n"
@@ -77,15 +77,15 @@ describe("module: github @action", async function () {
         warning: () => {},
         setOutput: () => {},
       }
-      
+              */
       // Use proxyquire to inject mocks
 
       const main = proxyquire(modulePath, {
-        debug: () => {},
-        info: () => {},
-        warning: () => {},
+        issueFileCommand: (command, message) => {
+          console.log( command + "[" + message + "]")
+        },
       })
-        */
+
       // execute the test
       /*
       process.stdout.write = (chunk, encoding, callback) => {
@@ -98,12 +98,12 @@ describe("module: github @action", async function () {
         };
       //
       */
-     delete process.env.GITHUB_OUTPUT
-     await captureOutput(() => {
-       core.setOutput("time", time)
-     });
+      //delete process.env.GITHUB_OUTPUT
+      await captureOutput(() => {
+        main.setOutput("time", time)
+      });
       // 3. Restore the original method
-      process.env.GITHUB_OUTPUT = GITHUB_OUTPUT
+      //process.env.GITHUB_OUTPUT = GITHUB_OUTPUT
       result = captureOutput.output
       //process.stdout.write = originalStdoutWrite;
       if (argTrace) {
