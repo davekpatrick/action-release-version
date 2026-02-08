@@ -56,62 +56,76 @@ describe("module: github @action", async function () {
       // - This test verifies the action core module is able to set outputs
       // ---------------------------------------------------
       // fixture inputs
-      var result = ''
+      var regex = new RegExp(/^(?<key>.*)<<(?:ghadelimiter_.*)[\n\r]+(?<value>[\S\s]*)(?:ghadelimiter_.*)$/)
+      const crypto = require("node:crypto")
+      // create a randomly generated, 36 character long v4 UUID
+      let UUID = crypto.randomUUID().replace(/-/g, "") // remove the dashes
       //var GITHUB_OUTPUT = process.env.GITHUB_OUTPUT
-      let time = new Date().toTimeString()
+      let key = "time"
+      let value = new Date().toTimeString()
       // e.g. "\n::set-output name=time::21:51:19 GMT+0000 (Coordinated Universal Time)\n"
-      let expected = "\n::set-output name=time::" + time + "\n"
+      let expected = {
+       false: "::set-output name=" + key +"::" + value,
+        /*
+        time<<ghadelimiter_ed3c902b-5871-464f-81a5-eb6de62ff66c
+        01:35:24 GMT+0000 (Coordinated Universal Time)
+        ghadelimiter_ed3c902b-5871-464f-81a5-eb6de62ff66c
+        */
+       true: `${key}<<ghadelimiter_${UUID}
+              ${value}
+              ghadelimiter_${UUID}
+              `.split("\n")
+              .map(s => s.trim())
+              .join("\n")
+      }
       // execute the test
       ///core.setOutput("time", time)
-      //const originalStdoutWrite = process.stdout.write.bind(process.stdout);
-      const captureOutput = createOutputInterceptor();
-
-/*
-      // Mock core module to avoid actual core.info/debug calls
- 
-      const coreMock = {
-        startGroup: () => {},
-        endGroup: () => {},
-        debug: () => {},
-        info: () => {},
-        warning: () => {},
-        setOutput: () => {},
+      const originalStdoutWrite = process.stdout.write.bind(process.stdout);
+      let processStdOut = ""
+      //const captureOutput = createOutputInterceptor();
+      //console.log("GITHUB_OUTPUT=" + process.env["GITHUB_OUTPUT"])
+      // Mock 
+      const fileCommandMock = {
+        issueFileCommand: (command, message) =>  {
+          let tmp = message.match(regex)
+          let tmpl = `${tmp.groups.key}<<ghadelimiter_${UUID}
+                      ${tmp.groups.value.trimEnd()}
+                      ghadelimiter_${UUID}
+                     `.split("\n")
+                      .map(s => s.trim())
+                      .join("\n")
+          process.stdout.write(tmpl)
+        },
       }
-              */
       // Use proxyquire to inject mocks
 
       const main = proxyquire(modulePath, {
-        issueFileCommand: (command, message) => {
-          console.log( command + "[" + message + "]")
-        },
+        "./file-command": fileCommandMock,
+        "node:process": processMock,     
       })
-
       // execute the test
-      /*
       process.stdout.write = (chunk, encoding, callback) => {
         // 
-        result += chunk;
+        processStdOut += chunk;
         // Call the original write method to ensure normal console output still works if desired
         // or simply return the chunk if you want to suppress console output during capture
-        return originalStdoutWrite(chunk, encoding, callback);
-        //return true
-        };
-      //
-      */
+        //return originalStdoutWrite(chunk, encoding, callback);
+        return true
+      }
       //delete process.env.GITHUB_OUTPUT
-      await captureOutput(() => {
-        main.setOutput("time", time)
-      });
+      //await captureOutput(() => {
+      main.setOutput(key, value)
+      //});
       // 3. Restore the original method
       //process.env.GITHUB_OUTPUT = GITHUB_OUTPUT
-      result = captureOutput.output
-      //process.stdout.write = originalStdoutWrite;
+      const result = processStdOut
+      process.stdout.write = originalStdoutWrite;
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
       }
       // Validate the test result
       expect(result).to.be.a("string")
-      expect(result).to.equal(expected)
+      expect(result).to.equal(expected["true"])
     })
 
     it("Action core exportVariable", function (argTrace = cfgTrace) {

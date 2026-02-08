@@ -91,6 +91,7 @@ function setLocalTestEnvironmentValues(data) {
       GITHUB_WORKSPACE: path.join(__dirname, "fixtures", "workspace"),
       HOME: "?",
       ACTIONS_STEP_DEBUG: "true",
+      GITHUB_OUTPUT: path.join(__dirname, "fixtures", "output"),
     }
   } else {
     console.log("runningIn:[continuousIntegration]")
