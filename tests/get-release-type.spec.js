@@ -125,9 +125,9 @@ describe("function: get-release-type.js", async function () {
         "node:process": processMock,
       })
       // execute the test
-      const result = await main({
-        apiToken: apiToken
-      })
+      const result = await main(
+        apiToken
+      )
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
       }

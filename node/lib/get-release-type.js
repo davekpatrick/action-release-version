@@ -11,19 +11,26 @@ const semverDiff = require('semver/functions/diff')
 //
 // ------------------------------------
 module.exports = async function getReleaseType(
-  {
   argApiToken,
-  argInceptionVersionTag = '0.0.0',
-  argInceptionVersionIncrement = 'minor',
+  argOptional = {
+    inceptionVersionTag: '0.0.0',
+    inceptionVersionIncrement: 'minor',
+    currentVersion: null,
+    versionHistory: []
+  },
   //argTrigger = null,
-  argCurrentVersion = argInceptionVersionTag,
-  argVersionHistory = [argCurrentVersion]
-  }
 ) {
   const functionName = getReleaseType.name
   // ------------------------------------
   core.debug('Start ' + functionName)
-  core.info('argCurrentVersion[' + argCurrentVersion + ']')
+  // Argument clean up
+  if (argOptional.currentVersion === null ) {
+    argOptional.currentVersion = argOptional.inceptionVersionTag
+  }
+  if (argOptional.versionHistory.length === 0) {
+    argOptional.versionHistory = [argOptional.currentVersion]
+  }
+  core.info('currentVersion[' + argOptional.currentVersion + ']')
   var outEvent = null
   var outType = null
   var outChange = null
@@ -102,10 +109,10 @@ module.exports = async function getReleaseType(
   }
   // ------------------------------------
   // remove the current version from the version history
-  var versionHistory = argVersionHistory
-  if (versionHistory.includes(argCurrentVersion)) {
+  var versionHistory = argOptional.versionHistory
+  if (versionHistory.includes(argOptional.currentVersion)) {
     versionHistory = versionHistory.filter(
-      (version) => version !== argCurrentVersion
+      (version) => version !== argOptional.currentVersion
     )
   }
   core.debug('versionHistory[' + JSON.stringify(versionHistory) + ']')
@@ -148,7 +155,7 @@ module.exports = async function getReleaseType(
       // locate the previous version
       let previousVersion = semverMaxSatisfying(
         versionHistory,
-        '<' + argCurrentVersion,
+        '<' + argOptional.currentVersion,
         { includePrerelease: true }
       )
       if (previousVersion === null || previousVersion === undefined) {
@@ -157,7 +164,7 @@ module.exports = async function getReleaseType(
       } else {
         // determine the release type based on the difference between the current and previous version
         core.info('Previous version located [' + previousVersion + ']')
-        let versionDiff = semverDiff(previousVersion, argCurrentVersion, {
+        let versionDiff = semverDiff(previousVersion, argOptional.currentVersion, {
           includePrerelease: true,
         })
         core.info('versionDiff[' + versionDiff + ']')
@@ -165,7 +172,7 @@ module.exports = async function getReleaseType(
           // no difference found between the current and previous version
           throw new Error(
             'No difference between current[' +
-              argCurrentVersion +
+              argOptional.currentVersion +
               '] and previous[' +
               previousVersion +
               '] versions'
@@ -185,10 +192,10 @@ module.exports = async function getReleaseType(
     // check how much version history we have
     if (versionHistory.length === 0) {
       outType = 'initial'
-      if (argCurrentVersion === argInceptionVersionTag) {
+      if (argOptional.currentVersion === argOptional.inceptionVersionTag) {
         // we have no version history and the current version is the inception version
         // which means the user has not set the version correctly
-        outChange = argInceptionVersionIncrement
+        outChange = argOptional.inceptionVersionIncrement
         core.warning(
           'Current version is equal to inception version, ensuring increment to[' +
             outChange +
@@ -202,7 +209,7 @@ module.exports = async function getReleaseType(
       // locate the previous version
       let previousVersion = semverMaxSatisfying(
         versionHistory,
-        '<' + argCurrentVersion,
+        '<' + argOptional.currentVersion,
         { includePrerelease: true }
       )
       if (previousVersion === null || previousVersion === undefined) {
@@ -211,7 +218,7 @@ module.exports = async function getReleaseType(
       } else {
         // determine the release type based on the difference between the current and previous version
         core.info('Previous version located [' + previousVersion + ']')
-        let versionDiff = semverDiff(previousVersion, argCurrentVersion, {
+        let versionDiff = semverDiff(previousVersion, argOptional.currentVersion, {
           includePrerelease: true,
         })
         core.info('versionDiff[' + versionDiff + ']')
@@ -219,7 +226,7 @@ module.exports = async function getReleaseType(
           // no difference found between the current and previous version
           throw new Error(
             'No difference between current[' +
-              argCurrentVersion +
+              argOptional.currentVersion +
               '] and previous[' +
               previousVersion +
               '] versions'
@@ -251,8 +258,8 @@ module.exports = async function getReleaseType(
     // check how much version history we have
     if (versionHistory.length === 0) {
       outType = 'build'
-      if (argCurrentVersion === argInceptionVersionTag) {
-        outChange = argInceptionVersionIncrement // first version, so make it at least 0.1.0
+      if (argOptional.currentVersion === argOptional.inceptionVersionTag) {
+        outChange = argOptional.inceptionVersionIncrement // first version, so make it at least 0.1.0
       } else {
         // current version is not the inception version tag
         // so do not increment the version, just use the current version

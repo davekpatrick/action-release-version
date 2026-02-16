@@ -47,7 +47,7 @@ describe("module: github @action", async function () {
   // ---------------------------------------------------
   // ---------------------------------------------------
   context("Action core functionality tests", function () {
-    const cfgTrace = true
+    const cfgTrace = false
     let moduleName = "@actions/core"
     let modulePath = dirNodeModules + path.sep + moduleName
     it("Action core setOutput", async function (argTrace = cfgTrace) {

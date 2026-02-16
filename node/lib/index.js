@@ -253,11 +253,14 @@ module.exports = async function main() {
     // - if current version is from a workflow_dispatch, do not increment
     // - otherwise increment based on the type determined above
     // ------------------------------------
-    const getReleaseTypeData = await getReleaseType({
-      apiToken: apiToken, // GitHub API token
-      argCurrentVersion: currentVersion, // the identified current version
-      argVersionHistory: getVersionData.history // full version history, TODO: this be an issue with larger projects and version history
-    })
+    const getReleaseTypeData = await getReleaseType(
+      apiToken, // GitHub API token
+      {
+        //  other optional inputs
+        currentVersion: currentVersion, // the identified current version
+        versionHistory: getVersionData.history // full version history, TODO: this be an issue with larger projects and version history
+      }
+    )
     core.info('getReleaseTypeData[' + JSON.stringify(getReleaseTypeData) + ']')
     core.endGroup()
     core.startGroup('Execution')
