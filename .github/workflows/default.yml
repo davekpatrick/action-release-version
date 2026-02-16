@@ -89,7 +89,7 @@ jobs:
         name: ${{ github.event.repository.name }}-build
         if-no-files-found: error
         path: |
-          node/dist/
+          dist/
           node/package-lock.json
           README.md
           action.yml
