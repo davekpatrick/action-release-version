@@ -1,5 +1,5 @@
 // BOF
-const os  = require ("node:os")
+const os = require("node:os")
 const path = require("node:path")
 // project directories
 const dirRoot = path.normalize(path.resolve(__dirname, "..", ".."))
@@ -57,12 +57,15 @@ describe("module: github @action", async function () {
       // - This test verifies the action core module is able to set outputs
       // ---------------------------------------------------
       // fixture inputs
-      var regex = new RegExp(/^(?<key>.*)<<(?:ghadelimiter_.*)[\n\r]+(?<value>[\S\s]*)(?:ghadelimiter_.*)$/)
-      let UUID = crypto.randomUUID()  // create a randomly generated, 36 character long v4 UUID
+      var regex = new RegExp(
+        /^(?<key>.*)<<(?:ghadelimiter_.*)[\n\r]+(?<value>[\S\s]*)(?:ghadelimiter_.*)$/,
+      )
+      let UUID = crypto.randomUUID() // create a randomly generated, 36 character long v4 UUID
       //
       let key = "time"
       let value = new Date().toTimeString()
-      let expectedOutputType = process.env.GITHUB_ENV !== undefined ? true : false
+      let expectedOutputType =
+        process.env.GITHUB_ENV !== undefined ? true : false
       let expected = {
         /*
         "\n::set-output name=time::21:51:19 GMT+0000 (Coordinated Universal Time)\n"
@@ -76,14 +79,15 @@ describe("module: github @action", async function () {
         true: `${key}<<ghadelimiter_${UUID}
                ${value}
                ghadelimiter_${UUID}
-               `.split("\n")
-               .map(s => s.trim())
-               .join("\n")
+               `
+          .split("\n")
+          .map((s) => s.trim())
+          .join("\n"),
       }
-      let processStdOut = '' // used to capture stdout 
-      // Mock 
+      let processStdOut = "" // used to capture stdout
+      // Mock
       const fileCommandMock = {
-        issueFileCommand: (command, message) =>  {
+        issueFileCommand: (command, message) => {
           // DOC: https://github.com/actions/toolkit/blob/8351a5d84d862813d1bb8bdeef87b215f8a946f9/packages/core/src/file-command.ts#L11
           let tmp = message.match(regex)
           // prepareKeyValueMessage mock
@@ -91,22 +95,23 @@ describe("module: github @action", async function () {
           let tmpl = `${tmp.groups.key}<<ghadelimiter_${UUID}
                       ${tmp.groups.value.trimEnd()}
                       ghadelimiter_${UUID}
-                     `.split("\n")
-                      .map(s => s.trim())
-                      .join("\n")
+                     `
+            .split("\n")
+            .map((s) => s.trim())
+            .join("\n")
           process.stdout.write(tmpl)
         },
       }
       // Use proxyquire to inject mocks
       const main = proxyquire(modulePath, {
         "./file-command": fileCommandMock,
-        "node:process": processMock,     
+        "node:process": processMock,
       })
       // execute the test
       const originalStdoutWrite = process.stdout.write.bind(process.stdout)
       process.stdout.write = (chunk, encoding, callback) => {
-        // 
-        processStdOut += chunk;
+        //
+        processStdOut += chunk
         // Call the original write method to ensure normal console output still works if desired
         // or simply return the chunk if you want to suppress console output during capture
         //return originalStdoutWrite(chunk, encoding, callback);
@@ -114,8 +119,8 @@ describe("module: github @action", async function () {
       }
       await main.setOutput(key, value)
       const result = processStdOut
-      process.stdout.write = originalStdoutWrite;
-      // 
+      process.stdout.write = originalStdoutWrite
+      //
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
       }
@@ -131,12 +136,15 @@ describe("module: github @action", async function () {
       // - This test verifies the action core module is able to set environment variables
       // ---------------------------------------------------
       // fixture inputs
-      var regex = new RegExp(/^(?<key>.*)<<(?:ghadelimiter_.*)[\n\r]+(?<value>[\S\s]*)(?:ghadelimiter_.*)$/)
-      let UUID = crypto.randomUUID()  // create a randomly generated, 36 character long v4 UUID
+      var regex = new RegExp(
+        /^(?<key>.*)<<(?:ghadelimiter_.*)[\n\r]+(?<value>[\S\s]*)(?:ghadelimiter_.*)$/,
+      )
+      let UUID = crypto.randomUUID() // create a randomly generated, 36 character long v4 UUID
       //
       let key = "TEST"
       let value = new Date().toTimeString()
-      let expectedOutputType = process.env.GITHUB_ENV !== undefined ? true : false
+      let expectedOutputType =
+        process.env.GITHUB_ENV !== undefined ? true : false
       let expected = {
         /*
         "\n::set-env name=time::21:51:19 GMT+0000 (Coordinated Universal Time)\n"
@@ -150,14 +158,15 @@ describe("module: github @action", async function () {
         true: `${key}<<ghadelimiter_${UUID}
                ${value}
                ghadelimiter_${UUID}
-               `.split("\n")
-               .map(s => s.trim())
-               .join("\n")
+               `
+          .split("\n")
+          .map((s) => s.trim())
+          .join("\n"),
       }
-      let processStdOut = '' // used to capture stdout
-      // Mock 
+      let processStdOut = "" // used to capture stdout
+      // Mock
       const fileCommandMock = {
-        issueFileCommand: (command, message) =>  {
+        issueFileCommand: (command, message) => {
           // DOC: https://github.com/actions/toolkit/blob/8351a5d84d862813d1bb8bdeef87b215f8a946f9/packages/core/src/file-command.ts#L11
           let tmp = message.match(regex)
           // prepareKeyValueMessage mock
@@ -165,27 +174,28 @@ describe("module: github @action", async function () {
           let tmpl = `${tmp.groups.key}<<ghadelimiter_${UUID}
                       ${tmp.groups.value.trimEnd()}
                       ghadelimiter_${UUID}
-                     `.split("\n")
-                      .map(s => s.trim())
-                      .join("\n")
+                     `
+            .split("\n")
+            .map((s) => s.trim())
+            .join("\n")
           process.stdout.write(tmpl)
         },
       }
       // Use proxyquire to inject mocks
       const main = proxyquire(modulePath, {
         "./file-command": fileCommandMock,
-        "node:process": processMock,     
+        "node:process": processMock,
       })
       // execute the test
       const originalStdoutWrite = process.stdout.write.bind(process.stdout)
       process.stdout.write = (chunk, encoding, callback) => {
-        // 
-        processStdOut += chunk;
+        //
+        processStdOut += chunk
         // Call the original write method to ensure normal console output still works if desired
         // or simply return the chunk if you want to suppress console output during capture
         //return originalStdoutWrite(chunk, encoding, callback);
         return true
-      } 
+      }
       // execute the test
       await main.exportVariable(key, value)
       const result = processStdOut

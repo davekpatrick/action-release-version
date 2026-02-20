@@ -74,7 +74,7 @@ describe("function: get-release-type.js", async function () {
       //
       const githubRepository = process.env["GITHUB_REPOSITORY"]
       const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
-      const githubEventName = 'release'
+      const githubEventName = "release"
       const githubDefaultBranchName =
         process.env["GITHUB_REF"].match(/[^/]+$/g)[0] // get last part of ref only aka branch name
       // Mock the octokit client with all required API calls
@@ -125,9 +125,7 @@ describe("function: get-release-type.js", async function () {
         "node:process": processMock,
       })
       // execute the test
-      const result = await main(
-        apiToken
-      )
+      const result = await main(apiToken)
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
       }

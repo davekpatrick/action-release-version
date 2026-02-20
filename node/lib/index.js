@@ -258,7 +258,7 @@ module.exports = async function main() {
       {
         //  other optional inputs
         currentVersion: currentVersion, // the identified current version
-        versionHistory: getVersionData.history // full version history, TODO: this be an issue with larger projects and version history
+        versionHistory: getVersionData.history, // full version history, TODO: this be an issue with larger projects and version history
       }
     )
     core.info('getReleaseTypeData[' + JSON.stringify(getReleaseTypeData) + ']')

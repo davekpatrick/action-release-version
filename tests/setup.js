@@ -92,9 +92,14 @@ function setLocalTestEnvironmentValues(data) {
       HOME: "?",
       ACTIONS_STEP_DEBUG: "true",
       // SRC: https://github.com/actions/toolkit/blob/8c90e2297afbb441a5d0a345e901fe83516ab42f/packages/core/src/file-command.ts#L11
-      //     issueFileCommand() function 
-      GITHUB_OUTPUT: path.join(__dirname, "fixtures", "issueFileCommand", "output"),
-      GITHUB_ENV:  path.join(__dirname, "fixtures", "issueFileCommand", "env"),
+      //     issueFileCommand() function
+      GITHUB_OUTPUT: path.join(
+        __dirname,
+        "fixtures",
+        "issueFileCommand",
+        "output",
+      ),
+      GITHUB_ENV: path.join(__dirname, "fixtures", "issueFileCommand", "env"),
     }
   } else {
     console.log("runningIn:[continuousIntegration]")

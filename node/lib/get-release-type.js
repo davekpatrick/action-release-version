@@ -16,15 +16,15 @@ module.exports = async function getReleaseType(
     inceptionVersionTag: '0.0.0',
     inceptionVersionIncrement: 'minor',
     currentVersion: null,
-    versionHistory: []
-  },
+    versionHistory: [],
+  }
   //argTrigger = null,
 ) {
   const functionName = getReleaseType.name
   // ------------------------------------
   core.debug('Start ' + functionName)
   // Argument clean up
-  if (argOptional.currentVersion === null ) {
+  if (argOptional.currentVersion === null) {
     argOptional.currentVersion = argOptional.inceptionVersionTag
   }
   if (argOptional.versionHistory.length === 0) {
@@ -164,9 +164,13 @@ module.exports = async function getReleaseType(
       } else {
         // determine the release type based on the difference between the current and previous version
         core.info('Previous version located [' + previousVersion + ']')
-        let versionDiff = semverDiff(previousVersion, argOptional.currentVersion, {
-          includePrerelease: true,
-        })
+        let versionDiff = semverDiff(
+          previousVersion,
+          argOptional.currentVersion,
+          {
+            includePrerelease: true,
+          }
+        )
         core.info('versionDiff[' + versionDiff + ']')
         if (versionDiff === null || versionDiff === undefined) {
           // no difference found between the current and previous version
@@ -218,9 +222,13 @@ module.exports = async function getReleaseType(
       } else {
         // determine the release type based on the difference between the current and previous version
         core.info('Previous version located [' + previousVersion + ']')
-        let versionDiff = semverDiff(previousVersion, argOptional.currentVersion, {
-          includePrerelease: true,
-        })
+        let versionDiff = semverDiff(
+          previousVersion,
+          argOptional.currentVersion,
+          {
+            includePrerelease: true,
+          }
+        )
         core.info('versionDiff[' + versionDiff + ']')
         if (versionDiff === null || versionDiff === undefined) {
           // no difference found between the current and previous version
