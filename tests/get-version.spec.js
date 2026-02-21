@@ -63,7 +63,7 @@ describe("function: get-version.js", async function () {
       expect(result).to.be.a("function")
     })
 
-    it("Should accept default parameters", async function (argTrace = cfgTrace) {
+    it("Should accept default parameters (release)", async function (argTrace = cfgTrace) {
       // ---------------------------------------------------
       // Details
       // ------------
@@ -76,7 +76,7 @@ describe("function: get-version.js", async function () {
       const githubRepository = process.env["GITHUB_REPOSITORY"]
       const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
       const githubCommitSha = process.env["GITHUB_SHA"]
-      const githubEventName = process.env["GITHUB_EVENT_NAME"]
+      const githubEventName = "release"
       const latestTagName = "1.2.3"
       // Mock the octokit client with all required API calls
       const mockOctokit = {
