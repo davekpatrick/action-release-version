@@ -11,14 +11,14 @@ const semverMaxSatisfying = require('semver/ranges/max-satisfying')
 // ------------------------------------
 module.exports = async function getVersion(
   argApiToken,
-  argGithub = {
-    eventType: null,
-    repoOwner: null,
-    repoName: null,
-  },
-  argTagPrefix = 'v',
-  argInceptionVersionTag = '0.0.0',
-  argVersion = null // Just use the provided version
+  {
+    argGithubEventType = null,
+    argGithubRepoOwner = null,
+    argGithubRepoName =  null,
+    argTagPrefix = 'v',
+    argInceptionVersionTag = '0.0.0',
+    argVersion = null // just use this input as the 'current' version
+  }
 ) {
   const functionName = getVersion.name
   // ------------------------------------
@@ -36,14 +36,13 @@ module.exports = async function getVersion(
   var outTrigger = null
   var outVersion = null
   var outHistory = []
-
   // what event triggered this release version action
   // e.g. push, pull_request, release, workflow_dispatch
   // DOC: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types
-  outTrigger = argGithub.eventType
+  outTrigger = argGithubEventType
   core.info('Event trigger detected[' + outTrigger + ']')
-  const githubRepoOwner = argGithub.repoOwner
-  const githubRepoName = argGithub.repoName
+  const githubRepoOwner = argGithubRepoOwner
+  const githubRepoName = argGithubRepoName
   core.info(
     'Repository detected[' + githubRepoOwner + '/' + githubRepoName + ']'
   )

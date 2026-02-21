@@ -365,7 +365,7 @@ describe("index.js", async function () {
           switch (input) {
             case "apiToken":
               return apiToken
-            case "argVersion":
+            case "version":
               return currentVersion
             case "versionInputAsReleaseVersion":
               return "true"

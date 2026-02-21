@@ -30,7 +30,7 @@ module.exports = async function getReleaseType(
   if (argOptional.versionHistory.length === 0) {
     argOptional.versionHistory = [argOptional.currentVersion]
   }
-  core.info('currentVersion[' + argOptional.currentVersion + ']')
+  //core.info('currentVersion[' + argOptional.currentVersion + ']')
   var outEvent = null
   var outType = null
   var outChange = null

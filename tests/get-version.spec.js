@@ -141,11 +141,11 @@ describe("function: get-version.js", async function () {
       // execute the test
       const result = await main(
         apiToken,
-        (data = {
-          eventType: githubEventName,
-          repoOwner: githubRepositoryOwner,
-          repoName: githubRepository,
-        }),
+        {
+          githubEventName: githubEventName,
+          githubRepoOwner: githubRepositoryOwner,
+          githhubRepoName: githubRepository,
+        },
       )
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
@@ -224,9 +224,9 @@ describe("function: get-version.js", async function () {
       // execute the test
       const result = await main(
         apiToken,
-        (data = {}),
-        undefined,
-        inceptionVersion,
+        {
+          inceptionVersionTag: inceptionVersion
+        }
       )
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
@@ -304,16 +304,18 @@ describe("function: get-version.js", async function () {
         setFailed: () => {},
       }
       // Use proxyquire to inject mocks
-      const getVersionWithMocks = proxyquire(modulePath, {
+      const main = proxyquire(modulePath, {
         "@actions/github": githubMock,
         "@actions/core": coreMock,
         "node:process": processMock,
       })
       // execute the test
-      const result = await getVersionWithMocks(
+      const result = await main(
         apiToken,
-        tagPrefix,
-        inceptionVersion,
+        {
+          argTagPrefix: tagPrefix,
+          argInceptionVersionTag: inceptionVersion
+        }
       )
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
@@ -394,7 +396,14 @@ describe("function: get-version.js", async function () {
         "node:process": processMock,
       })
       // execute the test
-      const result = await main(apiToken, tagPrefix, inceptionVersion)
+      const result = await main(
+        apiToken,
+        {
+          argTagPrefix: tagPrefix,
+          argInceptionVersionTag: inceptionVersion
+        }
+      )
+
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
       }
@@ -475,16 +484,18 @@ describe("function: get-version.js", async function () {
         setFailed: () => {},
       }
       // Use proxyquire to inject mocks
-      const getVersionWithMocks = proxyquire(modulePath, {
+      const main = proxyquire(modulePath, {
         "@actions/github": githubMock,
         "@actions/core": coreMock,
         "node:process": processMock,
       })
       // execute the test
-      const result = await getVersionWithMocks(
+      const result = await main(
         apiToken,
-        tagPrefix,
-        inceptionVersion,
+        {
+          argTagPrefix: tagPrefix,
+          argInceptionVersionTag: inceptionVersion
+        }
       )
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
@@ -583,17 +594,19 @@ describe("function: get-version.js", async function () {
       }
 
       // Use proxyquire to inject mocks
-      const getVersionWithMocks = proxyquire(modulePath, {
+      const main = proxyquire(modulePath, {
         "@actions/github": githubMock,
         "@actions/core": coreMock,
         "node:process": processMock,
       })
 
       // execute the test
-      const result = await getVersionWithMocks(
+      const result = await main(
         apiToken,
-        tagPrefix,
-        inceptionVersion,
+        {
+          argTagPrefix: tagPrefix,
+          argInceptionVersionTag: inceptionVersion
+        }
       )
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
@@ -684,17 +697,19 @@ describe("function: get-version.js", async function () {
       }
 
       // Use proxyquire to inject mocks
-      const getVersionWithMocks = proxyquire(modulePath, {
+      const main = proxyquire(modulePath, {
         "@actions/github": githubMock,
         "@actions/core": coreMock,
         "node:process": processMock,
       })
 
       // execute the test
-      const result = await getVersionWithMocks(
+      const result = await main(
         apiToken,
-        tagPrefix,
-        inceptionVersion,
+        {
+          argTagPrefix: tagPrefix,
+          argInceptionVersionTag: inceptionVersion
+        }
       )
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
