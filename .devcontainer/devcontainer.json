@@ -1,5 +1,5 @@
 {
-  "name": "Github Node.js Action",
+  "name": "default",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
   // https://containers.dev/features
   "features": {

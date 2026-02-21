@@ -3,12 +3,16 @@
 exit: true # could be expressed as "no-exit: true"
 extension: ['js']
 file:
-  - '../tests/setup.js'
+- '../tests/setup.js'
 package: './package.json'
 recursive: true
 reporter: 'spec'
 spec:
-  - '../tests/**/*.spec.js'
+- '../tests/**/*.spec.js'
 timeout: 2000 # same as "timeout: '2s'"
+retries: 1
 ui: 'bdd'
+ignore:
+- '../tests/logs/*'
+- '../tests/tmp/*'
 # EOF

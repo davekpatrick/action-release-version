@@ -4,6 +4,7 @@
 ---
 name: Continuous Integration
 run-name: "Continuous Integration (CI) build #${{ github.run_number }}"
+## ---------------------------------------------------
 on:
   push:
     branches-ignore:
@@ -11,10 +12,22 @@ on:
     - development
   pull_request:
     # The branches below must be a subset of the branches above
+    # matched against refs/heads
     branches:
     - main
+    types:
+    - opened
+    - synchronize
+    - reopened
+    - ready_for_review
+    - labeled
+    - unlabeled
+## ---------------------------------------------------
+concurrency:
+  group: continuousIntegration-${{ github.ref }}
+  cancel-in-progress: true
+## ---------------------------------------------------
 jobs:
-  # --------------------------------------------
   build:
     name: Artifact build
     strategy:
@@ -41,7 +54,7 @@ jobs:
       run: |
         cd node
         npm run format
-    - name: Unit Tests
+    - name: Unit Test
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -69,12 +82,14 @@ jobs:
       uses: ./
       with:
         apiToken: ${{ secrets.GITHUB_TOKEN }}
-    - uses: actions/upload-artifact@v4
+        tagPrefix: ''
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ github.event.repository.name }}-build
         if-no-files-found: error
         path: |
-          node/dist/
+          dist/
           node/package-lock.json
           README.md
           action.yml

@@ -4,14 +4,15 @@
 ---
 name: Continuous Delivery Release
 run-name: "Continuous Delivery (CD) creating release"
+## ---------------------------------------------------
 on:
   push:
     branches:    
     - main
     paths-ignore:
     - '**.md'
+## ---------------------------------------------------
 jobs:
-  # --------------------------------------------
   build:
     name: Artifact build
     strategy:
@@ -63,7 +64,7 @@ jobs:
         name: ${{ github.event.repository.name }}_release_${{ steps.build-version.outputs.versionTag }}
         if-no-files-found: error
         path: |
-          node/dist/
+          dist/
           node/package-lock.json
           README.md
           action.yml

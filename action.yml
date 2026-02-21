@@ -12,12 +12,20 @@ inputs:
     required: false
     default: 'v'
   inceptionVersionTag: 
-    description: 'The initial version tag to use for the first release'
+    description: 'The starting point if no prior tags are found'
     required: false
     default: '0.0.0'
   version: 
     description: 'The semver version to use as the current version'
     required: false
+  versionInputAsReleaseVersion:
+    description: 'Use the current version input as the release version, skipping any version incrementing'
+    required: false
+    default: 'false'
+  keywords:
+    description: 'A comma-separated list of keywords to identify the type of release'
+    required: false
+    default: 'major,minor,patch,premajor,preminor,prepatch,prerelease'
 ## ------------------------------
 outputs:
   versionTag: # id of output
@@ -29,5 +37,5 @@ branding:
 ## ------------------------------
 runs:
   using: 'node20'
-  main: 'node/dist/index.js'
+  main: 'dist/index.js'
 # EOF

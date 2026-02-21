@@ -3,19 +3,29 @@
 const packageName = '@@NPM_PACKAGE_NAME@@'
 const packageVersion = '@@NPM_PACKAGE_VERSION@@'
 // ------------------------------------
+const process = require('node:process')
+// ------------------------------------
 // External modules
 // ------------------------------------
 const core = require('@actions/core') // Microsoft's actions toolkit
+const github = require('@actions/github') // Microsoft's actions github toolkit
 const semver = require('semver') // Node's semver package
 // ------------------------------------
 // Internal modules
 // ------------------------------------
 const getVersion = require('./get-version')
 const getReleaseType = require('./get-release-type')
+const incrementVersion = require('./increment-version')
 //
 module.exports = async function main() {
   try {
     core.startGroup('Initialization')
+    // ------------------------------------
+    // ------------------------------------
+    // variables
+    var currentVersion = null
+    var outVersionTag = null
+    // ------------------------------------
     core.info(
       'package[' + packageName + ']' + ' version[' + packageVersion + ']'
     )
@@ -23,7 +33,15 @@ module.exports = async function main() {
     const argTagPrefix = core.getInput('tagPrefix')
     const argInceptionVersionTag = core.getInput('inceptionVersionTag')
     const argVersion = core.getInput('argVersion')
-
+    const argVersionInputAsReleaseVersion = core.getInput(
+      'versionInputAsReleaseVersion'
+    )
+    //
+    // API token can be provided as an action input or via the GITHUB_TOKEN environment variable
+    // input takes precedence over environment variable
+    // see https://docs.github.com/en/actions/security-guides/automatic-token-authentication
+    // for more information on the GITHUB_TOKEN variable
+    //
     const argApiToken = core.getInput('apiToken')
     const envApiToken = process.env.GITHUB_TOKEN // doc: https://nodejs.org/dist/latest-v8.x/docs/api/process.html
     //
@@ -50,48 +68,136 @@ module.exports = async function main() {
     // ensure we mask the token in logs
     core.debug('API token length[' + apiToken.length + ']')
     core.setSecret(apiToken)
+    // doc: https://github.com/actions/toolkit/blob/main/packages/github/README.md
+    //      https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#event-object-common-properties
+    //
+    // https://github.com/actions/toolkit/blob/main/packages/github/src/context.ts
+    // https://docs.github.com/en/actions/learn-github-actions/variables
+    // env.GITHUB_EVENT_NAME
+    const githubContext = github.context
+    core.debug('context[' + JSON.stringify(githubContext) + ']')
+    // determine what event triggered this action
+    // e.g. push, pull_request, release, workflow_dispatch
+    // DOC: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types
+    // ------------------------------------
+    const githubEventType = githubContext.eventName
+    core.info('githubEventType[' + githubEventType + ']')
+    // get the repo owner and name
+    // TODO:
+    // investigate github.context.payload.repository.owner.name
+    //  - this used to exist but no longer appears in the payload for some reason
+    // github.context.payload.repository.owner.login
+    //  - is the login name
+    //  - can this different from the actual name e.g. for an organization
+    // github.context.payload.repository.owner.name
+    //  - is the actual name
+    //  - as using this but no longer exists in payload for some reason
+    const gitHubRepoOwnerLogin = githubContext.payload.repository.owner.login
+    const gitHubRepoOwnerName = githubContext.payload.repository.owner.name
+    var gitHubRepoOwner = null
+    var gitHubRepoName = githubContext.payload.repository.name
+    core.debug(
+      'gitHubRepoOwnerLogin[' +
+        gitHubRepoOwnerLogin +
+        '] gitHubRepoOwnerName[' +
+        gitHubRepoOwnerName +
+        '] gitHubRepo[' +
+        gitHubRepoName +
+        ']'
+    )
+    // prefer the actual name, but fall back to the login if name is not available
+    if (gitHubRepoOwnerName === undefined) {
+      core.debug('Undefined GitHub repository.owner.name')
+      gitHubRepoOwner = gitHubRepoOwnerLogin
+    } else {
+      gitHubRepoOwner = gitHubRepoOwnerName
+    }
+    // ensure we have valid repository information
+    if (
+      gitHubRepoOwner === null ||
+      gitHubRepoOwner === '' ||
+      gitHubRepoOwner === undefined
+    ) {
+      throw new Error('Unable to locate the repository owner')
+    }
+    if (
+      gitHubRepoName === null ||
+      gitHubRepoName === '' ||
+      gitHubRepoName === undefined
+    ) {
+      throw new Error('Unable to locate the repository name')
+    }
+    core.info(
+      'gitHubRepoOwner[' +
+        gitHubRepoOwner +
+        '] gitHubRepoName[' +
+        gitHubRepoName +
+        ']'
+    )
+
     core.endGroup()
     core.startGroup('Preparation')
     // ------------------------------------
     // ------------------------------------
-    //
-    //
-    //core.info(JSON.stringify(process.env))
+    // check if we have a version input, and are just going to use that as the release version
+    // if so, validate it and return it
+    if (argVersionInputAsReleaseVersion === 'true') {
+      if (argVersion !== null && argVersion !== '') {
+        core.debug('argVersion[' + argVersion + ']')
+        let semVer = semver.clean(argVersion)
+        if (semVer === null || semVer === '' || semVer === undefined) {
+          // strange, the input provided is invalid
+          throw new Error('Invalid semver version[' + argVersion + ']')
+        }
+        if (argVersionInputAsReleaseVersion === 'true') {
+          currentVersion = semVer
+          core.info(
+            'Using the current version[' +
+              currentVersion +
+              '] as the release version'
+          )
+          // ------------------------------------
+          outVersionTag = currentVersion
+          return outVersionTag // early exit
+        }
+      } else {
+        throw new Error(
+          'Action input[versionInputAsReleaseVersion] is true, but no version input has been provided'
+        )
+      }
+    }
+    // ------------------------------------
     // ------------------------------------
     // get the "current" version
-    // methods
-    // - via argVersion input
-    // - on release event, use the tag that triggered the workflow
-    // - on workflow_dispatch event, use the input version
-    // - get the latest tag from the repo
-    // - Repository action variable, RELEASE_VERSION
-    // - if no version found, use argInceptionoutVersionTag
+    // methods in order of precedence (e.g arg, env, cfg, def)
+    // arg:
+    //   - via argVersion input
+    //   - on release event, use the tag that triggered the workflow
+    //   - on workflow_dispatch event, use the input version
+    // env:
+    //   - repository action variable, RELEASE_VERSION
+    // cfg:
+    //   - action configuration file
+    //   - get the latest from the git repostory tags
+    // def:
+    //   - if no version found, use argInceptionVersionTag default
     // ------------------------------------
     var getVersionData = {}
-    var currentVersion = null
-    var outVersionTag = null
-    if (argVersion !== null && argVersion !== '') {
-      core.debug('argVersion[' + argVersion + ']')
-      let semVer = semver.clean(argVersion)
-      if (semVer === null || semVer === '' || semVer === undefined) {
-        // strange, the input provided is invalid
-        throw new Error('Invalid semver version[' + argVersion + ']')
-      }
-      currentVersion = semVer
-      core.info(
-        'currentVersion[' + currentVersion + '] as dictated by action input'
-      )
-      outVersionTag = currentVersion
-      return outVersionTag
-    } else {
-      getVersionData = await getVersion(
-        apiToken,
-        argTagPrefix,
-        argInceptionVersionTag
-      )
-      currentVersion = getVersionData.version
-    }
+    getVersionData = await getVersion(
+      apiToken, // GitHub API token
+      {
+        // GitHub Environment inputs
+        eventType: githubEventType,
+        repoOwner: gitHubRepoOwner,
+        repoName: gitHubRepoName,
+      },
+      // Action inputs
+      argTagPrefix,
+      argInceptionVersionTag,
+      argVersion
+    )
     core.debug('getVersionData[' + JSON.stringify(getVersionData) + ']')
+    currentVersion = getVersionData.version
     core.info('currentVersion[' + currentVersion + ']')
     // ------------------------------------
     // determine the increment type ..initial thoughts
@@ -148,32 +254,29 @@ module.exports = async function main() {
     // - otherwise increment based on the type determined above
     // ------------------------------------
     const getReleaseTypeData = await getReleaseType(
-      apiToken,
-      getVersionData.version,
-      getVersionData.history
+      apiToken, // GitHub API token
+      {
+        //  other optional inputs
+        currentVersion: currentVersion, // the identified current version
+        versionHistory: getVersionData.history, // full version history, TODO: this be an issue with larger projects and version history
+      }
     )
     core.info('getReleaseTypeData[' + JSON.stringify(getReleaseTypeData) + ']')
     core.endGroup()
     core.startGroup('Execution')
-
-    if (currentVersion === null) {
-      // TODO: review logic here
-      // no current version, so start at argInceptionVersionTag (aka 0.0.0) and increment
-      outVersionTag = semver.inc(argInceptionVersionTag, 'minor')
-    } else {
-      // increment the current version
-      if (
-        getReleaseTypeData.event === 'released' ||
-        getReleaseTypeData.event === 'manual'
-      ) {
-        // already released or manually triggered, so use the current version
-        outVersionTag = currentVersion
-      } else {
-        // increment based on the change type determined
-        //outVersionTag = semver.inc(currentVersion, getReleaseTypeData.change)
-        outVersionTag = semver.inc(currentVersion, 'minor')
-      }
+    // ------------------------------------
+    const incrementedVersionData = await incrementVersion(
+      currentVersion,
+      getReleaseTypeData.type,
+      getReleaseTypeData.change
+    )
+    core.debug(
+      'incrementedVersionData[' + JSON.stringify(incrementedVersionData) + ']'
+    )
+    if (incrementedVersionData === null) {
+      throw new Error('incrementVersion returned null data')
     }
+    outVersionTag = incrementedVersionData.version.new
     // ------------------------------------
     core.endGroup()
 
@@ -187,5 +290,5 @@ module.exports = async function main() {
     core.setFailed(error.message)
     process.exit(core.ExitCode.Failure)
   }
-}
+} // main
 // EOF

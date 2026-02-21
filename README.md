@@ -17,11 +17,9 @@ The release version to use
 ## Example usage
 
 ```yaml
-
 uses: davekpatrick/action-release-version@0.1.0
 with:
   apiToken: ${{ secret.GITHUB_TOKEN }}
-
 ```
 
 <!-- EOF -->
