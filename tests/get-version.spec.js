@@ -144,7 +144,7 @@ describe("function: get-version.js", async function () {
         {
           githubEventName: githubEventName,
           githubRepoOwner: githubRepositoryOwner,
-          githhubRepoName: githubRepository,
+          githubRepoName: githubRepository,
         },
       )
       if (argTrace) {
@@ -313,7 +313,7 @@ describe("function: get-version.js", async function () {
       const result = await main(
         apiToken,
         {
-          argTagPrefix: tagPrefix,
+          tagPrefix: tagPrefix,
           argInceptionVersionTag: inceptionVersion
         }
       )
@@ -399,7 +399,7 @@ describe("function: get-version.js", async function () {
       const result = await main(
         apiToken,
         {
-          argTagPrefix: tagPrefix,
+          tagPrefix: tagPrefix,
           argInceptionVersionTag: inceptionVersion
         }
       )
@@ -493,7 +493,7 @@ describe("function: get-version.js", async function () {
       const result = await main(
         apiToken,
         {
-          argTagPrefix: tagPrefix,
+          tagPrefix: tagPrefix,
           argInceptionVersionTag: inceptionVersion
         }
       )
@@ -604,7 +604,7 @@ describe("function: get-version.js", async function () {
       const result = await main(
         apiToken,
         {
-          argTagPrefix: tagPrefix,
+          tagPrefix: tagPrefix,
           argInceptionVersionTag: inceptionVersion
         }
       )

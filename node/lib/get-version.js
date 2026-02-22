@@ -10,14 +10,16 @@ const semverParse = require('semver/functions/parse')
 const semverMaxSatisfying = require('semver/ranges/max-satisfying')
 // ------------------------------------
 module.exports = async function getVersion(
-  argApiToken,
+  apiToken,
   {
-    argGithubEventType = null,
-    argGithubRepoOwner = null,
-    argGithubRepoName =  null,
-    argTagPrefix = 'v',
-    argInceptionVersionTag = '0.0.0',
-    argVersion = null // just use this input as the 'current' version
+    //
+    githubEventType = null,
+    githubRepoOwner = null,
+    githubRepoName =  null,
+    //
+    tagPrefix = 'v',
+    inceptionVersionTag = '0.0.0',
+    versionTag = null // just use this input as the 'current' version
   }
 ) {
   const functionName = getVersion.name
@@ -33,6 +35,19 @@ module.exports = async function getVersion(
   // - explore github graphQL to retrieve the latest tags
   // ------------------------------------
   core.debug('Start ' + functionName)
+  // ------------------------------------
+  // argument(input) variable setup
+  const argApiToken = apiToken
+  // 
+  const argGithubEventType = githubEventType
+  const argGithubRepoOwner = githubRepoOwner
+  const argGithubRepoName = githubRepoName
+  //
+  const argTagPrefix = tagPrefix
+  const argInceptionVersionTag = inceptionVersionTag
+  const argVersionTag = versionTag
+  // ------------------------------------
+  // output variable setup
   var outTrigger = null
   var outVersion = null
   var outHistory = []
@@ -41,10 +56,8 @@ module.exports = async function getVersion(
   // DOC: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types
   outTrigger = argGithubEventType
   core.info('Event trigger detected[' + outTrigger + ']')
-  const githubRepoOwner = argGithubRepoOwner
-  const githubRepoName = argGithubRepoName
   core.info(
-    'Repository detected[' + githubRepoOwner + '/' + githubRepoName + ']'
+    'Repository detected[' + argGithubRepoOwner + '/' + argGithubRepoName + ']'
   )
   core.info('Tag prefix detected[' + argTagPrefix + ']')
   core.info('Inception version tag detected[' + argInceptionVersionTag + ']')
@@ -60,8 +73,8 @@ module.exports = async function getVersion(
   // get all matching refs (tags)
   // https://docs.github.com/en/rest/reference/git#list-matching-references
   let matchingTags = await octokit.rest.git.listMatchingRefs({
-    owner: githubRepoOwner,
-    repo: githubRepoName,
+    owner: argGithubRepoOwner,
+    repo: argGithubRepoName,
     ref: 'tags/' + argTagPrefix,
   })
   core.debug('matchingTags[' + JSON.stringify(matchingTags) + ']')
@@ -103,8 +116,8 @@ module.exports = async function getVersion(
   }
   // ------------------------------------
   // process the event types
-  if (argVersion !== null && argVersion !== '') {
-    // use the provided current version
+  if (argVersionTag !== null && argVersionTag !== '') {
+    // use the provided 'current' version
     core.info('Version specified as action input[' + argVersion + ']')
     let semVer = semverClean(argVersion)
     if (semVer === null || semVer === '' || semVer === undefined) {
@@ -119,8 +132,8 @@ module.exports = async function getVersion(
     core.info('Release event detected, with tag[' + tagData + ']')
     // ensure the tag exists
     let getRefData = await octokit.rest.git.getRef({
-      owner: githubRepoOwner,
-      repo: githubRepoName,
+      owner: argGithubRepoOwner,
+      repo: argGithubRepoName,
       ref: getRef,
     })
     core.debug('getRefData[' + JSON.stringify(getRefData) + ']')
@@ -146,8 +159,8 @@ module.exports = async function getVersion(
     // get the commit data before the push
     // https://docs.github.com/en/rest/git/commits?apiVersion=2022-11-28#get-a-commit
     let gitBeforeCommitShaData = await octokit.rest.git.getCommit({
-      owner: githubRepoOwner,
-      repo: githubRepoName,
+      owner: argGithubRepoOwner,
+      repo: argGithubRepoName,
       commit_sha: gitBeforeCommitSha, // sha of the commit before the push
     })
     core.info(
@@ -157,15 +170,15 @@ module.exports = async function getVersion(
     // DOC: https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-branches-for-head-commit
     let getBeforeCommitBranches = await octokit.request(
       'GET /repos/' +
-        githubRepoOwner +
+        argGithubRepoOwner +
         '/' +
-        githubRepoName +
+        argGithubRepoName +
         '/commits/' +
         gitBeforeCommitSha +
         '/branches-where-head',
       {
-        owner: githubRepoOwner,
-        repo: githubRepoName,
+        owner: argGithubRepoOwner,
+        repo: argGithubRepoName,
         commit_sha: gitBeforeCommitSha,
       }
     )

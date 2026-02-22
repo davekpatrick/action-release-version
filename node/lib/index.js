@@ -187,13 +187,13 @@ module.exports = async function main() {
       apiToken, // GitHub API token
       {
         // GitHub environment inputs
-        argGithubEventType: githubEventType,
-        argGithubRepoOwner: gitHubRepoOwner,
-        argGithubRepoName: gitHubRepoName,
+        githubEventType: githubEventType,
+        githubRepoOwner: gitHubRepoOwner,
+        githubRepoName: gitHubRepoName,
         // Action inputs
-        argTagPrefix: argTagPrefix,
-        argInceptionVersionTag: argInceptionVersionTag,
-        argVersion: argVersion
+        tagPrefix: argTagPrefix,
+        inceptionVersionTag: argInceptionVersionTag,
+        versionTag: argVersion
       }
     )
     core.debug('getVersionData[' + JSON.stringify(getVersionData) + ']')
