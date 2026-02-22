@@ -193,7 +193,7 @@ module.exports = async function main() {
         // Action inputs
         tagPrefix: argTagPrefix,
         inceptionVersionTag: argInceptionVersionTag,
-        versionTag: argVersion
+        versionTag: argVersion,
       }
     )
     core.debug('getVersionData[' + JSON.stringify(getVersionData) + ']')

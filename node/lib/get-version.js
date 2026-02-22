@@ -15,11 +15,11 @@ module.exports = async function getVersion(
     //
     githubEventType = null,
     githubRepoOwner = null,
-    githubRepoName =  null,
+    githubRepoName = null,
     //
     tagPrefix = 'v',
     inceptionVersionTag = '0.0.0',
-    versionTag = null // just use this input as the 'current' version
+    versionTag = null, // just use this input as the 'current' version
   }
 ) {
   const functionName = getVersion.name
@@ -38,7 +38,7 @@ module.exports = async function getVersion(
   // ------------------------------------
   // argument(input) variable setup
   const argApiToken = apiToken
-  // 
+  //
   const argGithubEventType = githubEventType
   const argGithubRepoOwner = githubRepoOwner
   const argGithubRepoName = githubRepoName
@@ -118,11 +118,11 @@ module.exports = async function getVersion(
   // process the event types
   if (argVersionTag !== null && argVersionTag !== '') {
     // use the provided 'current' version
-    core.info('Version specified as action input[' + argVersion + ']')
-    let semVer = semverClean(argVersion)
+    core.info('Version specified as action input[' + argVersionTag + ']')
+    let semVer = semverClean(argVersionTag)
     if (semVer === null || semVer === '' || semVer === undefined) {
       // strange, the input provided is invalid
-      throw new Error('Invalid semver version[' + argVersion + ']')
+      throw new Error('Invalid semver version[' + argVersionTag + ']')
     }
     outVersion = semVer
   } else if (outTrigger === 'release') {

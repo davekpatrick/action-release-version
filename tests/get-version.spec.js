@@ -139,14 +139,11 @@ describe("function: get-version.js", async function () {
         "node:process": processMock,
       })
       // execute the test
-      const result = await main(
-        apiToken,
-        {
-          githubEventName: githubEventName,
-          githubRepoOwner: githubRepositoryOwner,
-          githubRepoName: githubRepository,
-        },
-      )
+      const result = await main(apiToken, {
+        githubEventName: githubEventName,
+        githubRepoOwner: githubRepositoryOwner,
+        githubRepoName: githubRepository,
+      })
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
       }
@@ -222,12 +219,9 @@ describe("function: get-version.js", async function () {
         "node:process": processMock,
       })
       // execute the test
-      const result = await main(
-        apiToken,
-        {
-          inceptionVersionTag: inceptionVersion
-        }
-      )
+      const result = await main(apiToken, {
+        inceptionVersionTag: inceptionVersion,
+      })
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
       }
@@ -310,13 +304,10 @@ describe("function: get-version.js", async function () {
         "node:process": processMock,
       })
       // execute the test
-      const result = await main(
-        apiToken,
-        {
-          tagPrefix: tagPrefix,
-          argInceptionVersionTag: inceptionVersion
-        }
-      )
+      const result = await main(apiToken, {
+        tagPrefix: tagPrefix,
+        argInceptionVersionTag: inceptionVersion,
+      })
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
       }
@@ -396,13 +387,10 @@ describe("function: get-version.js", async function () {
         "node:process": processMock,
       })
       // execute the test
-      const result = await main(
-        apiToken,
-        {
-          tagPrefix: tagPrefix,
-          argInceptionVersionTag: inceptionVersion
-        }
-      )
+      const result = await main(apiToken, {
+        tagPrefix: tagPrefix,
+        argInceptionVersionTag: inceptionVersion,
+      })
 
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
@@ -490,13 +478,10 @@ describe("function: get-version.js", async function () {
         "node:process": processMock,
       })
       // execute the test
-      const result = await main(
-        apiToken,
-        {
-          tagPrefix: tagPrefix,
-          argInceptionVersionTag: inceptionVersion
-        }
-      )
+      const result = await main(apiToken, {
+        tagPrefix: tagPrefix,
+        argInceptionVersionTag: inceptionVersion,
+      })
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
       }
@@ -601,13 +586,10 @@ describe("function: get-version.js", async function () {
       })
 
       // execute the test
-      const result = await main(
-        apiToken,
-        {
-          tagPrefix: tagPrefix,
-          argInceptionVersionTag: inceptionVersion
-        }
-      )
+      const result = await main(apiToken, {
+        tagPrefix: tagPrefix,
+        argInceptionVersionTag: inceptionVersion,
+      })
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
       }
@@ -704,13 +686,10 @@ describe("function: get-version.js", async function () {
       })
 
       // execute the test
-      const result = await main(
-        apiToken,
-        {
-          argTagPrefix: tagPrefix,
-          argInceptionVersionTag: inceptionVersion
-        }
-      )
+      const result = await main(apiToken, {
+        argTagPrefix: tagPrefix,
+        argInceptionVersionTag: inceptionVersion,
+      })
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
       }
