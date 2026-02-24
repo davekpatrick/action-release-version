@@ -742,7 +742,7 @@ if (currentVersion === null) {
 // BOF
 // ------------------------------------
 const packageName = '@davekpatrick/action-release-version'
-const packageVersion = '0.0.0'
+const packageVersion = '0.4.0'
 // ------------------------------------
 const process = __nccwpck_require__(7742)
 // ------------------------------------
