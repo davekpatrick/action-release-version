@@ -329,7 +329,7 @@ module.exports = async function getReleaseType(
       // check if the pull request is to the default branch
       if (gitBaseRef === gitDefaultBranch) {
         core.info('Pull request to default branch detected')
-        // TODO: add support for 'pre' 
+        // TODO: add support for 'pre'
         //outChange = 'pre' + outChange
         //core.info('Pre-release change detected')
       } else {
