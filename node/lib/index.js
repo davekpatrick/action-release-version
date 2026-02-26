@@ -32,7 +32,7 @@ module.exports = async function main() {
     // Remember that inputs are defined in action metadata file
     const argTagPrefix = core.getInput('tagPrefix')
     const argInceptionVersionTag = core.getInput('inceptionVersionTag')
-    const argVersion = core.getInput('argVersion')
+    const argVersion = core.getInput('version')
     const argVersionInputAsReleaseVersion = core.getInput(
       'versionInputAsReleaseVersion'
     )
@@ -186,15 +186,15 @@ module.exports = async function main() {
     getVersionData = await getVersion(
       apiToken, // GitHub API token
       {
-        // GitHub Environment inputs
-        eventType: githubEventType,
-        repoOwner: gitHubRepoOwner,
-        repoName: gitHubRepoName,
-      },
-      // Action inputs
-      argTagPrefix,
-      argInceptionVersionTag,
-      argVersion
+        // GitHub environment inputs
+        githubEventType: githubEventType,
+        githubRepoOwner: gitHubRepoOwner,
+        githubRepoName: gitHubRepoName,
+        // Action inputs
+        tagPrefix: argTagPrefix,
+        inceptionVersionTag: argInceptionVersionTag,
+        versionTag: argVersion,
+      }
     )
     core.debug('getVersionData[' + JSON.stringify(getVersionData) + ']')
     currentVersion = getVersionData.version
