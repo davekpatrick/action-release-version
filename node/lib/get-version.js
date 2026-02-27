@@ -55,12 +55,9 @@ module.exports = async function getVersion(
   // e.g. push, pull_request, release, workflow_dispatch
   // DOC: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types
   outTrigger = argGithubEventType
-  core.info('Event trigger detected[' + outTrigger + ']')
-  core.info(
-    'Repository detected[' + argGithubRepoOwner + '/' + argGithubRepoName + ']'
-  )
-  core.info('Tag prefix detected[' + argTagPrefix + ']')
-  core.info('Inception version tag detected[' + argInceptionVersionTag + ']')
+  core.info('Event trigger[' + outTrigger + ']')
+  core.info('Version tag prefix[' + argTagPrefix + ']')
+  core.info('Inception version tag[' + argInceptionVersionTag + ']')
   // setup authenticated github client
   // doc: https://github.com/actions/toolkit/blob/main/packages/github/README.md
   //      https://octokit.github.io/rest.js/v18#authentication

@@ -183,7 +183,6 @@ module.exports = async function main() {
     //   - if no version found, use argInceptionVersionTag default
     // ------------------------------------
     var getVersionData = {}
-    core.info('argTagPrefix['+argTagPrefix+']')
     getVersionData = await getVersion(
       apiToken, // GitHub API token
       {
