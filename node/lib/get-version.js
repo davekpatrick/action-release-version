@@ -9,6 +9,7 @@ const semverClean = require('semver/functions/clean')
 const semverParse = require('semver/functions/parse')
 const semverMaxSatisfying = require('semver/ranges/max-satisfying')
 // ------------------------------------
+// ------------------------------------
 module.exports = async function getVersion(
   apiToken,
   {
@@ -55,9 +56,8 @@ module.exports = async function getVersion(
   // e.g. push, pull_request, release, workflow_dispatch
   // DOC: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types
   outTrigger = argGithubEventType
-  core.info('Event trigger[' + outTrigger + ']')
-  core.info('Version tag prefix[' + argTagPrefix + ']')
-  core.info('Inception version tag[' + argInceptionVersionTag + ']')
+  core.info('versionTagPrefix[' + argTagPrefix + ']')
+  core.info('inceptionVersionTag[' + argInceptionVersionTag + ']')
   // setup authenticated github client
   // doc: https://github.com/actions/toolkit/blob/main/packages/github/README.md
   //      https://octokit.github.io/rest.js/v18#authentication
@@ -92,19 +92,19 @@ module.exports = async function getVersion(
       // discard null/empty semverTag
       if (tagData === null) {
         // invalid semver tag
-        core.debug('Invalid versionTag[' + tagName + '] ')
+        core.debug('invalidVersionTag[' + tagName + '] ')
         continue // skip to the next tag
       } else {
         // check for build version tags e.g v1.2.3+build.1
         if (tagData.build.length > 0) {
           // do not add to the list of semver tags, as this is not a release version
           // TODO: review this .. maybe we should include an option to increment build versions
-          core.debug('Ignoring build[' + tagData.build + ']')
+          core.debug('ignoringBuild[' + tagData.build + ']')
           continue // skip to the next tag
         } else {
           // confirming it does not already exists in the list
           if (!outHistory.includes(tagData.version)) {
-            core.debug('Adding versionTag[' + tagData.version + ']')
+            core.debug('addingVersionTag[' + tagData.version + ']')
             outHistory.push(tagData.version)
           }
         }
@@ -124,65 +124,42 @@ module.exports = async function getVersion(
     outVersion = semVer
   } else if (outTrigger === 'release') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#releaseevent
-    let tagData = github.context.payload.release.tag_name
-    let getRef = 'tags/' + tagData
-    core.info('Release event detected, with tag[' + tagData + ']')
+    let gitTag = github.context.payload.release.tag_name
+    let gitRef = 'tags/' + gitTag
     // ensure the tag exists
-    let getRefData = await octokit.rest.git.getRef({
+    let gitRefData = await octokit.rest.git.getRef({
       owner: argGithubRepoOwner,
       repo: argGithubRepoName,
-      ref: getRef,
+      ref: gitRef,
     })
-    core.debug('getRefData[' + JSON.stringify(getRefData) + ']')
-    if (getRefData.status !== 200) {
-      throw new Error('Unable to retrieve ref[' + getRef + '] data')
+    core.debug('gitRefData[' + JSON.stringify(gitRefData) + ']')
+    if (gitRefData.status !== 200) {
+      throw new Error('Unable to retrieve ref[' + gitRef + '] data')
     }
-    core.info('tagSha[' + getRefData.data.object.sha + ']')
+    let gitSha = gitRefData.data.object.sha
+    core.info('Release detected, with ref[' + gitRef + '] sha[' + gitSha + ']')
     // ensure we have a valid semver tag
-    let tagSemVer = semverClean(tagData)
+    let tagSemVer = semverClean(gitTag)
     if (tagSemVer === null) {
-      throw new Error('Invalid semver tag[' + tagData + ']')
+      throw new Error('Invalid semver tag[' + gitTag + ']')
     }
     outVersion = tagSemVer
   } else if (outTrigger === 'push') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pushevent
     let gitRef = github.context.ref
     let gitSha = github.context.sha
-    let gitBeforeCommitSha = github.context.payload.before // sha of the commit before the push
+    let gitShaBefore = github.context.payload.before // sha of the commit before the push
     core.info(
-      'Push event detected, with ref[' + gitRef + '] commitSha[' + gitSha + ']'
+      'Push detected, with ref[' + gitRef + '] sha[' + gitSha + ']'
     )
-    core.info('beforeCommitSha[' + gitBeforeCommitSha + ']')
-    // get the commit data before the push
-    // https://docs.github.com/en/rest/git/commits?apiVersion=2022-11-28#get-a-commit
-    let gitBeforeCommitShaData = await octokit.rest.git.getCommit({
-      owner: argGithubRepoOwner,
-      repo: argGithubRepoName,
-      commit_sha: gitBeforeCommitSha, // sha of the commit before the push
-    })
-    core.info(
-      'gitBeforeCommitShaData[' + JSON.stringify(gitBeforeCommitShaData) + ']'
-    )
-    // get all branches where the given commit SHA is the latest commit
-    // DOC: https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-branches-for-head-commit
-    let getBeforeCommitBranches = await octokit.request(
-      'GET /repos/' +
-        argGithubRepoOwner +
-        '/' +
-        argGithubRepoName +
-        '/commits/' +
-        gitBeforeCommitSha +
-        '/branches-where-head',
-      {
-        owner: argGithubRepoOwner,
-        repo: argGithubRepoName,
-        commit_sha: gitBeforeCommitSha,
-      }
-    )
-    core.info(
-      'getBeforeCommitBranches[' + JSON.stringify(getBeforeCommitBranches) + ']'
-    )
-    // TODO: review the branches where the commit exists
+
+
+
+
+
+
+
+    
 
     // get the latest version from the outHistory
     // using semver maxSatisfying with range *
