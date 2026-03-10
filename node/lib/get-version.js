@@ -40,10 +40,10 @@ module.exports = async function getVersion(
   const argInceptionVersionTag = inceptionVersionTag
   const argVersionTag = versionTag
   // ------------------------------------
-  //
+
   const githubEventType = github.context.eventName
   const githubRepoOwner = github.context.payload.repository.owner.login
-  const githubRepoName  = github.context.payload.repository.name
+  const githubRepoName = github.context.payload.repository.name
   // output variable setup
   var outTrigger = null
   var outVersion = null
@@ -145,17 +145,8 @@ module.exports = async function getVersion(
     let gitRef = github.context.ref
     let gitSha = github.context.sha
     let gitShaBefore = github.context.payload.before // sha of the commit before the push
-    core.info(
-      'Push detected, with ref[' + gitRef + '] sha[' + gitSha + ']'
-    )
-
-
-
-
-
-
-
-
+    core.info('Push detected, with ref[' + gitRef + '] sha[' + gitSha + ']')
+    core.debug('gitShaBefore[' + gitShaBefore + ']')
 
     // get the latest version from the outHistory
     // using semver maxSatisfying with range *

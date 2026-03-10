@@ -68,7 +68,7 @@ module.exports = async function getReleaseType(
   //
   // ------------------------------------
   const githubRepoOwner = github.context.payload.repository.owner.login
-  const githubRepoName  = github.context.payload.repository.name
+  const githubRepoName = github.context.payload.repository.name
   // ------------------------------------
   // setup authenticated github client
   // doc: https://github.com/actions/toolkit/blob/main/packages/github/README.md
@@ -134,13 +134,9 @@ module.exports = async function getReleaseType(
       } else {
         // determine the release type based on the difference between the current and previous version
         core.info('Previous version located [' + previousVersion + ']')
-        let versionDiff = semverDiff(
-          previousVersion,
-          argCurrentVersion,
-          {
-            includePrerelease: true,
-          }
-        )
+        let versionDiff = semverDiff(previousVersion, argCurrentVersion, {
+          includePrerelease: true,
+        })
         core.info('versionDiff[' + versionDiff + ']')
         if (versionDiff === null || versionDiff === undefined) {
           // no difference found between the current and previous version
@@ -192,13 +188,9 @@ module.exports = async function getReleaseType(
       } else {
         // determine the release type based on the difference between the current and previous version
         core.info('Previous version located [' + previousVersion + ']')
-        let versionDiff = semverDiff(
-          previousVersion,
-          argCurrentVersion,
-          {
-            includePrerelease: true,
-          }
-        )
+        let versionDiff = semverDiff(previousVersion, argCurrentVersion, {
+          includePrerelease: true,
+        })
         core.info('versionDiff[' + versionDiff + ']')
         if (versionDiff === null || versionDiff === undefined) {
           // no difference found between the current and previous version
@@ -235,44 +227,41 @@ module.exports = async function getReleaseType(
     // get the commit data before the push
     // https://docs.github.com/en/rest/git/commits?apiVersion=2022-11-28#get-a-commit
     let gitBeforeCommitShaData = await octokit.rest.git.getCommit({
-      owner: argGithubRepoOwner,
-      repo: argGithubRepoName,
+      owner: githubRepoOwner,
+      repo: githubRepoName,
       commit_sha: gitBeforeCommitSha, // sha of the commit before the push
     })
     core.debug(
       'gitBeforeCommitShaData[' + JSON.stringify(gitBeforeCommitShaData) + ']'
     )
     let gitBeforeCommitShaMessage = gitBeforeCommitShaData.data.message
-    core.info(
-      'beforeCommitShaMessage[' + gitBeforeCommitShaMessage + ']'
-    )
+    core.info('beforeCommitShaMessage[' + gitBeforeCommitShaMessage + ']')
     // get all branches where the given commit SHA is the latest commit
     // DOC: https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-branches-for-head-commit
     let getBeforeCommitBranches = await octokit.request(
       'GET /repos/' +
-        argGithubRepoOwner +
+        githubRepoOwner +
         '/' +
-        argGithubRepoName +
+        githubRepoName +
         '/commits/' +
         gitBeforeCommitSha +
         '/branches-where-head',
       {
-        owner: argGithubRepoOwner,
-        repo: argGithubRepoName,
+        owner: githubRepoOwner,
+        repo: githubRepoName,
         commit_sha: gitBeforeCommitSha,
       }
     )
     core.debug(
       'getBeforeCommitBranches[' + JSON.stringify(getBeforeCommitBranches) + ']'
     )
-    let beforeCommitBranchList = getBeforeCommitBranches.data.ForEach( i => {
-        i.name
+    let beforeCommitBranchList = getBeforeCommitBranches.data.ForEach((i) => {
+      i.name
     })
     core.info(
       'beforeCommitBranchList[' + JSON.stringify(beforeCommitBranchList) + ']'
     )
     // TODO: review the branches where the commit exists
-
 
     /*
     await octokit.request('GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls', {
@@ -284,7 +273,6 @@ module.exports = async function getReleaseType(
       }
     })
     */
-
   } else if (github.context.eventName === 'pull_request') {
     // ------------------------------------
     // a pull_request event has occurred
