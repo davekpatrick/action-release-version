@@ -42,7 +42,7 @@ module.exports = async function getVersion(
   // ------------------------------------
   //
   const githubEventType = github.context.eventName
-  const githubRepoOwner = github.context.payload.repository.owner.name
+  const githubRepoOwner = github.context.payload.repository.owner.login
   const githubRepoName  = github.context.payload.repository.name
   // output variable setup
   var outTrigger = null
