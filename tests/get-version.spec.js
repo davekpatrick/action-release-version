@@ -17,9 +17,6 @@ describe("function: get-version.js", async function () {
   let moduleName = "get-version"
   let modulePath = path.resolve(dirNode, "lib", moduleName)
   // ---------------------------------------------------
-  // Modules under test
-  const github = require(dirNodeModules + path.sep + "@actions/github")
-  // ---------------------------------------------------
   // utility modules
   const semverValid = require(
     dirNodeModules + path.sep + "semver/functions/valid",
@@ -140,9 +137,6 @@ describe("function: get-version.js", async function () {
       })
       // execute the test
       const result = await main(apiToken, {
-        githubEventName: githubEventName,
-        githubRepoOwner: githubRepositoryOwner,
-        githubRepoName: githubRepository,
       })
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
@@ -167,7 +161,7 @@ describe("function: get-version.js", async function () {
       //
       const githubRepository = process.env["GITHUB_REPOSITORY"]
       const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
-      const beforeCommitSha = process.env["GITHUB_SHA"]
+      const githubCommitSha = process.env["GITHUB_SHA"]
       const githubEventName = "somethingStrange"
       const latestTagName = "1.2.3"
       // Mock GitHub module
@@ -180,7 +174,7 @@ describe("function: get-version.js", async function () {
                 {
                   ref: "refs/tags/" + latestTagName,
                   object: {
-                    sha: beforeCommitSha,
+                    sha: githubCommitSha,
                   },
                 },
               ],

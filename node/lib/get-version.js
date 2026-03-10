@@ -14,14 +14,10 @@ module.exports = async function getVersion(
   apiToken,
   {
     //
-    githubEventType = null,
-    githubRepoOwner = null,
-    githubRepoName = null,
-    //
     tagPrefix = 'v',
     inceptionVersionTag = '0.0.0',
     versionTag = null, // just use this input as the 'current' version
-  }
+  } = {}
 ) {
   const functionName = getVersion.name
   // ------------------------------------
@@ -40,14 +36,14 @@ module.exports = async function getVersion(
   // argument(input) variable setup
   const argApiToken = apiToken
   //
-  const argGithubEventType = githubEventType
-  const argGithubRepoOwner = githubRepoOwner
-  const argGithubRepoName = githubRepoName
-  //
   const argTagPrefix = tagPrefix
   const argInceptionVersionTag = inceptionVersionTag
   const argVersionTag = versionTag
   // ------------------------------------
+  //
+  const githubEventType = github.context.eventName
+  const githubRepoOwner = github.context.payload.repository.owner.name
+  const githubRepoName  = github.context.payload.repository.name
   // output variable setup
   var outTrigger = null
   var outVersion = null
@@ -55,7 +51,7 @@ module.exports = async function getVersion(
   // what event triggered this release version action
   // e.g. push, pull_request, release, workflow_dispatch
   // DOC: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types
-  outTrigger = argGithubEventType
+  outTrigger = githubEventType
   core.info('versionTagPrefix[' + argTagPrefix + ']')
   core.info('inceptionVersionTag[' + argInceptionVersionTag + ']')
   // setup authenticated github client
@@ -70,8 +66,8 @@ module.exports = async function getVersion(
   // get all matching refs (tags)
   // https://docs.github.com/en/rest/reference/git#list-matching-references
   let matchingTags = await octokit.rest.git.listMatchingRefs({
-    owner: argGithubRepoOwner,
-    repo: argGithubRepoName,
+    owner: githubRepoOwner,
+    repo: githubRepoName,
     ref: 'tags/' + argTagPrefix,
   })
   core.debug('matchingTags[' + JSON.stringify(matchingTags) + ']')
@@ -128,8 +124,8 @@ module.exports = async function getVersion(
     let gitRef = 'tags/' + gitTag
     // ensure the tag exists
     let gitRefData = await octokit.rest.git.getRef({
-      owner: argGithubRepoOwner,
-      repo: argGithubRepoName,
+      owner: githubRepoOwner,
+      repo: githubRepoName,
       ref: gitRef,
     })
     core.debug('gitRefData[' + JSON.stringify(gitRefData) + ']')
@@ -159,7 +155,7 @@ module.exports = async function getVersion(
 
 
 
-    
+
 
     // get the latest version from the outHistory
     // using semver maxSatisfying with range *
