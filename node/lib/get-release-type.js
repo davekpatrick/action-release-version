@@ -8,29 +8,36 @@ const github = require('@actions/github') // Microsoft's actions github toolkit
 const semverMaxSatisfying = require('semver/ranges/max-satisfying')
 const semverDiff = require('semver/functions/diff')
 // ------------------------------------
-//
 // ------------------------------------
 module.exports = async function getReleaseType(
-  argApiToken,
-  argOptional = {
-    inceptionVersionTag: '0.0.0',
-    inceptionVersionIncrement: 'minor',
-    currentVersion: null,
-    versionHistory: [],
-  }
-  //argTrigger = null,
+  apiToken,
+  {
+    //
+    inceptionVersionTag = '0.0.0',
+    inceptionVersionIncrement = 'minor',
+    //
+    versionTagCurrent = inceptionVersionTag,
+    versionTagHistory = [inceptionVersionTag],
+    //
+    //argTrigger = null,
+  } = {}
 ) {
   const functionName = getReleaseType.name
   // ------------------------------------
+  //
+  //
+  // ------------------------------------
   core.debug('Start ' + functionName)
-  // Argument clean up
-  if (argOptional.currentVersion === null) {
-    argOptional.currentVersion = argOptional.inceptionVersionTag
-  }
-  if (argOptional.versionHistory.length === 0) {
-    argOptional.versionHistory = [argOptional.currentVersion]
-  }
-  //core.info('currentVersion[' + argOptional.currentVersion + ']')
+  // argument(input) variable setup
+  const argApiToken = apiToken
+  //
+  const argCurrentVersion = versionTagCurrent
+  const argVersionHistory = versionTagHistory
+  //
+  const argInceptionVersionTag = inceptionVersionTag
+  const argInceptionVersionIncrement = inceptionVersionIncrement
+  // ------------------------------------
+  // output variable setup
   var outEvent = null
   var outType = null
   var outChange = null
@@ -60,45 +67,8 @@ module.exports = async function getReleaseType(
   //  - patch       e.g. 0.1.1
   //
   // ------------------------------------
-  core.debug('context[' + JSON.stringify(github.context) + ']')
-  core.debug('contextType[' + github.context.eventName + ']')
-  // get the repo owner and name
-  // TODO:
-  // investigate github.context.payload.repository.owner.name vs login
-  //  if these can be different and which to use
-  //  especially for enterprise accounts
-  // e.g. if the repo is owned by an organization
-  //
-  // github.context.payload.repository.owner.login
-  //  - is the login name
-  //  - can this different from the actual name ?
-  // github.context.payload.repository.owner.name
-  //  - is the actual name
-  //  - was using this but no longer exists in payload for some reason
-  const gitRepoOwnerLogin = github.context.payload.repository.owner.login
-  const gitRepoOwnerName = github.context.payload.repository.owner.name
-  const gitRepo = github.context.payload.repository.name
-  core.debug(
-    'gitRepoOwnerLogin[' +
-      gitRepoOwnerLogin +
-      '] gitRepoOwnerName[' +
-      gitRepoOwnerName +
-      '] gitRepo[' +
-      gitRepo +
-      ']'
-  )
-  if (gitRepoOwnerName === undefined) {
-    core.debug('Undefined GitHub repository.owner.name')
-  }
-  let gitOwner = gitRepoOwnerLogin
-  // ensure we have valid repository information
-  if (gitOwner === null || gitOwner === '' || gitOwner === undefined) {
-    throw new Error('Unable to locate the repository owner')
-  }
-  if (gitRepo === null || gitRepo === '' || gitRepo === undefined) {
-    throw new Error('Unable to locate the repository name')
-  }
-  core.debug('gitOwner[' + gitOwner + '] gitRepo[' + gitRepo + ']')
+  const githubRepoOwner = github.context.payload.repository.owner.login
+  const githubRepoName  = github.context.payload.repository.name
   // ------------------------------------
   // setup authenticated github client
   // doc: https://github.com/actions/toolkit/blob/main/packages/github/README.md
@@ -109,10 +79,10 @@ module.exports = async function getReleaseType(
   }
   // ------------------------------------
   // remove the current version from the version history
-  var versionHistory = argOptional.versionHistory
-  if (versionHistory.includes(argOptional.currentVersion)) {
+  var versionHistory = argVersionHistory
+  if (versionHistory.includes(argCurrentVersion)) {
     versionHistory = versionHistory.filter(
-      (version) => version !== argOptional.currentVersion
+      (version) => version !== argCurrentVersion
     )
   }
   core.debug('versionHistory[' + JSON.stringify(versionHistory) + ']')
@@ -121,8 +91,8 @@ module.exports = async function getReleaseType(
   var gitDefaultBranch = null
   try {
     const gitRepoData = await octokit.rest.repos.get({
-      owner: gitOwner,
-      repo: gitRepo,
+      owner: githubRepoOwner,
+      repo: githubRepoName,
     })
     core.debug('gitRepoData[' + JSON.stringify(gitRepoData) + ']')
     gitDefaultBranch = gitRepoData.data.default_branch //
@@ -155,7 +125,7 @@ module.exports = async function getReleaseType(
       // locate the previous version
       let previousVersion = semverMaxSatisfying(
         versionHistory,
-        '<' + argOptional.currentVersion,
+        '<' + argCurrentVersion,
         { includePrerelease: true }
       )
       if (previousVersion === null || previousVersion === undefined) {
@@ -166,7 +136,7 @@ module.exports = async function getReleaseType(
         core.info('Previous version located [' + previousVersion + ']')
         let versionDiff = semverDiff(
           previousVersion,
-          argOptional.currentVersion,
+          argCurrentVersion,
           {
             includePrerelease: true,
           }
@@ -176,7 +146,7 @@ module.exports = async function getReleaseType(
           // no difference found between the current and previous version
           throw new Error(
             'No difference between current[' +
-              argOptional.currentVersion +
+              argCurrentVersion +
               '] and previous[' +
               previousVersion +
               '] versions'
@@ -196,10 +166,10 @@ module.exports = async function getReleaseType(
     // check how much version history we have
     if (versionHistory.length === 0) {
       outType = 'initial'
-      if (argOptional.currentVersion === argOptional.inceptionVersionTag) {
+      if (argCurrentVersion === argInceptionVersionTag) {
         // we have no version history and the current version is the inception version
         // which means the user has not set the version correctly
-        outChange = argOptional.inceptionVersionIncrement
+        outChange = argInceptionVersionIncrement
         core.warning(
           'Current version is equal to inception version, ensuring increment to[' +
             outChange +
@@ -213,7 +183,7 @@ module.exports = async function getReleaseType(
       // locate the previous version
       let previousVersion = semverMaxSatisfying(
         versionHistory,
-        '<' + argOptional.currentVersion,
+        '<' + argCurrentVersion,
         { includePrerelease: true }
       )
       if (previousVersion === null || previousVersion === undefined) {
@@ -224,7 +194,7 @@ module.exports = async function getReleaseType(
         core.info('Previous version located [' + previousVersion + ']')
         let versionDiff = semverDiff(
           previousVersion,
-          argOptional.currentVersion,
+          argCurrentVersion,
           {
             includePrerelease: true,
           }
@@ -234,7 +204,7 @@ module.exports = async function getReleaseType(
           // no difference found between the current and previous version
           throw new Error(
             'No difference between current[' +
-              argOptional.currentVersion +
+              argCurrentVersion +
               '] and previous[' +
               previousVersion +
               '] versions'
@@ -259,6 +229,62 @@ module.exports = async function getReleaseType(
 
     outType = 'push'
     core.info('outType[' + outType + ']')
+
+    let gitBeforeCommitSha = github.context.payload.before // sha of the commit before the push
+    core.info('beforeCommitSha[' + gitBeforeCommitSha + ']')
+    // get the commit data before the push
+    // https://docs.github.com/en/rest/git/commits?apiVersion=2022-11-28#get-a-commit
+    let gitBeforeCommitShaData = await octokit.rest.git.getCommit({
+      owner: argGithubRepoOwner,
+      repo: argGithubRepoName,
+      commit_sha: gitBeforeCommitSha, // sha of the commit before the push
+    })
+    core.debug(
+      'gitBeforeCommitShaData[' + JSON.stringify(gitBeforeCommitShaData) + ']'
+    )
+    let gitBeforeCommitShaMessage = gitBeforeCommitShaData.data.message
+    core.info(
+      'beforeCommitShaMessage[' + gitBeforeCommitShaMessage + ']'
+    )
+    // get all branches where the given commit SHA is the latest commit
+    // DOC: https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-branches-for-head-commit
+    let getBeforeCommitBranches = await octokit.request(
+      'GET /repos/' +
+        argGithubRepoOwner +
+        '/' +
+        argGithubRepoName +
+        '/commits/' +
+        gitBeforeCommitSha +
+        '/branches-where-head',
+      {
+        owner: argGithubRepoOwner,
+        repo: argGithubRepoName,
+        commit_sha: gitBeforeCommitSha,
+      }
+    )
+    core.debug(
+      'getBeforeCommitBranches[' + JSON.stringify(getBeforeCommitBranches) + ']'
+    )
+    let beforeCommitBranchList = getBeforeCommitBranches.data.ForEach( i => {
+        i.name
+    })
+    core.info(
+      'beforeCommitBranchList[' + JSON.stringify(beforeCommitBranchList) + ']'
+    )
+    // TODO: review the branches where the commit exists
+
+
+    /*
+    await octokit.request('GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls', {
+      owner: 'OWNER',
+      repo: 'REPO',
+      commit_sha: 'COMMIT_SHA',
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    })
+    */
+
   } else if (github.context.eventName === 'pull_request') {
     // ------------------------------------
     // a pull_request event has occurred
@@ -266,8 +292,8 @@ module.exports = async function getReleaseType(
     // check how much version history we have
     if (versionHistory.length === 0) {
       outType = 'build'
-      if (argOptional.currentVersion === argOptional.inceptionVersionTag) {
-        outChange = argOptional.inceptionVersionIncrement // first version, so make it at least 0.1.0
+      if (argCurrentVersion === argInceptionVersionTag) {
+        outChange = argInceptionVersionIncrement // first version, so make it at least 0.1.0
       } else {
         // current version is not the inception version tag
         // so do not increment the version, just use the current version
