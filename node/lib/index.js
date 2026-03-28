@@ -262,8 +262,8 @@ module.exports = async function main() {
     // ------------------------------------
     const incrementedVersionData = await incrementVersion(currentVersion, {
       // other optional inputs
-      argReleaseType: getReleaseTypeData.type,
-      argReleaseChange: getReleaseTypeData.change,
+      releaseType: getReleaseTypeData.type,
+      releaseChange: getReleaseTypeData.change,
     })
     core.debug(
       'incrementedVersionData[' + JSON.stringify(incrementedVersionData) + ']'
