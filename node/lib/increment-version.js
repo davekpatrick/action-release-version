@@ -63,7 +63,7 @@ module.exports = async function incrementVersion(
   } else if (functionArguments.releaseType === 'releasing') {
     functionReturn.new = semverInc(
       functionArguments.currentVersion,
-      functionArguments.releaseType
+      functionArguments.releaseChange
     )
     core.info(
       'Releasing version, so incrementing current version[' +
@@ -75,9 +75,8 @@ module.exports = async function incrementVersion(
   } else if (functionArguments.releaseType === 'build') {
     functionReturn.new = semverInc(
       functionArguments.currentVersion,
-      functionArguments.releaseType
+      functionArguments.releaseChange
     )
-    core.debug(functionArguments.releaseType)
     let buildData =
       functionArguments.buildMetadata.inst +
       '.' +
