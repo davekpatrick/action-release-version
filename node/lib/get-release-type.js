@@ -18,29 +18,30 @@ module.exports = async function getReleaseType(
     //
     versionTagCurrent = inceptionVersionTag,
     versionTagHistory = [inceptionVersionTag],
-    //
-    //argTrigger = null,
   } = {}
 ) {
   const functionName = getReleaseType.name
-  // ------------------------------------
-  //
-  //
-  // ------------------------------------
   core.debug('Start ' + functionName)
-  // argument(input) variable setup
-  const argApiToken = apiToken
-  //
-  const argCurrentVersion = versionTagCurrent
-  const argVersionHistory = versionTagHistory
-  //
-  const argInceptionVersionTag = inceptionVersionTag
-  const argInceptionVersionIncrement = inceptionVersionIncrement
   // ------------------------------------
-  // output variable setup
-  var outEvent = null
-  var outType = null
-  var outChange = null
+  // ------------------------------------
+  // argument(input) variable setup
+  const functionArguments = {
+    apiToken: apiToken,
+    //
+    versionTagCurrent: versionTagCurrent,
+    versionTagHistory: versionTagHistory,
+    //
+    inceptionVersionTag: inceptionVersionTag,
+    inceptionVersionIncrement: inceptionVersionIncrement,
+  }
+  // ------------------------------------
+  // ------------------------------------
+  // return(output) variable setup
+  var functionReturn = {
+    event: null,
+    type: null,
+    change: null,
+  }
   // ------------------------------------
   // declare return variables
   // event
@@ -73,16 +74,16 @@ module.exports = async function getReleaseType(
   // setup authenticated github client
   // doc: https://github.com/actions/toolkit/blob/main/packages/github/README.md
   //      https://octokit.github.io/rest.js/v18#authentication
-  const octokit = github.getOctokit(argApiToken)
+  const octokit = github.getOctokit(functionArguments.apiToken)
   if (octokit === null || octokit === undefined) {
     throw new Error('Unable to create authenticated GitHub client')
   }
   // ------------------------------------
-  // remove the current version from the version history
-  var versionHistory = argVersionHistory
-  if (versionHistory.includes(argCurrentVersion)) {
+  // remove the inception version from the version history
+  var versionHistory = functionArguments.versionTagHistory
+  if (versionHistory.includes(functionArguments.inceptionVersionTag)) {
     versionHistory = versionHistory.filter(
-      (version) => version !== argCurrentVersion
+      (version) => version !== functionArguments.inceptionVersionTag
     )
   }
   core.debug('versionHistory[' + JSON.stringify(versionHistory) + ']')
@@ -114,18 +115,18 @@ module.exports = async function getReleaseType(
   if (github.context.eventName === 'release') {
     // ------------------------------------
     // a release event has occurred - use the tag that triggered the workflow
-    outEvent = github.context.eventName
+    functionReturn.event = github.context.eventName
     // check how much version history we have
     if (versionHistory.length === 0) {
-      outType = 'initial' //
-      outChange = 'none' //
+      functionReturn.type = 'initial' //
+      functionReturn.change = 'none' //
       core.info('Initial release version detected')
     } else {
       core.debug('Locating previous version')
       // locate the previous version
       let previousVersion = semverMaxSatisfying(
         versionHistory,
-        '<' + argCurrentVersion,
+        '<' + functionArguments.versionTagCurrent,
         { includePrerelease: true }
       )
       if (previousVersion === null || previousVersion === undefined) {
@@ -134,52 +135,59 @@ module.exports = async function getReleaseType(
       } else {
         // determine the release type based on the difference between the current and previous version
         core.info('Previous version located [' + previousVersion + ']')
-        let versionDiff = semverDiff(previousVersion, argCurrentVersion, {
-          includePrerelease: true,
-        })
+        let versionDiff = semverDiff(
+          previousVersion,
+          functionArguments.versionTagCurrent,
+          {
+            includePrerelease: true,
+          }
+        )
         core.info('versionDiff[' + versionDiff + ']')
         if (versionDiff === null || versionDiff === undefined) {
           // no difference found between the current and previous version
           throw new Error(
             'No difference between current[' +
-              argCurrentVersion +
+              functionArguments.versionTagCurrent +
               '] and previous[' +
               previousVersion +
               '] versions'
           )
         } else {
           // this is a release event ... so we have an already released the version
-          outType = 'released'
-          outChange = versionDiff
+          functionReturn.type = 'released'
+          functionReturn.change = versionDiff
         }
       }
     }
-    core.info('outType[' + outType + ']')
+    core.info('type[' + functionReturn.type + ']')
   } else if (github.context.eventName === 'workflow_dispatch') {
     // ------------------------------------
     // a workflow_dispatch event has occurred - do not increment the version
-    outEvent = 'manual'
+    functionReturn.event = 'manual'
     // check how much version history we have
     if (versionHistory.length === 0) {
-      outType = 'initial'
-      if (argCurrentVersion === argInceptionVersionTag) {
+      functionReturn.type = 'initial'
+      if (
+        functionArguments.versionTagCurrent ===
+        functionArguments.inceptionVersionTag
+      ) {
         // we have no version history and the current version is the inception version
         // which means the user has not set the version correctly
-        outChange = argInceptionVersionIncrement
+        functionReturn.change = functionArguments.inceptionVersionIncrement
         core.warning(
           'Current version is equal to inception version, ensuring increment to[' +
-            outChange +
+            functionReturn.change +
             ']'
         )
       } else {
-        outChange = 'none' // no change as first version and set manually
+        functionReturn.change = 'none' // no change as first version and set manually
       }
       core.info('Manual initial release version detected')
     } else {
       // locate the previous version
       let previousVersion = semverMaxSatisfying(
         versionHistory,
-        '<' + argCurrentVersion,
+        '<' + functionArguments.versionTagCurrent,
         { includePrerelease: true }
       )
       if (previousVersion === null || previousVersion === undefined) {
@@ -188,27 +196,31 @@ module.exports = async function getReleaseType(
       } else {
         // determine the release type based on the difference between the current and previous version
         core.info('Previous version located [' + previousVersion + ']')
-        let versionDiff = semverDiff(previousVersion, argCurrentVersion, {
-          includePrerelease: true,
-        })
+        let versionDiff = semverDiff(
+          previousVersion,
+          functionArguments.versionTagCurrent,
+          {
+            includePrerelease: true,
+          }
+        )
         core.info('versionDiff[' + versionDiff + ']')
         if (versionDiff === null || versionDiff === undefined) {
           // no difference found between the current and previous version
           throw new Error(
             'No difference between current[' +
-              argCurrentVersion +
+              functionArguments.versionTagCurrent +
               '] and previous[' +
               previousVersion +
               '] versions'
           )
         } else {
           // determine the type of change
-          outType = 'releasing'
-          outChange = versionDiff
+          functionReturn.type = 'releasing'
+          functionReturn.change = versionDiff
         }
       }
     }
-    core.info('outType[' + outType + ']')
+    core.info('type[' + functionReturn.type + ']')
   } else if (github.context.eventName === 'push') {
     // ------------------------------------
     // a push event has occurred
@@ -217,10 +229,10 @@ module.exports = async function getReleaseType(
     //  - branch name
     //  - files changed
     //  - other ?
-    outEvent = github.context.eventName
+    functionReturn.event = github.context.eventName
 
-    outType = 'push'
-    core.info('outType[' + outType + ']')
+    functionReturn.type = 'push'
+    core.info('type[' + functionReturn.type + ']')
 
     let gitBeforeCommitSha = github.context.payload.before // sha of the commit before the push
     core.info('beforeCommitSha[' + gitBeforeCommitSha + ']')
@@ -263,34 +275,45 @@ module.exports = async function getReleaseType(
     )
     // TODO: review the branches where the commit exists
 
-    /*
-    await octokit.request('GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls', {
-      owner: 'OWNER',
-      repo: 'REPO',
-      commit_sha: 'COMMIT_SHA',
-      headers: {
-        'X-GitHub-Api-Version': '2022-11-28'
+    // To list the open or merged pull requests associated with a branch, you can set the commit_sha parameter to the branch name
+    // DOC: https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-pull-requests-associated-with-a-commit
+    let getPullRequest = await octokit.request(
+      'GET /repos/' +
+        githubRepoOwner +
+        '/' +
+        githubRepoName +
+        '/commits/{commit_sha}/pulls',
+      {
+        owner: 'OWNER',
+        repo: 'REPO',
+        commit_sha: 'COMMIT_SHA',
+        headers: {
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
       }
-    })
-    */
+    )
+    core.debug('getPullRequest[' + JSON.stringify(getPullRequest) + ']')
   } else if (github.context.eventName === 'pull_request') {
     // ------------------------------------
     // a pull_request event has occurred
-    outEvent = github.context.eventName
+    functionReturn.event = github.context.eventName
     // check how much version history we have
     if (versionHistory.length === 0) {
-      outType = 'build'
-      if (argCurrentVersion === argInceptionVersionTag) {
-        outChange = argInceptionVersionIncrement // first version, so make it at least 0.1.0
+      functionReturn.type = 'build'
+      if (
+        functionArguments.versionTagCurrent ===
+        functionArguments.inceptionVersionTag
+      ) {
+        functionReturn.change = functionArguments.inceptionVersionIncrement // first version, so make it at least 0.1.0
       } else {
         // current version is not the inception version tag
         // so do not increment the version, just use the current version
-        outChange = 'none'
+        functionReturn.change = 'none'
       }
       core.info('Initial release version detected')
     } else {
       //
-      outType = 'build'
+      functionReturn.type = 'build'
       //
       let gitHeadRef = github.context.payload.pull_request.head.ref
       let gitBaseRef = github.context.payload.pull_request.base.ref
@@ -313,7 +336,7 @@ module.exports = async function getReleaseType(
         pullRequestTitle.includes('[fix]') ||
         pullRequestLabels.some((label) => label.name === 'fix')
       ) {
-        outChange = 'patch'
+        functionReturn.change = 'patch'
         core.info('Patch change detected')
       }
       // feature branch
@@ -323,7 +346,7 @@ module.exports = async function getReleaseType(
         pullRequestTitle.includes('[feature]') ||
         pullRequestLabels.some((label) => label.name === 'feature')
       ) {
-        outChange = 'minor'
+        functionReturn.change = 'minor'
         core.info('Minor change detected')
       }
       // major branch
@@ -333,35 +356,35 @@ module.exports = async function getReleaseType(
         pullRequestTitle.includes('[major]') ||
         pullRequestLabels.some((label) => label.name === 'major')
       ) {
-        outChange = 'major'
+        functionReturn.change = 'major'
         core.info('Major change detected')
       } else {
         // default to patch change
-        outChange = 'minor'
+        functionReturn.change = 'minor'
         core.info('default to minor change')
       }
       // check if the pull request is to the default branch
       if (gitBaseRef === gitDefaultBranch) {
         core.info('Pull request to default branch detected')
         // TODO: add support for 'pre'
-        //outChange = 'pre' + outChange
+        //functionReturn.change = 'pre' + functionReturn.change
         //core.info('Pre-release change detected')
       } else {
         core.info('Pull request to non-default branch detected')
       }
     }
-    core.info('outType[' + outType + ']')
+    core.info('type[' + functionReturn.type + ']')
   } else {
-    outEvent = 'unknown'
-    outType = null
-    outChange = null
+    functionReturn.event = 'unknown'
+    functionReturn.type = null
+    functionReturn.change = null
   }
   // ------------------------------------
   core.debug('End ' + functionName)
   return {
-    event: outEvent,
-    type: outType,
-    change: outChange,
+    event: functionReturn.event,
+    type: functionReturn.type,
+    change: functionReturn.change,
   }
 } // getReleaseType
 // EOF

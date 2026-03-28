@@ -20,6 +20,7 @@ module.exports = async function getVersion(
   } = {}
 ) {
   const functionName = getVersion.name
+  core.debug('Start ' + functionName)
   // ------------------------------------
   // getVersion
   // Retrieve the current version tag from the repository
@@ -31,33 +32,40 @@ module.exports = async function getVersion(
   // - support for configuration file for RELEASE_VERSION
   // - explore github graphQL to retrieve the latest tags
   // ------------------------------------
-  core.debug('Start ' + functionName)
   // ------------------------------------
   // argument(input) variable setup
-  const argApiToken = apiToken
-  //
-  const argTagPrefix = tagPrefix
-  const argInceptionVersionTag = inceptionVersionTag
-  const argVersionTag = versionTag
+  const functionArguments = {
+    apiToken: apiToken,
+    //
+    tagPrefix: tagPrefix,
+    inceptionVersionTag: inceptionVersionTag,
+    versionTag: versionTag,
+  }
   // ------------------------------------
-
+  // ------------------------------------
   const githubEventType = github.context.eventName
   const githubRepoOwner = github.context.payload.repository.owner.login
   const githubRepoName = github.context.payload.repository.name
-  // output variable setup
-  var outTrigger = null
-  var outVersion = null
-  var outHistory = []
+  // ------------------------------------
+  // ------------------------------------
+  // return(output) variable setup
+  var functionReturn = {
+    trigger: null,
+    version: null,
+    history: [],
+  }
   // what event triggered this release version action
   // e.g. push, pull_request, release, workflow_dispatch
   // DOC: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types
-  outTrigger = githubEventType
-  core.info('versionTagPrefix[' + argTagPrefix + ']')
-  core.info('inceptionVersionTag[' + argInceptionVersionTag + ']')
+  functionReturn.trigger = githubEventType
+  core.debug('versionTagPrefix[' + functionArguments.tagPrefix + ']')
+  core.debug(
+    'inceptionVersionTag[' + functionArguments.inceptionVersionTag + ']'
+  )
   // setup authenticated github client
   // doc: https://github.com/actions/toolkit/blob/main/packages/github/README.md
   //      https://octokit.github.io/rest.js/v18#authentication
-  const octokit = github.getOctokit(argApiToken)
+  const octokit = github.getOctokit(functionArguments.apiToken)
   if (octokit === null || octokit === undefined) {
     throw new Error('Unable to create authenticated GitHub client')
   }
@@ -68,12 +76,12 @@ module.exports = async function getVersion(
   let matchingTags = await octokit.rest.git.listMatchingRefs({
     owner: githubRepoOwner,
     repo: githubRepoName,
-    ref: 'tags/' + argTagPrefix,
+    ref: 'tags/' + functionArguments.tagPrefix,
   })
   core.debug('matchingTags[' + JSON.stringify(matchingTags) + ']')
   if (matchingTags.data.length === 0) {
     core.warning('No current version found')
-    outHistory.push(argInceptionVersionTag) // starting point
+    functionReturn.history.push(functionArguments.inceptionVersionTag) // starting point
   } else {
     // build a list of valid release version tags
     // i.e. valid semver tags without build metadata
@@ -99,26 +107,35 @@ module.exports = async function getVersion(
           continue // skip to the next tag
         } else {
           // confirming it does not already exists in the list
-          if (!outHistory.includes(tagData.version)) {
+          if (!functionReturn.history.includes(tagData.version)) {
             core.debug('addingVersionTag[' + tagData.version + ']')
-            outHistory.push(tagData.version)
+            functionReturn.history.push(tagData.version)
           }
         }
       }
     }
   }
+  core.info('versionHistorySize[' + functionReturn.history.length + ']')
   // ------------------------------------
   // process the event types
-  if (argVersionTag !== null && argVersionTag !== '') {
+  if (
+    functionArguments.versionTag !== undefined &&
+    functionArguments.versionTag !== null &&
+    functionArguments.versionTag !== ''
+  ) {
     // use the provided 'current' version
-    core.info('Version specified as action input[' + argVersionTag + ']')
-    let semVer = semverClean(argVersionTag)
+    core.info(
+      'Version specified as action input[' + functionArguments.versionTag + ']'
+    )
+    let semVer = semverClean(functionArguments.versionTag)
     if (semVer === null || semVer === '' || semVer === undefined) {
       // strange, the input provided is invalid
-      throw new Error('Invalid semver version[' + argVersionTag + ']')
+      throw new Error(
+        'Invalid semver version[' + functionArguments.versionTag + ']'
+      )
     }
-    outVersion = semVer
-  } else if (outTrigger === 'release') {
+    functionReturn.version = semVer
+  } else if (functionReturn.trigger === 'release') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#releaseevent
     let gitTag = github.context.payload.release.tag_name
     let gitRef = 'tags/' + gitTag
@@ -139,8 +156,8 @@ module.exports = async function getVersion(
     if (tagSemVer === null) {
       throw new Error('Invalid semver tag[' + gitTag + ']')
     }
-    outVersion = tagSemVer
-  } else if (outTrigger === 'push') {
+    functionReturn.version = tagSemVer
+  } else if (functionReturn.trigger === 'push') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pushevent
     let gitRef = github.context.ref
     let gitSha = github.context.sha
@@ -148,42 +165,42 @@ module.exports = async function getVersion(
     core.info('Push detected, with ref[' + gitRef + '] sha[' + gitSha + ']')
     core.debug('gitShaBefore[' + gitShaBefore + ']')
 
-    // get the latest version from the outHistory
+    // get the latest version from the functionReturn.history
     // using semver maxSatisfying with range *
     // should return the highest version
-    let latestVersion = semverMaxSatisfying(outHistory, '*', {
+    let latestVersion = semverMaxSatisfying(functionReturn.history, '*', {
       includePrerelease: true,
     })
     if (latestVersion === null) {
       throw new Error('unable to locate latest version')
     } else {
-      outVersion = latestVersion
+      functionReturn.version = latestVersion
     }
-  } else if (outTrigger === 'pull_request') {
+  } else if (functionReturn.trigger === 'pull_request') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pullrequestevent
     let gitRef = github.context.ref
     let gitSha = github.context.sha
     core.info(
-      'Pull Request event detected, with ref[' +
+      'Pull Request detected, with ref[' +
         gitRef +
         '] commitsha[' +
         gitSha +
         ']'
     )
-    // get the latest version from the outHistory
+    // get the latest version from the functionReturn.history
     // using semver maxSatisfying with range *
     // should return the highest version
-    let latestVersion = semverMaxSatisfying(outHistory, '*', {
+    let latestVersion = semverMaxSatisfying(functionReturn.history, '*', {
       includePrerelease: true,
     })
     if (latestVersion === null) {
       throw new Error('unable to locate latest version')
     } else {
-      outVersion = latestVersion
+      functionReturn.version = latestVersion
     }
-  } else if (outTrigger === 'workflow_dispatch') {
+  } else if (functionReturn.trigger === 'workflow_dispatch') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#workflow_dispatch
-    core.info('Workflow Dispatch event detected')
+    core.info('Workflow Dispatch detected')
     // pull the "version" from the input
     // TODO: should we validate the input name/version exists in the action definition
     //       should we allow an alternative input name via action input?
@@ -201,29 +218,29 @@ module.exports = async function getVersion(
       // strange, the input provided is invalid
       throw new Error('Invalid semver version[' + inputVersion + ']')
     }
-    outVersion = semVer
+    functionReturn.version = semVer
   } else {
     //
-    core.info('Unknown event type[' + outTrigger + ']')
+    core.info('Unknown event type[' + functionReturn.trigger + ']')
     // TODO: should this be an error or warning and return null ? e.g. for schedule event
-    // get the latest version from the outHistory
+    // get the latest version from the functionReturn.history
     // using semver maxSatisfying with range *
     // should return the highest version
-    let latestVersion = semverMaxSatisfying(outHistory, '*', {
+    let latestVersion = semverMaxSatisfying(functionReturn.history, '*', {
       includePrerelease: true,
     })
     if (latestVersion === null) {
       throw new Error('unable to locate latest version')
     } else {
-      outVersion = latestVersion
+      functionReturn.version = latestVersion
     }
   }
   // ------------------------------------
   core.debug('End ' + functionName)
   return {
-    trigger: outTrigger,
-    version: outVersion,
-    history: outHistory,
+    trigger: functionReturn.trigger,
+    version: functionReturn.version,
+    history: functionReturn.history,
   }
 } // getVersion
 // EOF

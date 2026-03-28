@@ -79,6 +79,7 @@ describe("function: increment-version.js", async function () {
       const githubDefaultBranchName =
         process.env["GITHUB_REF"].match(/[^/]+$/g)[0] // get last part of ref only aka branch name
       const currentVersion = "0.0.0"
+      const expectedVersion = "0.1.0"
       // Mock core module to avoid actual core.info/debug calls
       const coreMock = {
         startGroup: () => {},
@@ -93,7 +94,7 @@ describe("function: increment-version.js", async function () {
         "node:process": processMock,
       })
       // execute the test
-      const result = await main(currentVersion, "initial", "none")
+      const result = await main(currentVersion)
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
       }
@@ -101,7 +102,7 @@ describe("function: increment-version.js", async function () {
       expect(result.version.old).to.be.string
       expect(result.version.new).to.be.string
       expect(result.version.old).to.equal(currentVersion)
-      expect(result.version.new).to.equal(currentVersion)
+      expect(result.version.new).to.equal(expectedVersion)
     })
   })
 })
