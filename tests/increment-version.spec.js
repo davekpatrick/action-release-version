@@ -110,7 +110,7 @@ describe("function: increment-version.js", async function () {
       expect(semverValid(result.version.new)).to.not.be.null
     })
 
-    it("Should handle pull_request event on initial build version default", async function (argTrace = true) {
+    it("Should handle pull_request event on initial build version default", async function (argTrace = cfgTrace) {
       // ---------------------------------------------------
       // Details
       // ------------
@@ -130,9 +130,9 @@ describe("function: increment-version.js", async function () {
       const coreMock = {
         startGroup: () => {},
         endGroup: () => {},
-        //debug: () => {},
-        //info: () => {},
-        //warning: () => {},
+        debug: () => {},
+        info: () => {},
+        warning: () => {},
       }
       // Use proxyquire to inject mocks
       const main = proxyquire(modulePath, {
