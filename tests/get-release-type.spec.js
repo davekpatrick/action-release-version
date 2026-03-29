@@ -137,6 +137,88 @@ describe("function: get-release-type.js", async function () {
       expect(result.change).to.be.string
       expect(result.change).to.equal("none")
     })
+
+    it("Should handle pull_request with fix label", async function (argTrace = cfgTrace) {
+      // ---------------------------------------------------
+      // Details
+      // ------------
+      // -
+      // ---------------------------------------------------
+      // fixture inputs
+      const apiToken = process.env["GITHUB_TOKEN"]
+      //
+      const githubRepository = process.env["GITHUB_REPOSITORY"]
+      const githubRepositoryOwner = process.env["GITHUB_REPOSITORY_OWNER"]
+      const githubEventName = "pull_request"
+      const githubDefaultBranchName =
+        process.env["GITHUB_REF"].match(/[^/]+$/g)[0] // get last part of ref only aka branch name
+      // Mock the octokit client with all required API calls
+      const mockOctokit = {
+        rest: {
+          repos: {
+            get: async () => ({
+              status: 200,
+              data: {
+                name: githubRepository,
+                owner: {
+                  login: githubRepositoryOwner,
+                },
+                default_branch: githubDefaultBranchName,
+              },
+            }),
+          },
+        },
+      }
+      // Mock GitHub module
+      const githubMock = {
+        context: {
+          eventName: githubEventName,
+          payload: {
+            repository: {
+              name: githubRepository,
+              owner: {
+                login: githubRepositoryOwner,
+                name: githubRepositoryOwner,
+              },
+            },
+            pull_request: {
+              labels: [
+                {
+                    "name": "fix",
+                }
+            ],
+            }
+          },
+        },
+        getOctokit: () => mockOctokit,
+      }
+      // Mock core module to avoid actual core.info/debug calls
+      const coreMock = {
+        startGroup: () => {},
+        endGroup: () => {},
+        debug: () => {},
+        info: () => {},
+        warning: () => {},
+      }
+      // Use proxyquire to inject mocks
+      const main = proxyquire(modulePath, {
+        "@actions/github": githubMock,
+        "@actions/core": coreMock,
+        "node:process": processMock,
+      })
+      // execute the test
+      const result = await main(apiToken)
+      if (argTrace) {
+        console.log("result:[" + JSON.stringify(result) + "]")
+      }
+      // Validate the test result
+      expect(result.event).to.be.string
+      expect(result.event).to.equal(githubEventName)
+      expect(result.type).to.be.string
+      expect(result.type).to.equal("build")
+      expect(result.change).to.be.string
+      expect(result.change).to.equal("minor")
+    })
   })
 })
 // EOF
