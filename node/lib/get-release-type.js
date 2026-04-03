@@ -51,15 +51,15 @@ module.exports = async function getReleaseType(
   //  - pull
   //  - unknown
   // type:
-  //  - none         e.g. no change detected
+  //  - none         e.g. no change, a no-op
   //  - initial      e.g. first version detected
   //  - released     e.g. 1.0.0
   //  - releasing    e.g. from 1.0.0-release.1 to 1.0.0
   //  - prerelease
   //  - build
   // change: ( e.g. from 0.1.0 to 1.0.0 )
-  //  - prerelease  e.g. 1.0.0-release.1
   //  - release     e.g  1.0.0
+  //  - prerelease  e.g. 1.0.0-release.1
   //  - premajor    e.g. 1.0.0-alpha.1
   //  - major       e.g. 1.0.0
   //  - preminor    e.g. 0.2.0-beta.1
@@ -225,9 +225,9 @@ module.exports = async function getReleaseType(
     // ------------------------------------
     // a pull_request event has occurred
     functionReturn.event = github.context.eventName
+    functionReturn.type = 'build' // TODO: should we have different types...
     // check how much version history we have
     if (versionHistory.length === 0) {
-      functionReturn.type = 'build'
       if (
         functionArguments.versionTagCurrent ===
         functionArguments.inceptionVersionTag
@@ -240,8 +240,6 @@ module.exports = async function getReleaseType(
       }
       core.info('Initial release version detected')
     } else {
-      //
-      functionReturn.type = 'build'
       //
       let gitHeadRef = github.context.payload.pull_request.head.ref
       let gitBaseRef = github.context.payload.pull_request.base.ref
@@ -257,15 +255,16 @@ module.exports = async function getReleaseType(
       core.debug('pullRequestLabels[' + JSON.stringify(pullRequestLabels) + ']')
       //
       // determine the type of change
-      // fix branch
-      // e.g. fix/issue-123
+
+      // major branch
+      // e.g. major/issue-123
       if (
-        gitHeadRef.startsWith('fix/') ||
-        pullRequestTitle.includes('[fix]') ||
-        pullRequestLabels.some((label) => label.name === 'fix')
+        gitHeadRef.startsWith('major/') ||
+        pullRequestTitle.includes('[major]') ||
+        pullRequestLabels.some((label) => label.name === 'major')
       ) {
-        functionReturn.change = 'patch'
-        core.info('Patch change detected')
+        functionReturn.change = 'major'
+        core.info('Major change detected')
       }
       // feature branch
       // e.g. feature/issue-123
@@ -277,16 +276,17 @@ module.exports = async function getReleaseType(
         functionReturn.change = 'minor'
         core.info('Minor change detected')
       }
-      // major branch
-      // e.g. major/issue-123
+      // fix branch
+      // e.g. fix/issue-123
       else if (
-        gitHeadRef.startsWith('major/') ||
-        pullRequestTitle.includes('[major]') ||
-        pullRequestLabels.some((label) => label.name === 'major')
+        gitHeadRef.startsWith('fix/') ||
+        pullRequestTitle.includes('[fix]') ||
+        pullRequestLabels.some((label) => label.name === 'fix')
       ) {
-        functionReturn.change = 'major'
-        core.info('Major change detected')
-      } else {
+        functionReturn.change = 'patch'
+        core.info('Patch change detected')
+      }
+       else {
         // default to patch change
         functionReturn.change = 'minor'
         core.info('default to minor change')
@@ -314,68 +314,87 @@ module.exports = async function getReleaseType(
     //  - other ?
     functionReturn.event = github.context.eventName
 
-    functionReturn.type = 'push'
-    core.info('type[' + functionReturn.type + ']')
-
     let gitBeforeCommitSha = github.context.payload.before // sha of the commit before the push
     core.info('beforeCommitSha[' + gitBeforeCommitSha + ']')
-    // get the commit data before the push
-    // https://docs.github.com/en/rest/git/commits?apiVersion=2022-11-28#get-a-commit
-    let gitBeforeCommitShaData = await octokit.rest.git.getCommit({
-      owner: githubRepoOwner,
-      repo: githubRepoName,
-      commit_sha: gitBeforeCommitSha, // sha of the commit before the push
-    })
-    core.debug(
-      'gitBeforeCommitShaData[' + JSON.stringify(gitBeforeCommitShaData) + ']'
-    )
-    let gitBeforeCommitShaMessage = gitBeforeCommitShaData.data.message
-    core.info('beforeCommitShaMessage[' + gitBeforeCommitShaMessage + ']')
-    // get all branches where the given commit SHA is the latest commit
-    // DOC: https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-branches-for-head-commit
-    let getBeforeCommitBranches = await octokit.request(
-      'GET /repos/' +
-        githubRepoOwner +
-        '/' +
-        githubRepoName +
-        '/commits/' +
-        gitBeforeCommitSha +
-        '/branches-where-head',
-      {
+    if (gitBeforeCommitSha === '0000000000000000000000000000000000000000' ) {
+      // Handle the "null" commit ID - technically represented as a string of 40 zeros
+      // an official Git convention used to represent a non-existent commit or a null parent, including these use cases
+      //  - Initial Commit/Root Commit
+      //  - Branch Deletion
+      //  - Branch Creation
+      // DOC: locate offical documentation (TODO)
+      //      https://github.com/git/git/commit/f65fdf04a13d2252de8b2b4b161db7c43f2c28ad
+      functionReturn.type = 'noop' // no change as null parent detected
+      core.debug('type[' + functionReturn.type + ']')
+      core.info('non-existent git commit event')
+    } else {
+      functionReturn.type = 'push'
+      core.info('type[' + functionReturn.type + ']')
+
+      // get the commit data before the push
+      // https://docs.github.com/en/rest/git/commits?apiVersion=2022-11-28#get-a-commit
+      let gitBeforeCommitShaData = await octokit.rest.git.getCommit({
         owner: githubRepoOwner,
         repo: githubRepoName,
-        commit_sha: gitBeforeCommitSha,
-      }
-    )
-    core.debug(
-      'getBeforeCommitBranches[' + JSON.stringify(getBeforeCommitBranches) + ']'
-    )
-    let beforeCommitBranchList = getBeforeCommitBranches.data.ForEach((i) => {
-      i.name
-    })
-    core.info(
-      'beforeCommitBranchList[' + JSON.stringify(beforeCommitBranchList) + ']'
-    )
-    // TODO: review the branches where the commit exists
+        commit_sha: gitBeforeCommitSha, // sha of the commit before the push
+      })
+      core.debug(
+        'gitBeforeCommitShaData[' + JSON.stringify(gitBeforeCommitShaData) + ']'
+      )
+      let gitBeforeCommitShaMessage = gitBeforeCommitShaData.data.message
+      core.info('beforeCommitShaMessage[' + gitBeforeCommitShaMessage + ']')
+      // get all branches where the given commit SHA is the latest commit
+      // DOC: https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-branches-for-head-commit
+      let getBeforeCommitBranches = await octokit.request(
+        'GET /repos/' +
+          githubRepoOwner +
+          '/' +
+          githubRepoName +
+          '/commits/' +
+          gitBeforeCommitSha +
+          '/branches-where-head',
+        {
+          owner: githubRepoOwner,
+          repo: githubRepoName,
+          commit_sha: gitBeforeCommitSha,
+        }
+      )
+      core.debug(
+        'getBeforeCommitBranches[' + JSON.stringify(getBeforeCommitBranches) + ']'
+      )
+      let beforeCommitBranchList = getBeforeCommitBranches.data.ForEach((i) => {
+        i.name
+      })
+      core.info(
+        'beforeCommitBranchList[' + JSON.stringify(beforeCommitBranchList) + ']'
+      )
+      // TODO: review the branches where the commit exists
 
-    // To list the open or merged pull requests associated with a branch, you can set the commit_sha parameter to the branch name
-    // DOC: https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-pull-requests-associated-with-a-commit
-    let getPullRequest = await octokit.request(
-      'GET /repos/' +
-        githubRepoOwner +
-        '/' +
-        githubRepoName +
-        '/commits/{commit_sha}/pulls',
-      {
-        owner: 'OWNER',
-        repo: 'REPO',
-        commit_sha: 'COMMIT_SHA',
-        headers: {
-          'X-GitHub-Api-Version': '2022-11-28',
-        },
-      }
-    )
-    core.debug('getPullRequest[' + JSON.stringify(getPullRequest) + ']')
+      // To list the open or merged pull requests associated with a branch, you can set the commit_sha parameter to the branch name
+      // DOC: https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-pull-requests-associated-with-a-commit
+      let getPullRequest = await octokit.request(
+        'GET /repos/' +
+          githubRepoOwner +
+          '/' +
+          githubRepoName +
+          '/commits/{commit_sha}/pulls',
+        {
+          owner: 'OWNER',
+          repo: 'REPO',
+          commit_sha: 'COMMIT_SHA',
+          headers: {
+            'X-GitHub-Api-Version': '2022-11-28',
+          },
+        }
+      )
+      core.debug('getPullRequest[' + JSON.stringify(getPullRequest) + ']')
+
+
+
+
+    }
+
+
   } else {
     functionReturn.event = 'unknown'
     functionReturn.type = null

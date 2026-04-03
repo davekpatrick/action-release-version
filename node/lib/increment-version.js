@@ -43,7 +43,7 @@ module.exports = async function incrementVersion(
   // return(output) variable setup
   var functionReturn = {
     old: functionArguments.currentVersion,
-    new: null,
+    new: null, // TODO: mmmmm
   }
   // ------------------------------------
   core.info('Version change type[' + functionArguments.releaseType + ']')
