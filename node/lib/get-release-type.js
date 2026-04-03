@@ -285,8 +285,7 @@ module.exports = async function getReleaseType(
       ) {
         functionReturn.change = 'patch'
         core.info('Patch change detected')
-      }
-       else {
+      } else {
         // default to patch change
         functionReturn.change = 'minor'
         core.info('default to minor change')
@@ -302,8 +301,6 @@ module.exports = async function getReleaseType(
       }
     }
     core.info('type[' + functionReturn.type + ']')
-  
-  
   } else if (github.context.eventName === 'push') {
     // ------------------------------------
     // a push event has occurred
@@ -316,7 +313,7 @@ module.exports = async function getReleaseType(
 
     let gitBeforeCommitSha = github.context.payload.before // sha of the commit before the push
     core.info('beforeCommitSha[' + gitBeforeCommitSha + ']')
-    if (gitBeforeCommitSha === '0000000000000000000000000000000000000000' ) {
+    if (gitBeforeCommitSha === '0000000000000000000000000000000000000000') {
       // Handle the "null" commit ID - technically represented as a string of 40 zeros
       // an official Git convention used to represent a non-existent commit or a null parent, including these use cases
       //  - Initial Commit/Root Commit
@@ -360,7 +357,9 @@ module.exports = async function getReleaseType(
         }
       )
       core.debug(
-        'getBeforeCommitBranches[' + JSON.stringify(getBeforeCommitBranches) + ']'
+        'getBeforeCommitBranches[' +
+          JSON.stringify(getBeforeCommitBranches) +
+          ']'
       )
       let beforeCommitBranchList = getBeforeCommitBranches.data.ForEach((i) => {
         i.name
@@ -388,13 +387,7 @@ module.exports = async function getReleaseType(
         }
       )
       core.debug('getPullRequest[' + JSON.stringify(getPullRequest) + ']')
-
-
-
-
     }
-
-
   } else {
     functionReturn.event = 'unknown'
     functionReturn.type = null

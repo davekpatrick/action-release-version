@@ -184,10 +184,10 @@ describe("function: get-release-type.js", async function () {
             pull_request: {
               labels: [
                 {
-                    "name": "fix",
-                }
-            ],
-            }
+                  name: "fix",
+                },
+              ],
+            },
           },
         },
         getOctokit: () => mockOctokit,
@@ -207,9 +207,7 @@ describe("function: get-release-type.js", async function () {
         "node:process": processMock,
       })
       // execute the test
-      const result = await main(
-        apiToken
-      )
+      const result = await main(apiToken)
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
       }
@@ -290,22 +288,19 @@ describe("function: get-release-type.js", async function () {
         "node:process": processMock,
       })
       // execute the test
-      const result = await main(
-        apiToken,
-        {
+      const result = await main(apiToken, {
         versionTagCurrent: currentVersion,
         versionTagHistory: [
-            "0.1.0",
-            "0.1.2",
-            "1.0.0",
-            "1.1.0",
-            "1.2.0",
-            "1.2.1",
-            "1.2.2",
-            currentVersion,
-          ],
-        }
-      )
+          "0.1.0",
+          "0.1.2",
+          "1.0.0",
+          "1.1.0",
+          "1.2.0",
+          "1.2.1",
+          "1.2.2",
+          currentVersion,
+        ],
+      })
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
       }

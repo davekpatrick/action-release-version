@@ -48,7 +48,7 @@ module.exports = async function incrementVersion(
   // ------------------------------------
   core.info('Version change type[' + functionArguments.releaseType + ']')
   // determine the new version based on the release type and change action
-  if ( functionArguments.releaseType === 'noop' ) {
+  if (functionArguments.releaseType === 'noop') {
     //
     functionReturn.new = functionArguments.currentVersion
     core.info('No increment required')
@@ -62,8 +62,9 @@ module.exports = async function incrementVersion(
       functionArguments.currentVersion,
       functionArguments.releaseChange
     )
-        core.info('Initial version, so ' + functionArguments.releaseChange + ' incrementing')
-
+    core.info(
+      'Initial version, so ' + functionArguments.releaseChange + ' incrementing'
+    )
   } else if (functionArguments.releaseType === 'releasing') {
     functionReturn.new = semverInc(
       functionArguments.currentVersion,
