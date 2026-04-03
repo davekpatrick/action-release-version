@@ -91,7 +91,7 @@ module.exports = async function main() {
     //  - can this different from the actual name e.g. for an organization
     // github.context.payload.repository.owner.name
     //  - is the actual name
-    //  - as using this but no longer exists in payload for some reason
+    //  - was using this but no longer exists in payload for some reason
     const gitHubRepoOwnerLogin = githubContext.payload.repository.owner.login
     const gitHubRepoOwnerName = githubContext.payload.repository.owner.name
     var gitHubRepoOwner = null
@@ -128,13 +128,12 @@ module.exports = async function main() {
       throw new Error('Unable to locate the repository name')
     }
     core.info(
-      'gitHubRepoOwner[' +
+      'gitHubRepoitory owner[' +
         gitHubRepoOwner +
-        '] gitHubRepoName[' +
+        '] name[' +
         gitHubRepoName +
         ']'
     )
-
     core.endGroup()
     core.startGroup('Preparation')
     // ------------------------------------
@@ -169,16 +168,16 @@ module.exports = async function main() {
     // ------------------------------------
     // ------------------------------------
     // get the "current" version
-    // methods in order of precedence (e.g arg, env, cfg, def)
+    // methods in order of precedence (arg -> env -> cfg -> def)
     // arg:
-    //   - via argVersion input
+    //   - via argVersion action input
     //   - on release event, use the tag that triggered the workflow
     //   - on workflow_dispatch event, use the input version
     // env:
     //   - repository action variable, RELEASE_VERSION
     // cfg:
     //   - action configuration file
-    //   - get the latest from the git repostory tags
+    //   - get the latest version from the git repostory tags
     // def:
     //   - if no version found, use argInceptionVersionTag default
     // ------------------------------------
@@ -186,10 +185,6 @@ module.exports = async function main() {
     getVersionData = await getVersion(
       apiToken, // GitHub API token
       {
-        // GitHub environment inputs
-        githubEventType: githubEventType,
-        githubRepoOwner: gitHubRepoOwner,
-        githubRepoName: gitHubRepoName,
         // Action inputs
         tagPrefix: argTagPrefix,
         inceptionVersionTag: argInceptionVersionTag,
@@ -256,20 +251,20 @@ module.exports = async function main() {
     const getReleaseTypeData = await getReleaseType(
       apiToken, // GitHub API token
       {
-        //  other optional inputs
-        currentVersion: currentVersion, // the identified current version
-        versionHistory: getVersionData.history, // full version history, TODO: this be an issue with larger projects and version history
+        // other optional inputs
+        versionTagCurrent: currentVersion, // the identified current version
+        versionTagHistory: getVersionData.history, // full version history, TODO: this be an issue with larger projects and version history
       }
     )
     core.info('getReleaseTypeData[' + JSON.stringify(getReleaseTypeData) + ']')
     core.endGroup()
     core.startGroup('Execution')
     // ------------------------------------
-    const incrementedVersionData = await incrementVersion(
-      currentVersion,
-      getReleaseTypeData.type,
-      getReleaseTypeData.change
-    )
+    const incrementedVersionData = await incrementVersion(currentVersion, {
+      // other optional inputs
+      releaseType: getReleaseTypeData.type,
+      releaseChange: getReleaseTypeData.change,
+    })
     core.debug(
       'incrementedVersionData[' + JSON.stringify(incrementedVersionData) + ']'
     )
