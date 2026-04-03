@@ -14,32 +14,40 @@ const github = __nccwpck_require__(5438) // Microsoft's actions github toolkit
 const semverMaxSatisfying = __nccwpck_require__(579)
 const semverDiff = __nccwpck_require__(4297)
 // ------------------------------------
-//
 // ------------------------------------
 module.exports = async function getReleaseType(
-  argApiToken,
-  argOptional = {
-    inceptionVersionTag: '0.0.0',
-    inceptionVersionIncrement: 'minor',
-    currentVersion: null,
-    versionHistory: [],
-  }
-  //argTrigger = null,
+  apiToken,
+  {
+    //
+    inceptionVersionTag = '0.0.0',
+    inceptionVersionIncrement = 'minor',
+    //
+    versionTagCurrent = inceptionVersionTag,
+    versionTagHistory = [inceptionVersionTag],
+  } = {}
 ) {
   const functionName = getReleaseType.name
-  // ------------------------------------
   core.debug('Start ' + functionName)
-  // Argument clean up
-  if (argOptional.currentVersion === null) {
-    argOptional.currentVersion = argOptional.inceptionVersionTag
+  // ------------------------------------
+  // ------------------------------------
+  // argument(input) variable setup
+  const functionArguments = {
+    apiToken: apiToken,
+    //
+    versionTagCurrent: versionTagCurrent,
+    versionTagHistory: versionTagHistory,
+    //
+    inceptionVersionTag: inceptionVersionTag,
+    inceptionVersionIncrement: inceptionVersionIncrement,
   }
-  if (argOptional.versionHistory.length === 0) {
-    argOptional.versionHistory = [argOptional.currentVersion]
+  // ------------------------------------
+  // ------------------------------------
+  // return(output) variable setup
+  var functionReturn = {
+    event: null,
+    type: null,
+    change: null,
   }
-  //core.info('currentVersion[' + argOptional.currentVersion + ']')
-  var outEvent = null
-  var outType = null
-  var outChange = null
   // ------------------------------------
   // declare return variables
   // event
@@ -49,15 +57,15 @@ module.exports = async function getReleaseType(
   //  - pull
   //  - unknown
   // type:
-  //  - none         e.g. no change detected
+  //  - noop         e.g. no change, a no-operation event
   //  - initial      e.g. first version detected
   //  - released     e.g. 1.0.0
   //  - releasing    e.g. from 1.0.0-release.1 to 1.0.0
   //  - prerelease
   //  - build
   // change: ( e.g. from 0.1.0 to 1.0.0 )
-  //  - prerelease  e.g. 1.0.0-release.1
   //  - release     e.g  1.0.0
+  //  - prerelease  e.g. 1.0.0-release.1
   //  - premajor    e.g. 1.0.0-alpha.1
   //  - major       e.g. 1.0.0
   //  - preminor    e.g. 0.2.0-beta.1
@@ -66,59 +74,22 @@ module.exports = async function getReleaseType(
   //  - patch       e.g. 0.1.1
   //
   // ------------------------------------
-  core.debug('context[' + JSON.stringify(github.context) + ']')
-  core.debug('contextType[' + github.context.eventName + ']')
-  // get the repo owner and name
-  // TODO:
-  // investigate github.context.payload.repository.owner.name vs login
-  //  if these can be different and which to use
-  //  especially for enterprise accounts
-  // e.g. if the repo is owned by an organization
-  //
-  // github.context.payload.repository.owner.login
-  //  - is the login name
-  //  - can this different from the actual name ?
-  // github.context.payload.repository.owner.name
-  //  - is the actual name
-  //  - was using this but no longer exists in payload for some reason
-  const gitRepoOwnerLogin = github.context.payload.repository.owner.login
-  const gitRepoOwnerName = github.context.payload.repository.owner.name
-  const gitRepo = github.context.payload.repository.name
-  core.debug(
-    'gitRepoOwnerLogin[' +
-      gitRepoOwnerLogin +
-      '] gitRepoOwnerName[' +
-      gitRepoOwnerName +
-      '] gitRepo[' +
-      gitRepo +
-      ']'
-  )
-  if (gitRepoOwnerName === undefined) {
-    core.debug('Undefined GitHub repository.owner.name')
-  }
-  let gitOwner = gitRepoOwnerLogin
-  // ensure we have valid repository information
-  if (gitOwner === null || gitOwner === '' || gitOwner === undefined) {
-    throw new Error('Unable to locate the repository owner')
-  }
-  if (gitRepo === null || gitRepo === '' || gitRepo === undefined) {
-    throw new Error('Unable to locate the repository name')
-  }
-  core.debug('gitOwner[' + gitOwner + '] gitRepo[' + gitRepo + ']')
+  const githubRepoOwner = github.context.payload.repository.owner.login
+  const githubRepoName = github.context.payload.repository.name
   // ------------------------------------
   // setup authenticated github client
   // doc: https://github.com/actions/toolkit/blob/main/packages/github/README.md
   //      https://octokit.github.io/rest.js/v18#authentication
-  const octokit = github.getOctokit(argApiToken)
+  const octokit = github.getOctokit(functionArguments.apiToken)
   if (octokit === null || octokit === undefined) {
     throw new Error('Unable to create authenticated GitHub client')
   }
   // ------------------------------------
-  // remove the current version from the version history
-  var versionHistory = argOptional.versionHistory
-  if (versionHistory.includes(argOptional.currentVersion)) {
+  // remove the inception version from the version history
+  var versionHistory = functionArguments.versionTagHistory
+  if (versionHistory.includes(functionArguments.inceptionVersionTag)) {
     versionHistory = versionHistory.filter(
-      (version) => version !== argOptional.currentVersion
+      (version) => version !== functionArguments.inceptionVersionTag
     )
   }
   core.debug('versionHistory[' + JSON.stringify(versionHistory) + ']')
@@ -127,8 +98,8 @@ module.exports = async function getReleaseType(
   var gitDefaultBranch = null
   try {
     const gitRepoData = await octokit.rest.repos.get({
-      owner: gitOwner,
-      repo: gitRepo,
+      owner: githubRepoOwner,
+      repo: githubRepoName,
     })
     core.debug('gitRepoData[' + JSON.stringify(gitRepoData) + ']')
     gitDefaultBranch = gitRepoData.data.default_branch //
@@ -150,18 +121,18 @@ module.exports = async function getReleaseType(
   if (github.context.eventName === 'release') {
     // ------------------------------------
     // a release event has occurred - use the tag that triggered the workflow
-    outEvent = github.context.eventName
+    functionReturn.event = github.context.eventName
     // check how much version history we have
     if (versionHistory.length === 0) {
-      outType = 'initial' //
-      outChange = 'none' //
+      functionReturn.type = 'initial' //
+      functionReturn.change = 'none' //
       core.info('Initial release version detected')
     } else {
       core.debug('Locating previous version')
       // locate the previous version
       let previousVersion = semverMaxSatisfying(
         versionHistory,
-        '<' + argOptional.currentVersion,
+        '<' + functionArguments.versionTagCurrent,
         { includePrerelease: true }
       )
       if (previousVersion === null || previousVersion === undefined) {
@@ -172,7 +143,7 @@ module.exports = async function getReleaseType(
         core.info('Previous version located [' + previousVersion + ']')
         let versionDiff = semverDiff(
           previousVersion,
-          argOptional.currentVersion,
+          functionArguments.versionTagCurrent,
           {
             includePrerelease: true,
           }
@@ -182,44 +153,47 @@ module.exports = async function getReleaseType(
           // no difference found between the current and previous version
           throw new Error(
             'No difference between current[' +
-              argOptional.currentVersion +
+              functionArguments.versionTagCurrent +
               '] and previous[' +
               previousVersion +
               '] versions'
           )
         } else {
           // this is a release event ... so we have an already released the version
-          outType = 'released'
-          outChange = versionDiff
+          functionReturn.type = 'released'
+          functionReturn.change = versionDiff
         }
       }
     }
-    core.info('outType[' + outType + ']')
+    core.info('type[' + functionReturn.type + ']')
   } else if (github.context.eventName === 'workflow_dispatch') {
     // ------------------------------------
     // a workflow_dispatch event has occurred - do not increment the version
-    outEvent = 'manual'
+    functionReturn.event = 'manual'
     // check how much version history we have
     if (versionHistory.length === 0) {
-      outType = 'initial'
-      if (argOptional.currentVersion === argOptional.inceptionVersionTag) {
+      functionReturn.type = 'initial'
+      if (
+        functionArguments.versionTagCurrent ===
+        functionArguments.inceptionVersionTag
+      ) {
         // we have no version history and the current version is the inception version
         // which means the user has not set the version correctly
-        outChange = argOptional.inceptionVersionIncrement
+        functionReturn.change = functionArguments.inceptionVersionIncrement
         core.warning(
           'Current version is equal to inception version, ensuring increment to[' +
-            outChange +
+            functionReturn.change +
             ']'
         )
       } else {
-        outChange = 'none' // no change as first version and set manually
+        functionReturn.change = 'none' // no change as first version and set manually
       }
       core.info('Manual initial release version detected')
     } else {
       // locate the previous version
       let previousVersion = semverMaxSatisfying(
         versionHistory,
-        '<' + argOptional.currentVersion,
+        '<' + functionArguments.versionTagCurrent,
         { includePrerelease: true }
       )
       if (previousVersion === null || previousVersion === undefined) {
@@ -230,7 +204,7 @@ module.exports = async function getReleaseType(
         core.info('Previous version located [' + previousVersion + ']')
         let versionDiff = semverDiff(
           previousVersion,
-          argOptional.currentVersion,
+          functionArguments.versionTagCurrent,
           {
             includePrerelease: true,
           }
@@ -240,49 +214,38 @@ module.exports = async function getReleaseType(
           // no difference found between the current and previous version
           throw new Error(
             'No difference between current[' +
-              argOptional.currentVersion +
+              functionArguments.versionTagCurrent +
               '] and previous[' +
               previousVersion +
               '] versions'
           )
         } else {
           // determine the type of change
-          outType = 'releasing'
-          outChange = versionDiff
+          functionReturn.type = 'releasing'
+          functionReturn.change = versionDiff
         }
       }
     }
-    core.info('outType[' + outType + ']')
-  } else if (github.context.eventName === 'push') {
-    // ------------------------------------
-    // a push event has occurred
-    // TODO: determine the type based on ;
-    //  - commit messages since the last tag
-    //  - branch name
-    //  - files changed
-    //  - other ?
-    outEvent = github.context.eventName
-
-    outType = 'push'
-    core.info('outType[' + outType + ']')
+    core.info('type[' + functionReturn.type + ']')
   } else if (github.context.eventName === 'pull_request') {
     // ------------------------------------
     // a pull_request event has occurred
-    outEvent = github.context.eventName
+    functionReturn.event = github.context.eventName
+    functionReturn.type = 'build' // TODO: should we have different types...
     // check how much version history we have
     if (versionHistory.length === 0) {
-      outType = 'build'
-      if (argOptional.currentVersion === argOptional.inceptionVersionTag) {
-        outChange = argOptional.inceptionVersionIncrement // first version, so make it at least 0.1.0
+      if (
+        functionArguments.versionTagCurrent ===
+        functionArguments.inceptionVersionTag
+      ) {
+        functionReturn.change = functionArguments.inceptionVersionIncrement // first version, so make it at least 0.1.0
       } else {
         // current version is not the inception version tag
         // so do not increment the version, just use the current version
-        outChange = 'none'
+        functionReturn.change = 'none'
       }
       core.info('Initial release version detected')
     } else {
-      //
-      outType = 'build'
       //
       let gitHeadRef = github.context.payload.pull_request.head.ref
       let gitBaseRef = github.context.payload.pull_request.base.ref
@@ -298,15 +261,16 @@ module.exports = async function getReleaseType(
       core.debug('pullRequestLabels[' + JSON.stringify(pullRequestLabels) + ']')
       //
       // determine the type of change
-      // fix branch
-      // e.g. fix/issue-123
+
+      // major branch
+      // e.g. major/issue-123
       if (
-        gitHeadRef.startsWith('fix/') ||
-        pullRequestTitle.includes('[fix]') ||
-        pullRequestLabels.some((label) => label.name === 'fix')
+        gitHeadRef.startsWith('major/') ||
+        pullRequestTitle.includes('[major]') ||
+        pullRequestLabels.some((label) => label.name === 'major')
       ) {
-        outChange = 'patch'
-        core.info('Patch change detected')
+        functionReturn.change = 'major'
+        core.info('Major change detected')
       }
       // feature branch
       // e.g. feature/issue-123
@@ -315,45 +279,132 @@ module.exports = async function getReleaseType(
         pullRequestTitle.includes('[feature]') ||
         pullRequestLabels.some((label) => label.name === 'feature')
       ) {
-        outChange = 'minor'
+        functionReturn.change = 'minor'
         core.info('Minor change detected')
       }
-      // major branch
-      // e.g. major/issue-123
+      // fix branch
+      // e.g. fix/issue-123
       else if (
-        gitHeadRef.startsWith('major/') ||
-        pullRequestTitle.includes('[major]') ||
-        pullRequestLabels.some((label) => label.name === 'major')
+        gitHeadRef.startsWith('fix/') ||
+        pullRequestTitle.includes('[fix]') ||
+        pullRequestLabels.some((label) => label.name === 'fix')
       ) {
-        outChange = 'major'
-        core.info('Major change detected')
+        functionReturn.change = 'patch'
+        core.info('Patch change detected')
       } else {
         // default to patch change
-        outChange = 'minor'
+        functionReturn.change = 'minor'
         core.info('default to minor change')
       }
       // check if the pull request is to the default branch
       if (gitBaseRef === gitDefaultBranch) {
         core.info('Pull request to default branch detected')
         // TODO: add support for 'pre'
-        //outChange = 'pre' + outChange
+        //functionReturn.change = 'pre' + functionReturn.change
         //core.info('Pre-release change detected')
       } else {
         core.info('Pull request to non-default branch detected')
       }
     }
-    core.info('outType[' + outType + ']')
+    core.info('type[' + functionReturn.type + ']')
+  } else if (github.context.eventName === 'push') {
+    // ------------------------------------
+    // a push event has occurred
+    // TODO: determine the type based on ;
+    //  - commit messages since the last tag
+    //  - branch name
+    //  - files changed
+    //  - other ?
+    functionReturn.event = github.context.eventName
+
+    let gitBeforeCommitSha = github.context.payload.before // sha of the commit before the push
+    core.info('beforeCommitSha[' + gitBeforeCommitSha + ']')
+    if (gitBeforeCommitSha === '0000000000000000000000000000000000000000') {
+      // Handle the "null" commit ID - technically represented as a string of 40 zeros
+      // an official Git convention used to represent a non-existent commit or a null parent, including these use cases
+      //  - Initial Commit/Root Commit
+      //  - Branch Deletion
+      //  - Branch Creation
+      // DOC: locate offical documentation (TODO)
+      //      https://github.com/git/git/commit/f65fdf04a13d2252de8b2b4b161db7c43f2c28ad
+      functionReturn.type = 'noop' // no change as null parent detected
+      core.debug('type[' + functionReturn.type + ']')
+      core.info('non-existent git commit event')
+    } else {
+      functionReturn.type = 'push'
+      core.info('type[' + functionReturn.type + ']')
+
+      // get the commit data before the push
+      // https://docs.github.com/en/rest/git/commits?apiVersion=2022-11-28#get-a-commit
+      let gitBeforeCommitShaData = await octokit.rest.git.getCommit({
+        owner: githubRepoOwner,
+        repo: githubRepoName,
+        commit_sha: gitBeforeCommitSha, // sha of the commit before the push
+      })
+      core.debug(
+        'gitBeforeCommitShaData[' + JSON.stringify(gitBeforeCommitShaData) + ']'
+      )
+      let gitBeforeCommitShaMessage = gitBeforeCommitShaData.data.message
+      core.info('beforeCommitShaMessage[' + gitBeforeCommitShaMessage + ']')
+      // get all branches where the given commit SHA is the latest commit
+      // DOC: https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-branches-for-head-commit
+      let getBeforeCommitBranches = await octokit.request(
+        'GET /repos/' +
+          githubRepoOwner +
+          '/' +
+          githubRepoName +
+          '/commits/' +
+          gitBeforeCommitSha +
+          '/branches-where-head',
+        {
+          owner: githubRepoOwner,
+          repo: githubRepoName,
+          commit_sha: gitBeforeCommitSha,
+        }
+      )
+      core.debug(
+        'getBeforeCommitBranches[' +
+          JSON.stringify(getBeforeCommitBranches) +
+          ']'
+      )
+      let beforeCommitBranchList = getBeforeCommitBranches.data.ForEach((i) => {
+        i.name
+      })
+      core.info(
+        'beforeCommitBranchList[' + JSON.stringify(beforeCommitBranchList) + ']'
+      )
+      // TODO: review the branches where the commit exists
+
+      // To list the open or merged pull requests associated with a branch, you can set the commit_sha parameter to the branch name
+      // DOC: https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-pull-requests-associated-with-a-commit
+      let getPullRequest = await octokit.request(
+        'GET /repos/' +
+          githubRepoOwner +
+          '/' +
+          githubRepoName +
+          '/commits/{commit_sha}/pulls',
+        {
+          owner: 'OWNER',
+          repo: 'REPO',
+          commit_sha: 'COMMIT_SHA',
+          headers: {
+            'X-GitHub-Api-Version': '2022-11-28',
+          },
+        }
+      )
+      core.debug('getPullRequest[' + JSON.stringify(getPullRequest) + ']')
+    }
   } else {
-    outEvent = 'unknown'
-    outType = null
-    outChange = null
+    functionReturn.event = 'unknown'
+    functionReturn.type = null
+    functionReturn.change = null
   }
   // ------------------------------------
   core.debug('End ' + functionName)
   return {
-    event: outEvent,
-    type: outType,
-    change: outChange,
+    event: functionReturn.event,
+    type: functionReturn.type,
+    change: functionReturn.change,
   }
 } // getReleaseType
 // EOF
@@ -375,20 +426,18 @@ const semverClean = __nccwpck_require__(8848)
 const semverParse = __nccwpck_require__(5925)
 const semverMaxSatisfying = __nccwpck_require__(579)
 // ------------------------------------
+// ------------------------------------
 module.exports = async function getVersion(
   apiToken,
   {
     //
-    githubEventType = null,
-    githubRepoOwner = null,
-    githubRepoName = null,
-    //
     tagPrefix = 'v',
     inceptionVersionTag = '0.0.0',
     versionTag = null, // just use this input as the 'current' version
-  }
+  } = {}
 ) {
   const functionName = getVersion.name
+  core.debug('Start ' + functionName)
   // ------------------------------------
   // getVersion
   // Retrieve the current version tag from the repository
@@ -400,34 +449,40 @@ module.exports = async function getVersion(
   // - support for configuration file for RELEASE_VERSION
   // - explore github graphQL to retrieve the latest tags
   // ------------------------------------
-  core.debug('Start ' + functionName)
   // ------------------------------------
   // argument(input) variable setup
-  const argApiToken = apiToken
-  //
-  const argGithubEventType = githubEventType
-  const argGithubRepoOwner = githubRepoOwner
-  const argGithubRepoName = githubRepoName
-  //
-  const argTagPrefix = tagPrefix
-  const argInceptionVersionTag = inceptionVersionTag
-  const argVersionTag = versionTag
+  const functionArguments = {
+    apiToken: apiToken,
+    //
+    tagPrefix: tagPrefix,
+    inceptionVersionTag: inceptionVersionTag,
+    versionTag: versionTag,
+  }
   // ------------------------------------
-  // output variable setup
-  var outTrigger = null
-  var outVersion = null
-  var outHistory = []
+  // ------------------------------------
+  const githubEventType = github.context.eventName
+  const githubRepoOwner = github.context.payload.repository.owner.login
+  const githubRepoName = github.context.payload.repository.name
+  // ------------------------------------
+  // ------------------------------------
+  // return(output) variable setup
+  var functionReturn = {
+    trigger: null,
+    version: null,
+    history: [],
+  }
   // what event triggered this release version action
   // e.g. push, pull_request, release, workflow_dispatch
   // DOC: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types
-  outTrigger = argGithubEventType
-  core.info('Event trigger[' + outTrigger + ']')
-  core.info('Version tag prefix[' + argTagPrefix + ']')
-  core.info('Inception version tag[' + argInceptionVersionTag + ']')
+  functionReturn.trigger = githubEventType
+  core.debug('versionTagPrefix[' + functionArguments.tagPrefix + ']')
+  core.debug(
+    'inceptionVersionTag[' + functionArguments.inceptionVersionTag + ']'
+  )
   // setup authenticated github client
   // doc: https://github.com/actions/toolkit/blob/main/packages/github/README.md
   //      https://octokit.github.io/rest.js/v18#authentication
-  const octokit = github.getOctokit(argApiToken)
+  const octokit = github.getOctokit(functionArguments.apiToken)
   if (octokit === null || octokit === undefined) {
     throw new Error('Unable to create authenticated GitHub client')
   }
@@ -436,14 +491,14 @@ module.exports = async function getVersion(
   // get all matching refs (tags)
   // https://docs.github.com/en/rest/reference/git#list-matching-references
   let matchingTags = await octokit.rest.git.listMatchingRefs({
-    owner: argGithubRepoOwner,
-    repo: argGithubRepoName,
-    ref: 'tags/' + argTagPrefix,
+    owner: githubRepoOwner,
+    repo: githubRepoName,
+    ref: 'tags/' + functionArguments.tagPrefix,
   })
   core.debug('matchingTags[' + JSON.stringify(matchingTags) + ']')
   if (matchingTags.data.length === 0) {
     core.warning('No current version found')
-    outHistory.push(argInceptionVersionTag) // starting point
+    functionReturn.history.push(functionArguments.inceptionVersionTag) // starting point
   } else {
     // build a list of valid release version tags
     // i.e. valid semver tags without build metadata
@@ -458,134 +513,111 @@ module.exports = async function getVersion(
       // discard null/empty semverTag
       if (tagData === null) {
         // invalid semver tag
-        core.debug('Invalid versionTag[' + tagName + '] ')
+        core.debug('invalidVersionTag[' + tagName + '] ')
         continue // skip to the next tag
       } else {
         // check for build version tags e.g v1.2.3+build.1
         if (tagData.build.length > 0) {
           // do not add to the list of semver tags, as this is not a release version
           // TODO: review this .. maybe we should include an option to increment build versions
-          core.debug('Ignoring build[' + tagData.build + ']')
+          core.debug('ignoringBuild[' + tagData.build + ']')
           continue // skip to the next tag
         } else {
           // confirming it does not already exists in the list
-          if (!outHistory.includes(tagData.version)) {
-            core.debug('Adding versionTag[' + tagData.version + ']')
-            outHistory.push(tagData.version)
+          if (!functionReturn.history.includes(tagData.version)) {
+            core.debug('addingVersionTag[' + tagData.version + ']')
+            functionReturn.history.push(tagData.version)
           }
         }
       }
     }
   }
+  core.info('versionHistorySize[' + functionReturn.history.length + ']')
   // ------------------------------------
   // process the event types
-  if (argVersionTag !== null && argVersionTag !== '') {
+  if (
+    functionArguments.versionTag !== undefined &&
+    functionArguments.versionTag !== null &&
+    functionArguments.versionTag !== ''
+  ) {
     // use the provided 'current' version
-    core.info('Version specified as action input[' + argVersionTag + ']')
-    let semVer = semverClean(argVersionTag)
+    core.info(
+      'Version specified as action input[' + functionArguments.versionTag + ']'
+    )
+    let semVer = semverClean(functionArguments.versionTag)
     if (semVer === null || semVer === '' || semVer === undefined) {
       // strange, the input provided is invalid
-      throw new Error('Invalid semver version[' + argVersionTag + ']')
+      throw new Error(
+        'Invalid semver version[' + functionArguments.versionTag + ']'
+      )
     }
-    outVersion = semVer
-  } else if (outTrigger === 'release') {
+    functionReturn.version = semVer
+  } else if (functionReturn.trigger === 'release') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#releaseevent
-    let tagData = github.context.payload.release.tag_name
-    let getRef = 'tags/' + tagData
-    core.info('Release event detected, with tag[' + tagData + ']')
+    let gitTag = github.context.payload.release.tag_name
+    let gitRef = 'tags/' + gitTag
     // ensure the tag exists
-    let getRefData = await octokit.rest.git.getRef({
-      owner: argGithubRepoOwner,
-      repo: argGithubRepoName,
-      ref: getRef,
+    let gitRefData = await octokit.rest.git.getRef({
+      owner: githubRepoOwner,
+      repo: githubRepoName,
+      ref: gitRef,
     })
-    core.debug('getRefData[' + JSON.stringify(getRefData) + ']')
-    if (getRefData.status !== 200) {
-      throw new Error('Unable to retrieve ref[' + getRef + '] data')
+    core.debug('gitRefData[' + JSON.stringify(gitRefData) + ']')
+    if (gitRefData.status !== 200) {
+      throw new Error('Unable to retrieve ref[' + gitRef + '] data')
     }
-    core.info('tagSha[' + getRefData.data.object.sha + ']')
+    let gitSha = gitRefData.data.object.sha
+    core.info('Release detected, with ref[' + gitRef + '] sha[' + gitSha + ']')
     // ensure we have a valid semver tag
-    let tagSemVer = semverClean(tagData)
+    let tagSemVer = semverClean(gitTag)
     if (tagSemVer === null) {
-      throw new Error('Invalid semver tag[' + tagData + ']')
+      throw new Error('Invalid semver tag[' + gitTag + ']')
     }
-    outVersion = tagSemVer
-  } else if (outTrigger === 'push') {
+    functionReturn.version = tagSemVer
+  } else if (functionReturn.trigger === 'push') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pushevent
     let gitRef = github.context.ref
     let gitSha = github.context.sha
-    let gitBeforeCommitSha = github.context.payload.before // sha of the commit before the push
-    core.info(
-      'Push event detected, with ref[' + gitRef + '] commitSha[' + gitSha + ']'
-    )
-    core.info('beforeCommitSha[' + gitBeforeCommitSha + ']')
-    // get the commit data before the push
-    // https://docs.github.com/en/rest/git/commits?apiVersion=2022-11-28#get-a-commit
-    let gitBeforeCommitShaData = await octokit.rest.git.getCommit({
-      owner: argGithubRepoOwner,
-      repo: argGithubRepoName,
-      commit_sha: gitBeforeCommitSha, // sha of the commit before the push
-    })
-    core.info(
-      'gitBeforeCommitShaData[' + JSON.stringify(gitBeforeCommitShaData) + ']'
-    )
-    // get all branches where the given commit SHA is the latest commit
-    // DOC: https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-branches-for-head-commit
-    let getBeforeCommitBranches = await octokit.request(
-      'GET /repos/' +
-        argGithubRepoOwner +
-        '/' +
-        argGithubRepoName +
-        '/commits/' +
-        gitBeforeCommitSha +
-        '/branches-where-head',
-      {
-        owner: argGithubRepoOwner,
-        repo: argGithubRepoName,
-        commit_sha: gitBeforeCommitSha,
-      }
-    )
-    core.info(
-      'getBeforeCommitBranches[' + JSON.stringify(getBeforeCommitBranches) + ']'
-    )
-    // TODO: review the branches where the commit exists
+    let gitShaBefore = github.context.payload.before // sha of the commit before the push
+    core.info('Push detected, with ref[' + gitRef + '] sha[' + gitSha + ']')
+    core.debug('gitShaBefore[' + gitShaBefore + ']')
 
-    // get the latest version from the outHistory
+    // get the latest version from the functionReturn.history
     // using semver maxSatisfying with range *
     // should return the highest version
-    let latestVersion = semverMaxSatisfying(outHistory, '*', {
+    let latestVersion = semverMaxSatisfying(functionReturn.history, '*', {
       includePrerelease: true,
     })
     if (latestVersion === null) {
       throw new Error('unable to locate latest version')
     } else {
-      outVersion = latestVersion
+      functionReturn.version = latestVersion
     }
-  } else if (outTrigger === 'pull_request') {
+  } else if (functionReturn.trigger === 'pull_request') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pullrequestevent
     let gitRef = github.context.ref
     let gitSha = github.context.sha
     core.info(
-      'Pull Request event detected, with ref[' +
+      'Pull Request detected, with ref[' +
         gitRef +
         '] commitsha[' +
         gitSha +
         ']'
     )
-    // get the latest version from the outHistory
+    // get the latest version from the functionReturn.history
     // using semver maxSatisfying with range *
     // should return the highest version
-    let latestVersion = semverMaxSatisfying(outHistory, '*', {
+    let latestVersion = semverMaxSatisfying(functionReturn.history, '*', {
       includePrerelease: true,
     })
     if (latestVersion === null) {
       throw new Error('unable to locate latest version')
     } else {
-      outVersion = latestVersion
+      functionReturn.version = latestVersion
     }
-  } else if (outTrigger === 'workflow_dispatch') {
+  } else if (functionReturn.trigger === 'workflow_dispatch') {
     // doc: https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#workflow_dispatch
-    core.info('Workflow Dispatch event detected')
+    core.info('Workflow Dispatch detected')
     // pull the "version" from the input
     // TODO: should we validate the input name/version exists in the action definition
     //       should we allow an alternative input name via action input?
@@ -603,29 +635,29 @@ module.exports = async function getVersion(
       // strange, the input provided is invalid
       throw new Error('Invalid semver version[' + inputVersion + ']')
     }
-    outVersion = semVer
+    functionReturn.version = semVer
   } else {
     //
-    core.info('Unknown event type[' + outTrigger + ']')
+    core.info('Unknown event type[' + functionReturn.trigger + ']')
     // TODO: should this be an error or warning and return null ? e.g. for schedule event
-    // get the latest version from the outHistory
+    // get the latest version from the functionReturn.history
     // using semver maxSatisfying with range *
     // should return the highest version
-    let latestVersion = semverMaxSatisfying(outHistory, '*', {
+    let latestVersion = semverMaxSatisfying(functionReturn.history, '*', {
       includePrerelease: true,
     })
     if (latestVersion === null) {
       throw new Error('unable to locate latest version')
     } else {
-      outVersion = latestVersion
+      functionReturn.version = latestVersion
     }
   }
   // ------------------------------------
   core.debug('End ' + functionName)
   return {
-    trigger: outTrigger,
-    version: outVersion,
-    history: outHistory,
+    trigger: functionReturn.trigger,
+    version: functionReturn.version,
+    history: functionReturn.history,
   }
 } // getVersion
 // EOF
@@ -647,50 +679,90 @@ const semverInc = __nccwpck_require__(900)
 //
 // ------------------------------------
 module.exports = async function incrementVersion(
-  argCurrentVersion,
-  argReleaseType = 'initial',
-  argReleaseChange = 'minor', // TODO: think about this
-  argBuildMetadata = {
-    // add suport for git sha
-    // $(echo 3d91209a0aab66bcefa0b733abd456da3f109fd2 | cut -c1-8)
-    inst: new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, ''),
-    num: 1,
-  }
+  currentVersion,
+  {
+    //
+    releaseType = 'initial',
+    releaseChange = 'minor', // TODO: think about this
+    buildMetadata = {
+      // add suport for git sha
+      // $(echo 3d91209a0aab66bcefa0b733abd456da3f109fd2 | cut -c1-8)
+      inst: new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, ''),
+      num: 1,
+    },
+  } = {}
 ) {
   // ------------------------------------
-  core.debug('Start incrementVersion')
-  var version = null
+  const functionName = incrementVersion.name
+  core.debug('Start ' + functionName)
   // ------------------------------------
-  core.info('Version change type[' + argReleaseChange + ']')
-  // determine the new version based on the release type and change
-  if (argReleaseType === 'released') {
+  // ------------------------------------
+  // argument(input) variable setup
+  const functionArguments = {
+    currentVersion: currentVersion,
     //
-    version = argCurrentVersion
+    releaseType: releaseType,
+    releaseChange: releaseChange,
+    buildMetadata: {
+      inst: buildMetadata.inst,
+      num: buildMetadata.num,
+    },
+  }
+  // ------------------------------------
+  // ------------------------------------
+  // return(output) variable setup
+  var functionReturn = {
+    old: functionArguments.currentVersion,
+    new: null, // TODO: mmmmm
+  }
+  // ------------------------------------
+  core.info('Version change type[' + functionArguments.releaseType + ']')
+  // determine the new version based on the release type and change action
+  if (functionArguments.releaseType === 'noop') {
+    //
+    functionReturn.new = functionArguments.currentVersion
+    core.info('No increment required')
+  } else if (functionArguments.releaseType === 'released') {
+    //
+    functionReturn.new = functionArguments.currentVersion
     core.info('Version is already released, no increment required')
-  } else if (argReleaseType === 'initial') {
+  } else if (functionArguments.releaseType === 'initial') {
     //
-    version = argCurrentVersion
-    core.info('Initial version, so incrementing required')
-  } else if (argReleaseType === 'releasing') {
-    version = semverInc(argCurrentVersion, argReleaseChange)
+    functionReturn.new = semverInc(
+      functionArguments.currentVersion,
+      functionArguments.releaseChange
+    )
+    core.info(
+      'Initial version, so ' + functionArguments.releaseChange + ' incrementing'
+    )
+  } else if (functionArguments.releaseType === 'releasing') {
+    functionReturn.new = semverInc(
+      functionArguments.currentVersion,
+      functionArguments.releaseChange
+    )
     core.info(
       'Releasing version, so incrementing current version[' +
-        argCurrentVersion +
+        functionArguments.currentVersion +
         '] to version[' +
-        version +
+        functionReturn.new +
         ']'
     )
-  } else if (argReleaseType === 'build') {
-    version = semverInc(argCurrentVersion, argReleaseChange)
-    core.debug(argReleaseChange)
-    let buildData = argBuildMetadata.inst + '.' + argBuildMetadata.num
+  } else if (functionArguments.releaseType === 'build') {
+    functionReturn.new = semverInc(
+      functionArguments.currentVersion,
+      functionArguments.releaseChange
+    )
+    let buildData =
+      functionArguments.buildMetadata.inst +
+      '.' +
+      functionArguments.buildMetadata.num
     let build = buildData.replace(/[^0-9A-Za-z-.]/g, '') // sanitize to valid semver build metadata
-    version = version + '+build.' + build
+    functionReturn.new = functionReturn.new + '+build.' + build
     core.info(
       'Build version, so incrementing current version[' +
-        argCurrentVersion +
+        functionArguments.currentVersion +
         '] to version[' +
-        version +
+        functionReturn.new +
         ']'
     )
   }
@@ -720,11 +792,11 @@ if (currentVersion === null) {
 */
 
   // ------------------------------------
-  core.debug('End incrementVersion')
+  core.debug('End ' + functionName)
   return {
     version: {
-      old: argCurrentVersion,
-      new: version,
+      old: functionReturn.old,
+      new: functionReturn.new,
     },
   }
 } // incrementVersion
@@ -739,7 +811,7 @@ if (currentVersion === null) {
 // BOF
 // ------------------------------------
 const packageName = '@davekpatrick/action-release-version'
-const packageVersion = '0.0.0'
+const packageVersion = '0.4.0'
 // ------------------------------------
 const process = __nccwpck_require__(7742)
 // ------------------------------------
@@ -829,7 +901,7 @@ module.exports = async function main() {
     //  - can this different from the actual name e.g. for an organization
     // github.context.payload.repository.owner.name
     //  - is the actual name
-    //  - as using this but no longer exists in payload for some reason
+    //  - was using this but no longer exists in payload for some reason
     const gitHubRepoOwnerLogin = githubContext.payload.repository.owner.login
     const gitHubRepoOwnerName = githubContext.payload.repository.owner.name
     var gitHubRepoOwner = null
@@ -866,13 +938,12 @@ module.exports = async function main() {
       throw new Error('Unable to locate the repository name')
     }
     core.info(
-      'gitHubRepoOwner[' +
+      'gitHubRepoitory owner[' +
         gitHubRepoOwner +
-        '] gitHubRepoName[' +
+        '] name[' +
         gitHubRepoName +
         ']'
     )
-
     core.endGroup()
     core.startGroup('Preparation')
     // ------------------------------------
@@ -907,16 +978,16 @@ module.exports = async function main() {
     // ------------------------------------
     // ------------------------------------
     // get the "current" version
-    // methods in order of precedence (e.g arg, env, cfg, def)
+    // methods in order of precedence (arg -> env -> cfg -> def)
     // arg:
-    //   - via argVersion input
+    //   - via argVersion action input
     //   - on release event, use the tag that triggered the workflow
     //   - on workflow_dispatch event, use the input version
     // env:
     //   - repository action variable, RELEASE_VERSION
     // cfg:
     //   - action configuration file
-    //   - get the latest from the git repostory tags
+    //   - get the latest version from the git repostory tags
     // def:
     //   - if no version found, use argInceptionVersionTag default
     // ------------------------------------
@@ -924,10 +995,6 @@ module.exports = async function main() {
     getVersionData = await getVersion(
       apiToken, // GitHub API token
       {
-        // GitHub environment inputs
-        githubEventType: githubEventType,
-        githubRepoOwner: gitHubRepoOwner,
-        githubRepoName: gitHubRepoName,
         // Action inputs
         tagPrefix: argTagPrefix,
         inceptionVersionTag: argInceptionVersionTag,
@@ -994,20 +1061,20 @@ module.exports = async function main() {
     const getReleaseTypeData = await getReleaseType(
       apiToken, // GitHub API token
       {
-        //  other optional inputs
-        currentVersion: currentVersion, // the identified current version
-        versionHistory: getVersionData.history, // full version history, TODO: this be an issue with larger projects and version history
+        // other optional inputs
+        versionTagCurrent: currentVersion, // the identified current version
+        versionTagHistory: getVersionData.history, // full version history, TODO: this be an issue with larger projects and version history
       }
     )
     core.info('getReleaseTypeData[' + JSON.stringify(getReleaseTypeData) + ']')
     core.endGroup()
     core.startGroup('Execution')
     // ------------------------------------
-    const incrementedVersionData = await incrementVersion(
-      currentVersion,
-      getReleaseTypeData.type,
-      getReleaseTypeData.change
-    )
+    const incrementedVersionData = await incrementVersion(currentVersion, {
+      // other optional inputs
+      releaseType: getReleaseTypeData.type,
+      releaseChange: getReleaseTypeData.change,
+    })
     core.debug(
       'incrementedVersionData[' + JSON.stringify(incrementedVersionData) + ']'
     )
