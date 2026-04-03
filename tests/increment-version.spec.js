@@ -25,8 +25,8 @@ describe("function: increment-version.js", async function () {
     dirNodeModules + path.sep + "semver/functions/valid",
   )
   const semverParse = require(
-      dirNodeModules + path.sep + "semver/functions/parse",
-    )
+    dirNodeModules + path.sep + "semver/functions/parse",
+  )
   // ---------------------------------------------------
   // Mocks
   const exitStub = (code) => {
@@ -117,7 +117,7 @@ describe("function: increment-version.js", async function () {
       // -
       // ---------------------------------------------------
       // fixture inputs
-      
+
       //
       const currentVersion = "0.0.0"
       const expectedVersion = currentVersion
@@ -135,12 +135,9 @@ describe("function: increment-version.js", async function () {
         "node:process": processMock,
       })
       // execute the test
-      const result = await main(
-        currentVersion,
-        {
-          releaseType: 'noop'
-        }
-      )
+      const result = await main(currentVersion, {
+        releaseType: "noop",
+      })
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
       }
@@ -183,13 +180,10 @@ describe("function: increment-version.js", async function () {
         "node:process": processMock,
       })
       // execute the test
-      const result = await main(
-        currentVersion,
-        {
-          releaseType: "build",
-          change: "minor"
-        }
-      )
+      const result = await main(currentVersion, {
+        releaseType: "build",
+        change: "minor",
+      })
       if (argTrace) {
         console.log("result:[" + JSON.stringify(result) + "]")
         console.log(semverParse(result.version.new))
@@ -201,9 +195,9 @@ describe("function: increment-version.js", async function () {
       expect(result.version.new).to.be.string
       expect(semverValid(result.version.new)).to.not.be.null
       expect(semverParse(result.version.new).version).to.equal(expectedVersion)
-      expect(semverParse(result.version.new).build).to.be.an('array')
+      expect(semverParse(result.version.new).build).to.be.an("array")
       expect(semverParse(result.version.new).build.length).to.equal(3) // e.g. build: [ 'build', '20260328T204112', '1' ]
-      expect(semverParse(result.version.new).build[0]).to.equal('build')
+      expect(semverParse(result.version.new).build[0]).to.equal("build")
     })
   })
 })
