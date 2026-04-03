@@ -51,7 +51,7 @@ module.exports = async function getReleaseType(
   //  - pull
   //  - unknown
   // type:
-  //  - none         e.g. no change, a no-op
+  //  - noop         e.g. no change, a no-operation event
   //  - initial      e.g. first version detected
   //  - released     e.g. 1.0.0
   //  - releasing    e.g. from 1.0.0-release.1 to 1.0.0

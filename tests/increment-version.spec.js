@@ -110,6 +110,49 @@ describe("function: increment-version.js", async function () {
       expect(semverValid(result.version.new)).to.not.be.null
     })
 
+    it("Should handle a no opeartion type", async function (argTrace = cfgTrace) {
+      // ---------------------------------------------------
+      // Details
+      // ------------
+      // -
+      // ---------------------------------------------------
+      // fixture inputs
+      
+      //
+      const currentVersion = "0.0.0"
+      const expectedVersion = currentVersion
+      // Mock core module to avoid actual core.info/debug calls
+      const coreMock = {
+        startGroup: () => {},
+        endGroup: () => {},
+        debug: () => {},
+        info: () => {},
+        warning: () => {},
+      }
+      // Use proxyquire to inject mocks
+      const main = proxyquire(modulePath, {
+        "@actions/core": coreMock,
+        "node:process": processMock,
+      })
+      // execute the test
+      const result = await main(
+        currentVersion,
+        {
+          releaseType: 'noop'
+        }
+      )
+      if (argTrace) {
+        console.log("result:[" + JSON.stringify(result) + "]")
+      }
+      // Validate the test result
+      expect(result.version.old).to.be.string
+      expect(result.version.old).to.equal(currentVersion)
+      //
+      expect(result.version.new).to.be.string
+      expect(result.version.new).to.equal(expectedVersion)
+      expect(semverValid(result.version.new)).to.not.be.null
+    })
+
     it("Should handle pull_request event on initial build version default", async function (argTrace = cfgTrace) {
       // ---------------------------------------------------
       // Details

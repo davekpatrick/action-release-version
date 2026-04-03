@@ -47,8 +47,12 @@ module.exports = async function incrementVersion(
   }
   // ------------------------------------
   core.info('Version change type[' + functionArguments.releaseType + ']')
-  // determine the new version based on the release type and change
-  if (functionArguments.releaseType === 'released') {
+  // determine the new version based on the release type and change action
+  if ( functionArguments.releaseType === 'noop' ) {
+    //
+    functionReturn.new = functionArguments.currentVersion
+    core.info('No increment required')
+  } else if (functionArguments.releaseType === 'released') {
     //
     functionReturn.new = functionArguments.currentVersion
     core.info('Version is already released, no increment required')
