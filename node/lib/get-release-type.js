@@ -361,32 +361,37 @@ module.exports = async function getReleaseType(
           JSON.stringify(getBeforeCommitBranches) +
           ']'
       )
-      let beforeCommitBranchList = getBeforeCommitBranches.data.ForEach((i) => {
-        i.name
-      })
+      // pull out just the branch names
+      let beforeCommitBranchList = getBeforeCommitBranches.data.map(data => 
+        data.name
+      )
       core.info(
         'beforeCommitBranchList[' + JSON.stringify(beforeCommitBranchList) + ']'
       )
+      //
+      if ( beforeCommitBranchList.includes(gitDefaultBranch) ) {
+        // 
+      } else {
+        //
+      }
+
       // TODO: review the branches where the commit exists
 
+
+
       // To list the open or merged pull requests associated with a branch, you can set the commit_sha parameter to the branch name
+      // https://api.github.com/repos/OWNER/REPO/commits/COMMIT_SHA/pulls
       // DOC: https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-pull-requests-associated-with-a-commit
       let getPullRequest = await octokit.request(
         'GET /repos/' +
           githubRepoOwner +
           '/' +
           githubRepoName +
-          '/commits/{commit_sha}/pulls',
-        {
-          owner: 'OWNER',
-          repo: 'REPO',
-          commit_sha: 'COMMIT_SHA',
-          headers: {
-            'X-GitHub-Api-Version': '2022-11-28',
-          },
-        }
+          '/commits/' + gitDefaultBranch + '/pulls'
       )
-      core.debug('getPullRequest[' + JSON.stringify(getPullRequest) + ']')
+      core.info('getPullRequest[' + JSON.stringify(getPullRequest) + ']')
+
+
     }
   } else {
     functionReturn.event = 'unknown'
