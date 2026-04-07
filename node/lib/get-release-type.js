@@ -389,8 +389,8 @@ module.exports = async function getReleaseType(
           githubRepoName +
           '/commits/' + gitDefaultBranch + '/pulls'
       )
-      core.info('getPullRequest[' + JSON.stringify(getPullRequest) + ']')
-
+      core.info('getPullRequestData[' + JSON.stringify(getPullRequest) + ']')
+      //  test it , again
 
     }
   } else {
