@@ -390,7 +390,7 @@ module.exports = async function getReleaseType(
           '/commits/' + gitDefaultBranch + '/pulls'
       )
       core.info('getPullRequestData[' + JSON.stringify(getPullRequest) + ']')
-      //  test it , again & again
+      //  test it , again & again + 1
 
     }
   } else {
