@@ -398,7 +398,7 @@ module.exports = async function getReleaseType(
           gitDefaultBranch +
           '/pulls'
       )
-      core.info('getPullRequest[' + JSON.stringify(getPullRequest) + ']')
+      core.debug('getPullRequest[' + JSON.stringify(getPullRequest) + ']')
       // get the pull request details
       let pullRequestList = getPullRequest.data.map((data) => ({
         number: data.number,
