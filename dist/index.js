@@ -328,7 +328,7 @@ module.exports = async function getReleaseType(
       // DOC: locate offical documentation (TODO)
       //      https://github.com/git/git/commit/f65fdf04a13d2252de8b2b4b161db7c43f2c28ad
       functionReturn.type = 'noop' // no change as null parent detected
-      core.debug('type[' + functionReturn.type + ']')
+      core.info('type[' + functionReturn.type + ']')
       core.info('non-existent git commit event')
     } else {
       functionReturn.type = 'push'
@@ -362,28 +362,35 @@ module.exports = async function getReleaseType(
           commit_sha: gitBeforeCommitSha,
         }
       )
-      core.debug(
+      core.info(
         'getBeforeCommitBranches[' +
           JSON.stringify(getBeforeCommitBranches) +
           ']'
       )
       // pull out just the branch names
-      let beforeCommitBranchList = getBeforeCommitBranches.data.map(data => 
-        data.name
+      let beforeCommitBranchList = getBeforeCommitBranches.data.map(
+        (data) => data.name
       )
       core.info(
         'beforeCommitBranchList[' + JSON.stringify(beforeCommitBranchList) + ']'
       )
-      //
-      if ( beforeCommitBranchList.includes(gitDefaultBranch) ) {
-        // 
+      // TODO: what should we do next ...
+      if (beforeCommitBranchList.includes(gitDefaultBranch)) {
+        //
+        core.info(
+          'gitBeforeCommitSha is the latest commit on the gitDefaultBranch[' +
+            gitDefaultBranch +
+            '] branch'
+        )
       } else {
         //
+        core.info(
+          'gitBeforeCommitSha is NOT the latest commit on the gitDefaultBranch[' +
+            gitDefaultBranch +
+            '] branch'
+        )
       }
-
       // TODO: review the branches where the commit exists
-
-
 
       // To list the open or merged pull requests associated with a branch, you can set the commit_sha parameter to the branch name
       // https://api.github.com/repos/OWNER/REPO/commits/COMMIT_SHA/pulls
@@ -393,10 +400,22 @@ module.exports = async function getReleaseType(
           githubRepoOwner +
           '/' +
           githubRepoName +
-          '/commits/' + gitDefaultBranch + '/pulls'
+          '/commits/' +
+          gitDefaultBranch +
+          '/pulls'
       )
-      core.info('getPullRequest[' + JSON.stringify(getPullRequest) + ']')
-
+      core.debug('getPullRequest[' + JSON.stringify(getPullRequest) + ']')
+      // get the pull request details
+      let pullRequestList = getPullRequest.data.map((data) => ({
+        number: data.number,
+        state: data.state,
+        labels: data.labels,
+        head: { ref: data.head.ref },
+        base: { ref: data.base.ref },
+      }))
+      core.info('pullRequestList[' + JSON.stringify(pullRequestList) + ']')
+      //
+      // test 1
 
     }
   } else {
@@ -816,7 +835,7 @@ if (currentVersion === null) {
 // BOF
 // ------------------------------------
 const packageName = '@davekpatrick/action-release-version'
-const packageVersion = '0.4.1'
+const packageVersion = '0.4.2'
 // ------------------------------------
 const process = __nccwpck_require__(7742)
 // ------------------------------------
