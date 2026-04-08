@@ -400,7 +400,7 @@ module.exports = async function getReleaseType(
       )
       core.info('getPullRequest[' + JSON.stringify(getPullRequest) + ']')
       // get the pull request details
-      let pullRequestList = getPullRequest.map((data) => ({
+      let pullRequestList = getPullRequest.data.map((data) => ({
         number: data.number,
         state: data.state,
         labels: data.labels,
