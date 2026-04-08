@@ -403,7 +403,7 @@ module.exports = async function getReleaseType(
       let pullRequestList = getPullRequest.data.map((data) => ({
         number: data.number,
         state: data.state,
-        labels: data.labels,
+        labels: data.labels.map(label => label.name),
         head: { ref: data.head.ref },
         base: { ref: data.base.ref },
       }))
