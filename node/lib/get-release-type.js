@@ -356,7 +356,7 @@ module.exports = async function getReleaseType(
           commit_sha: gitBeforeCommitSha,
         }
       )
-      core.info(
+      core.debug(
         'getBeforeCommitBranches[' +
           JSON.stringify(getBeforeCommitBranches) +
           ']'
@@ -395,7 +395,7 @@ module.exports = async function getReleaseType(
           '/' +
           githubRepoName +
           '/commits/' +
-          gitDefaultBranch +
+          gitBeforeCommitSha +
           '/pulls'
       )
       core.debug('getPullRequest[' + JSON.stringify(getPullRequest) + ']')
