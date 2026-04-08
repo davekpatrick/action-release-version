@@ -415,7 +415,7 @@ module.exports = async function getReleaseType(
       }))
       core.info('pullRequestList[' + JSON.stringify(pullRequestList) + ']')
       //
-      // test 1
+      // test 2
 
     }
   } else {
