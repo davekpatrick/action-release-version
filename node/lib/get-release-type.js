@@ -408,6 +408,9 @@ module.exports = async function getReleaseType(
         base: { ref: data.base.ref },
       }))
       core.info('pullRequestList[' + JSON.stringify(pullRequestList) + ']')
+      //
+      // test 1
+
     }
   } else {
     functionReturn.event = 'unknown'
