@@ -435,7 +435,7 @@ module.exports = async function getReleaseType(
           functionReturn.type = 'build'
           core.info('type[' + functionReturn.type + ']')
           core.info('Open pull request handling')
-          let tmp = getPullRequestChange(pullRequestClosedList)
+          let tmp = getPullRequestChange(pullRequestList)
           functionReturn.change = tmp
         }
       } else {
@@ -509,7 +509,7 @@ function getPullRequestChange(pullRequestList, { cfgFile = null } = {}) {
   }
   // ------------------------------------
   // ------------------------------------
-  console.log('pullList' + functionArguments.pullRequestList)
+  console.log('pullList ' + JSON.stringify(functionArguments.pullRequestList))
   // major
   if (
     functionArguments.pullRequestList.filter((data) =>
