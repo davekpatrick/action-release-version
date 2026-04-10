@@ -512,14 +512,16 @@ function getPullRequestChange(pullRequestList, { cfgFile = null } = {}) {
   console.log('pullList ' + JSON.stringify(functionArguments.pullRequestList))
   // major
   if (
-    functionArguments.pullRequestList.filter((data) =>
-      data.head.some(
-        (branch) =>
-          changeIdentifiers.major.branchNamePrefixes.includes(
-            branch.ref + changeIdentifiers.major.branchNamePrefixDelimiter
-          ) === true
+    functionArguments.pullRequestList.some((data) =>
+      changeIdentifiers.major.branchNamePrefixes.some((branch) =>
+        data.head.ref
+          .toLowerCase()
+          .startsWith(
+            branch.toLowerCase() +
+              changeIdentifiers.major.branchNamePrefixDelimiter
+          )
       )
-    ).length > 0 ||
+    ) ||
     functionArguments.pullRequestList.filter((data) =>
       data.title.some(
         (title) =>
@@ -528,8 +530,7 @@ function getPullRequestChange(pullRequestList, { cfgFile = null } = {}) {
     ).length > 0 ||
     functionArguments.pullRequestList.filter((data) =>
       data.labels.some(
-        (label) =>
-          changeIdentifiers.major.labelNames.includes(label) === true
+        (label) => changeIdentifiers.major.labelNames.includes(label) === true
       )
     ).length > 0
   ) {
@@ -538,14 +539,16 @@ function getPullRequestChange(pullRequestList, { cfgFile = null } = {}) {
   }
   //  minor
   else if (
-    functionArguments.pullRequestList.filter((data) =>
-      data.head.some(
-        (branch) =>
-          changeIdentifiers.minor.branchNamePrefixes.includes(
-            branch.ref + changeIdentifiers.minor.branchNamePrefixDelimiter
-          ) === true
+    functionArguments.pullRequestList.some((data) =>
+      changeIdentifiers.minor.branchNamePrefixes.some((branch) =>
+        data.head.ref
+          .toLowerCase()
+          .startsWith(
+            branch.toLowerCase() +
+              changeIdentifiers.minor.branchNamePrefixDelimiter
+          )
       )
-    ).length > 0 ||
+    ) ||
     functionArguments.pullRequestList.filter((data) =>
       data.title.some(
         (title) =>
@@ -554,8 +557,7 @@ function getPullRequestChange(pullRequestList, { cfgFile = null } = {}) {
     ).length > 0 ||
     functionArguments.pullRequestList.filter((data) =>
       data.labels.some(
-        (label) =>
-          changeIdentifiers.minor.labelNames.includes(label) === true
+        (label) => changeIdentifiers.minor.labelNames.includes(label) === true
       )
     ).length > 0
   ) {
@@ -563,14 +565,16 @@ function getPullRequestChange(pullRequestList, { cfgFile = null } = {}) {
   }
   // patch
   else if (
-    functionArguments.pullRequestList.filter((data) =>
-      data.head.some(
-        (branch) =>
-          changeIdentifiers.patch.branchNamePrefixes.includes(
-            branch.ref + changeIdentifiers.patch.branchNamePrefixDelimiter
-          ) === true
+    functionArguments.pullRequestList.some((data) =>
+      changeIdentifiers.patch.branchNamePrefixes.some((branch) =>
+        data.head.ref
+          .toLowerCase()
+          .startsWith(
+            branch.toLowerCase() +
+              changeIdentifiers.patch.branchNamePrefixDelimiter
+          )
       )
-    ).length > 0 ||
+    ) ||
     functionArguments.pullRequestList.filter((data) =>
       data.title.some(
         (title) =>
@@ -579,8 +583,7 @@ function getPullRequestChange(pullRequestList, { cfgFile = null } = {}) {
     ).length > 0 ||
     functionArguments.pullRequestList.filter((data) =>
       data.labels.some(
-        (label) =>
-          changeIdentifiers.patch.labelNames.includes(label) === true
+        (label) => changeIdentifiers.patch.labelNames.includes(label) === true
       )
     ).length > 0
   ) {
