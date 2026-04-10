@@ -325,10 +325,7 @@ module.exports = async function getReleaseType(
       core.info('type[' + functionReturn.type + ']')
       core.info('non-existent git commit event')
     } else {
-      functionReturn.type = 'push'
-      core.info('type[' + functionReturn.type + ']')
-
-      // TODO: determine type based commmit message e.g. [fix]
+      // TODO: determine type based commit message e.g. [fix]
 
       // get the commit data before the push
       // https://docs.github.com/en/rest/git/commits?apiVersion=2022-11-28#get-a-commit
@@ -414,6 +411,7 @@ module.exports = async function getReleaseType(
       core.info('pullRequestList[' + JSON.stringify(pullRequestList) + ']')
       // check for closed and merged pull requests
       if (pullRequestList.length > 0) {
+        core.info('pullRequestNum[' + pullRequestList.length + ']')
         // use pull request data to determine change
         let pullRequestClosedList = pullRequestList.filter(
           (data) =>
@@ -421,12 +419,22 @@ module.exports = async function getReleaseType(
         )
         //
         if (pullRequestClosedList.length > 0) {
+          functionReturn.type = 'push'
+          core.info('type[' + functionReturn.type + ']')
           // use pull request data to determine change
+          core.info('closed pull request handling')
+          let tmp = getPullRequestChange(pullRequestClosedList)
+          functionReturn.change = tmp
+        } else {
+          functionReturn.type = 'build'
+          core.info('type[' + functionReturn.type + ']')
+          core.info('Open pull request handling')
           let tmp = getPullRequestChange(pullRequestClosedList)
           functionReturn.change = tmp
         }
       } else {
         // no pull request open or merged
+        core.info('no pull request open or merged')
       }
     }
   } else {
