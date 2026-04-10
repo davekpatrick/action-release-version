@@ -509,6 +509,7 @@ function getPullRequestChange(pullRequestList, { cfgFile = null } = {}) {
   }
   // ------------------------------------
   // ------------------------------------
+  console.log('pullList' + functionArguments.pullRequestList)
   // major
   if (
     functionArguments.pullRequestList.filter((data) =>
@@ -528,7 +529,7 @@ function getPullRequestChange(pullRequestList, { cfgFile = null } = {}) {
     functionArguments.pullRequestList.filter((data) =>
       data.labels.some(
         (label) =>
-          changeIdentifiers.major.labelNames.includes(label.name) === true
+          changeIdentifiers.major.labelNames.includes(label) === true
       )
     ).length > 0
   ) {
@@ -554,7 +555,7 @@ function getPullRequestChange(pullRequestList, { cfgFile = null } = {}) {
     functionArguments.pullRequestList.filter((data) =>
       data.labels.some(
         (label) =>
-          changeIdentifiers.minor.labelNames.includes(label.name) === true
+          changeIdentifiers.minor.labelNames.includes(label) === true
       )
     ).length > 0
   ) {
@@ -579,7 +580,7 @@ function getPullRequestChange(pullRequestList, { cfgFile = null } = {}) {
     functionArguments.pullRequestList.filter((data) =>
       data.labels.some(
         (label) =>
-          changeIdentifiers.patch.labelNames.includes(label.name) === true
+          changeIdentifiers.patch.labelNames.includes(label) === true
       )
     ).length > 0
   ) {
