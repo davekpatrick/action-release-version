@@ -522,12 +522,11 @@ function getPullRequestChange(pullRequestList, { cfgFile = null } = {}) {
           )
       )
     ) ||
-    functionArguments.pullRequestList.filter((data) =>
-      data.title.some(
-        (title) =>
-          changeIdentifiers.major.titleKeywords.includes(title) === true
+    functionArguments.pullRequestList.some((data) =>
+      changeIdentifiers.major.titleKeywords.some((title) =>
+        data.title.toLowerCase().includes(title.toLowerCase())
       )
-    ).length > 0 ||
+    ) ||
     functionArguments.pullRequestList.filter((data) =>
       data.labels.some(
         (label) => changeIdentifiers.major.labelNames.includes(label) === true
@@ -549,12 +548,11 @@ function getPullRequestChange(pullRequestList, { cfgFile = null } = {}) {
           )
       )
     ) ||
-    functionArguments.pullRequestList.filter((data) =>
-      data.title.some(
-        (title) =>
-          changeIdentifiers.minor.titleKeywords.includes(title) === true
+    functionArguments.pullRequestList.some((data) =>
+      changeIdentifiers.minor.titleKeywords.some((title) =>
+        data.title.toLowerCase().includes(title.toLowerCase())
       )
-    ).length > 0 ||
+    ) ||
     functionArguments.pullRequestList.filter((data) =>
       data.labels.some(
         (label) => changeIdentifiers.minor.labelNames.includes(label) === true
@@ -575,12 +573,11 @@ function getPullRequestChange(pullRequestList, { cfgFile = null } = {}) {
           )
       )
     ) ||
-    functionArguments.pullRequestList.filter((data) =>
-      data.title.some(
-        (title) =>
-          changeIdentifiers.patch.titleKeywords.includes(title) === true
+    functionArguments.pullRequestList.some((data) =>
+      changeIdentifiers.patch.titleKeywords.some((title) =>
+        data.title.toLowerCase().includes(title.toLowerCase())
       )
-    ).length > 0 ||
+    ) ||
     functionArguments.pullRequestList.filter((data) =>
       data.labels.some(
         (label) => changeIdentifiers.patch.labelNames.includes(label) === true
