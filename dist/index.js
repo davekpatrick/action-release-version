@@ -534,6 +534,7 @@ function getPullRequestChange(pullRequestList, { cfgFile = null } = {}) {
     ).length > 0
   ) {
     //
+    core.info('patch match')
     functionReturn.change = changeIdentifiers.major.semverInc
   }
   //  minor
@@ -559,6 +560,7 @@ function getPullRequestChange(pullRequestList, { cfgFile = null } = {}) {
       )
     ).length > 0
   ) {
+    core.info('patch match')
     functionReturn.change = changeIdentifiers.minor.semverInc
   }
   // patch
@@ -584,6 +586,7 @@ function getPullRequestChange(pullRequestList, { cfgFile = null } = {}) {
       )
     ).length > 0
   ) {
+    core.info('patch match')
     functionReturn.change = changeIdentifiers.patch.semverInc
   } else {
     // default change
