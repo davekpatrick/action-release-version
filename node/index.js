@@ -2,6 +2,6 @@
 // ------------------------------------
 //
 // ------------------------------------
-const main = require('./lib/index')
+const main = require('./lib/main')
 main()
 // EOF
