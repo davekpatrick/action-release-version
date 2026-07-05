@@ -12,9 +12,9 @@ const expect = require(dirNodeModules + path.sep + "chai").expect
 const proxyquire = require(dirNodeModules + path.sep + "proxyquire")
 // ---------------------------------------------------
 // ---------------------------------------------------
-describe("index.js", async function () {
+describe("main.js", async function () {
   // ---------------------------------------------------
-  let moduleName = "index"
+  let moduleName = "main"
   let modulePath = path.resolve(dirNode, "lib", moduleName)
   // utility modules
   const semverParse = require(
@@ -67,7 +67,7 @@ describe("index.js", async function () {
   })
   // ---------------------------------------------------
   // ---------------------------------------------------
-  context("index.js: basic tests", function () {
+  context("main.js: basic tests", function () {
     const cfgTrace = false
     it("Should be a function", async function (argTrace = cfgTrace) {
       // ---------------------------------------------------
