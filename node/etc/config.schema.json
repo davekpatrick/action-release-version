@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://davekpatrick.dev/github/action/release-version/v1/config.schema.json",
+  "title": "Github Action - Action Release Version",
+  "description": "A GitHub Action to create and tag a release version.",
+  "type": "object",
+  "properties": {
+    "$schema":  { "type": "string" },
+    "changeTypes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "uniqueItemProperties": ["name","priority"],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "priority", "increment"],
+        "properties": {
+          "name": { "type": "string" },
+          "priority": { "type": "integer", "minimum": 0 },
+          "increment": { "type": "string", "enum": ["patch", "minor", "major"] },
+          "description": { "type": "string" },
+          "locations": { "$ref": "#/$defs/locations" },
+          "identifiers": {
+            "type": "array",
+            "minItems": 0,
+            "uniqueItems": true,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["phrase"],
+              "properties": {
+                "phrase": { "type": "string" },
+                "caseSensitive": { "type": "boolean" },
+                "locations": { "$ref": "#/$defs/locations" }
+              }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "$comment": "LOCAL RULE 1: A single release block cannot have a flag in both root locations and identifiers simultaneously",
+            "not": {
+              "type": "object",
+              "required": ["locations", "identifiers"],
+              "properties": {
+                "locations": { "$ref": "#/$defs/locationsWithAtLeastOneDefinitive" },
+                "identifiers": { "$ref": "#/$defs/identifiersWithAtLeastOneDefinitive" }
+              }
+            }
+          },
+          {
+            "$comment": "LOCAL RULE 2: The root locations object must contain AT MOST ONE definitive flag overall",
+            "properties": {
+              "locations": { "$ref": "#/$defs/locationsWithAtMostOneDefinitive" }
+            }
+          },
+          {
+            "$comment": "LOCAL RULE 3: All identifiers combined can contain AT MOST ONE definitive flag overall",
+            "properties": {
+              "identifiers": { "$ref": "#/$defs/identifiersWithAtMostOneDefinitive" }
+            }
+          }
+        ]
+      },
+      "contains": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "const": "default" }
+        }
+      },
+      "allOf": [
+        {
+          "$comment": "GLOBAL RULE: Ensure that across the entire payload, AT MOST ONE total type item registers any definitive flags.",
+          "contains": {
+            "type": "object",
+            "anyOf": [
+              {
+                "required": ["locations"],
+                "properties": {
+                  "locations": { "$ref": "#/$defs/locationsWithAtLeastOneDefinitive" }
+                }
+              },
+              {
+                "required": ["identifiers"],
+                "properties": {
+                  "identifiers": { "$ref": "#/$defs/identifiersWithAtLeastOneDefinitive" }
+                }
+              }
+            ]
+          },
+          "minContains": 0,
+          "maxContains": 1
+        }
+      ]
+    }
+  },
+  "required": ["changeTypes"],
+  "additionalProperties": false,
+  "$defs": {
+    "locations": {
+      "type": "object",
+      "propertyNames": {
+        "enum": ["pullRequest", "git"]
+      },
+      "additionalProperties": {
+        "type": "array",
+        "uniqueItems": true,
+        "items": {
+          "type": "object",
+          "required": ["type"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "type": "string" },
+            "enable": { "type": "boolean" },
+            "definitive": { "type": "boolean" },
+            "weight": { "type": "integer", "minimum": 0 },
+            "regex": { "type": "string" }
+          }
+        }
+      }
+    },
+    "locationsWithNoDefinitive": {
+      "type": "object",
+      "patternProperties": {
+        "^.*$": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "definitive": { "not": { "const": true } }
+            }
+          }
+        }
+      }
+    },
+    "locationsWithAtLeastOneDefinitive": {
+      "$comment": "It is NOT true that all sub-arrays have zero definitive flags.",
+      "not": { "$ref": "#/$defs/locationsWithNoDefinitive" }
+    },
+    "locationsWithAtMostOneDefinitive": {
+      "type": "object",
+      "allOf": [
+        {
+          "$comment": "Condition A: No single sub-array can ever contain more than 1 definitive=true flag",
+          "patternProperties": {
+            "^.*$": {
+              "type": "array",
+              "contains": {
+                "type": "object",
+                "required": ["definitive"],
+                "properties": { "definitive": { "const": true } }
+              },
+              "minContains": 0,
+              "maxContains": 1
+            }
+          }
+        },
+        {
+          "$comment": "Condition B: It is NOT true that ALL properties (both keys) contain a definitive flag simultaneously",
+          "not": {
+            "type": "object",
+            "minProperties": 2,
+            "patternProperties": {
+              "^.*$": {
+                "type": "array",
+                "contains": {
+                  "type": "object",
+                  "required": ["definitive"],
+                  "properties": { "definitive": { "const": true } }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "identifiersWithAtLeastOneDefinitive": {
+      "type": "array",
+      "contains": {
+        "type": "object",
+        "required": ["locations"],
+        "properties": {
+          "locations": { "$ref": "#/$defs/locationsWithAtLeastOneDefinitive" }
+        }
+      }
+    },
+    "identifiersWithAtMostOneDefinitive": {
+      "type": "array",
+      "contains": {
+        "type": "object",
+        "required": ["locations"],
+        "properties": {
+          "locations": { "$ref": "#/$defs/locationsWithAtLeastOneDefinitive" }
+        }
+      },
+      "minContains": 0,
+      "maxContains": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "locations": { "$ref": "#/$defs/locationsWithAtMostOneDefinitive" }
+        }
+      }
+    }
+  }
+}
