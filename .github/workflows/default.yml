@@ -63,7 +63,7 @@ jobs:
     - name: Calculate Version
       id: version
       # use main branch for latest for now
-      uses: davekpatrick/action-release-version@main 
+      uses: davekpatrick/action-release-version@main
       with:
         apiToken: ${{ secrets.GITHUB_TOKEN }}
     #- name: Calculate a short git SHA

@@ -287,10 +287,10 @@ module.exports = async function getReleaseType(
         core.info('Patch change detected')
       } else {
         // default to patch change
-        functionReturn.change = 'minor'
+        functionReturn.change = 'minor' // TODO: configurable option
         core.info('default to minor change')
       }
-      // check if the pull request is to the default branch
+      // check if the pull request is to the default branch // TODO: support non-default branch
       if (gitBaseRef === gitDefaultBranch) {
         core.info('Pull request to default branch detected')
         // TODO: add support for 'pre'
@@ -321,12 +321,11 @@ module.exports = async function getReleaseType(
       //  - Branch Creation
       // DOC: locate offical documentation (TODO)
       //      https://github.com/git/git/commit/f65fdf04a13d2252de8b2b4b161db7c43f2c28ad
-      functionReturn.type = 'noop' // no change as null parent detected
+      functionReturn.type = 'noop' // no change as null parent detected (TODO: or should we do a build)
       core.info('type[' + functionReturn.type + ']')
       core.info('non-existent git commit event')
     } else {
-      functionReturn.type = 'push'
-      core.info('type[' + functionReturn.type + ']')
+      // TODO: determine type based commit message e.g. [fix]
 
       // get the commit data before the push
       // https://docs.github.com/en/rest/git/commits?apiVersion=2022-11-28#get-a-commit
@@ -339,7 +338,7 @@ module.exports = async function getReleaseType(
         'gitBeforeCommitShaData[' + JSON.stringify(gitBeforeCommitShaData) + ']'
       )
       let gitBeforeCommitShaMessage = gitBeforeCommitShaData.data.message
-      core.info('beforeCommitShaMessage[' + gitBeforeCommitShaMessage + ']')
+      core.info('beforeCommitShaMessage[' + gitBeforeCommitShaMessage + ']') // TODO: reflect
       // get all branches where the given commit SHA is the latest commit
       // DOC: https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-branches-for-head-commit
       let getBeforeCommitBranches = await octokit.request(
@@ -356,7 +355,7 @@ module.exports = async function getReleaseType(
           commit_sha: gitBeforeCommitSha,
         }
       )
-      core.info(
+      core.debug(
         'getBeforeCommitBranches[' +
           JSON.stringify(getBeforeCommitBranches) +
           ']'
@@ -368,7 +367,8 @@ module.exports = async function getReleaseType(
       core.info(
         'beforeCommitBranchList[' + JSON.stringify(beforeCommitBranchList) + ']'
       )
-      // TODO: what should we do next ...
+      // TODO: review the branches where the commit exists
+      //       what should we do next ...
       if (beforeCommitBranchList.includes(gitDefaultBranch)) {
         //
         core.info(
@@ -384,9 +384,8 @@ module.exports = async function getReleaseType(
             '] branch'
         )
       }
-      // TODO: review the branches where the commit exists
-
-      // To list the open or merged pull requests associated with a branch, you can set the commit_sha parameter to the branch name
+      // list the open or merged pull requests associated with the commit sha
+      // NOTE: you can also set the commit_sha parameter to a branch name
       // https://api.github.com/repos/OWNER/REPO/commits/COMMIT_SHA/pulls
       // DOC: https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-pull-requests-associated-with-a-commit
       let getPullRequest = await octokit.request(
@@ -395,19 +394,48 @@ module.exports = async function getReleaseType(
           '/' +
           githubRepoName +
           '/commits/' +
-          gitDefaultBranch +
+          gitBeforeCommitSha +
           '/pulls'
       )
-      core.info('getPullRequest[' + JSON.stringify(getPullRequest) + ']')
-      // get the pull request details
-      let pullRequestList = getPullRequest.map((data) => ({
+      core.debug('getPullRequest[' + JSON.stringify(getPullRequest) + ']')
+      // get just the needed pull request details
+      let pullRequestList = getPullRequest.data.map((data) => ({
         number: data.number,
         state: data.state,
-        labels: data.labels,
+        title: data.title,
+        labels: data.labels.map((label) => label.name),
         head: { ref: data.head.ref },
         base: { ref: data.base.ref },
+        merged_at: data.merged_at,
       }))
       core.info('pullRequestList[' + JSON.stringify(pullRequestList) + ']')
+      // check for closed and merged pull requests
+      if (pullRequestList.length > 0) {
+        core.info('pullRequestNum[' + pullRequestList.length + ']')
+        // use pull request data to determine change
+        let pullRequestClosedList = pullRequestList.filter(
+          (data) =>
+            data.state.toLowerCase() === 'closed' && data.merged_at != null
+        )
+        //
+        if (pullRequestClosedList.length > 0) {
+          functionReturn.type = 'push'
+          core.info('type[' + functionReturn.type + ']')
+          // use pull request data to determine change
+          core.info('closed pull request handling')
+          let tmp = getPullRequestChange(pullRequestClosedList)
+          functionReturn.change = tmp
+        } else {
+          functionReturn.type = 'build'
+          core.info('type[' + functionReturn.type + ']')
+          core.info('Open pull request handling')
+          let tmp = getPullRequestChange(pullRequestList)
+          functionReturn.change = tmp
+        }
+      } else {
+        // no pull request open or merged
+        core.info('no pull request open or merged')
+      }
     }
   } else {
     functionReturn.event = 'unknown'
@@ -422,4 +450,147 @@ module.exports = async function getReleaseType(
     change: functionReturn.change,
   }
 } // getReleaseType
+
+function getPullRequestChange(pullRequestList, { cfgFile = null } = {}) {
+  const functionName = getPullRequestChange.name
+  core.debug('Start ' + functionName)
+  // ------------------------------------
+  // ------------------------------------
+  // argument(input) variable setup
+  const functionArguments = {
+    pullRequestList: pullRequestList,
+    cfgFile: cfgFile, // TODO: configurable options input
+  }
+  // ------------------------------------
+  // ------------------------------------
+  // return(output) variable setup
+  var functionReturn = {
+    change: null,
+  }
+  // ------------------------------------
+  // ------------------------------------
+  const defaultSemverInc = 'minor' // TODO: configurable option
+  const defaultBranchNamePrefixDelimiter = '/' // TODO: configurable option
+  const changeIdentifiers = {
+    // TODO: configurable options
+    major: {
+      semverInc: 'major',
+      //
+      titleKeywords: ['[major version]', '[breaking change]'],
+      labelNames: ['major', 'breaking'],
+      //
+      branchNamePrefixDelimiter: defaultBranchNamePrefixDelimiter,
+      branchNamePrefixes: ['major'],
+    },
+    minor: {
+      semverInc: 'minor',
+      //
+      titleKeywords: ['[minor version]', '[feature]'],
+      labelNames: ['minor', 'feature'],
+      //
+      branchNamePrefixDelimiter: defaultBranchNamePrefixDelimiter,
+      branchNamePrefixes: ['feature'],
+    },
+    patch: {
+      semverInc: 'patch',
+      //
+      titleKeywords: ['[patch version]', '[fix]'],
+      labelNames: ['patch', 'fix', 'bug'],
+      //
+      branchNamePrefixDelimiter: defaultBranchNamePrefixDelimiter,
+      branchNamePrefixes: ['fix'],
+    },
+  }
+  // ------------------------------------
+  // ------------------------------------
+  console.log('pullList ' + JSON.stringify(functionArguments.pullRequestList))
+  // major
+  if (
+    functionArguments.pullRequestList.some((data) =>
+      changeIdentifiers.major.branchNamePrefixes.some((branch) =>
+        data.head.ref
+          .toLowerCase()
+          .startsWith(
+            branch.toLowerCase() +
+              changeIdentifiers.major.branchNamePrefixDelimiter
+          )
+      )
+    ) ||
+    functionArguments.pullRequestList.some((data) =>
+      changeIdentifiers.major.titleKeywords.some((title) =>
+        data.title.toLowerCase().includes(title.toLowerCase())
+      )
+    ) ||
+    functionArguments.pullRequestList.filter((data) =>
+      data.labels.some(
+        (label) => changeIdentifiers.major.labelNames.includes(label) === true
+      )
+    ).length > 0
+  ) {
+    //
+    core.info('major match')
+    functionReturn.change = changeIdentifiers.major.semverInc
+  }
+  //  minor
+  else if (
+    functionArguments.pullRequestList.some((data) =>
+      changeIdentifiers.minor.branchNamePrefixes.some((branch) =>
+        data.head.ref
+          .toLowerCase()
+          .startsWith(
+            branch.toLowerCase() +
+              changeIdentifiers.minor.branchNamePrefixDelimiter
+          )
+      )
+    ) ||
+    functionArguments.pullRequestList.some((data) =>
+      changeIdentifiers.minor.titleKeywords.some((title) =>
+        data.title.toLowerCase().includes(title.toLowerCase())
+      )
+    ) ||
+    functionArguments.pullRequestList.filter((data) =>
+      data.labels.some(
+        (label) => changeIdentifiers.minor.labelNames.includes(label) === true
+      )
+    ).length > 0
+  ) {
+    core.info('minor match')
+    functionReturn.change = changeIdentifiers.minor.semverInc
+  }
+  // patch
+  else if (
+    functionArguments.pullRequestList.some((data) =>
+      changeIdentifiers.patch.branchNamePrefixes.some((branch) =>
+        data.head.ref
+          .toLowerCase()
+          .startsWith(
+            branch.toLowerCase() +
+              changeIdentifiers.patch.branchNamePrefixDelimiter
+          )
+      )
+    ) ||
+    functionArguments.pullRequestList.some((data) =>
+      changeIdentifiers.patch.titleKeywords.some((title) =>
+        data.title.toLowerCase().includes(title.toLowerCase())
+      )
+    ) ||
+    functionArguments.pullRequestList.filter((data) =>
+      data.labels.some(
+        (label) => changeIdentifiers.patch.labelNames.includes(label) === true
+      )
+    ).length > 0
+  ) {
+    core.info('patch match')
+    functionReturn.change = changeIdentifiers.patch.semverInc
+  } else {
+    // default change
+    functionReturn.change = defaultSemverInc
+    core.info('Using default SemverInc')
+  }
+  core.info(functionReturn.change + ' change detected')
+
+  // ------------------------------------
+  core.debug('End ' + functionName)
+  return functionReturn.change
+} // getPullRequestChange
 // EOF

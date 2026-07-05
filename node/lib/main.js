@@ -177,7 +177,7 @@ module.exports = async function main() {
     //   - repository action variable, RELEASE_VERSION
     // cfg:
     //   - action configuration file
-    //   - get the latest version from the git repostory tags
+    //   - get the latest version from the git repository tags
     // def:
     //   - if no version found, use argInceptionVersionTag default
     // ------------------------------------
