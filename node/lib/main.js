@@ -4,6 +4,8 @@ const packageName = '@@NPM_PACKAGE_NAME@@'
 const packageVersion = '@@NPM_PACKAGE_VERSION@@'
 // ------------------------------------
 const process = require('node:process')
+const path = require("node:path")
+const fs = require("node:fs")
 // ------------------------------------
 // External modules
 // ------------------------------------
@@ -23,6 +25,9 @@ module.exports = async function main() {
     // ------------------------------------
     // ------------------------------------
     // variables
+    const dirRoot = path.normalize(__dirname + path.sep + "..")
+    const dirGithub = path.resolve(dirRoot, ".github")
+    const dirGithubActions = path.resolve(dirGithub, "actions")
     var currentVersion = null
     var outVersionTag = null
     // ------------------------------------
@@ -36,6 +41,7 @@ module.exports = async function main() {
     const argVersionInputAsReleaseVersion = core.getInput(
       'versionInputAsReleaseVersion'
     )
+    const argConfigFile = core.getInput('configFile')
     //
     // API token can be provided as an action input or via the GITHUB_TOKEN environment variable
     // input takes precedence over environment variable
@@ -134,6 +140,28 @@ module.exports = async function main() {
         gitHubRepoName +
         ']'
     )
+    // additional configuration file setup
+    var configFile = null
+    var configFileExists = false
+    if (
+      argConfigFile === null ||
+      argConfigFile === '' ||
+      argConfigFile === undefined
+    ) {
+      configFile = path.resolve(dirGithubActions, packageName, "config.yml")
+    } else {
+      configFile = argConfigFile
+    }
+    if (
+        ! fs.existsSync(configFile)
+      ) {
+        core.debug(
+            'Additional configuration file[' + configFile + '] does not exist'
+          )
+          configFileExists = false
+      } else {
+        configFileExists = true
+      }
     core.endGroup()
     core.startGroup('Preparation')
     // ------------------------------------

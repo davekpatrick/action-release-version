@@ -22,10 +22,9 @@ inputs:
     description: 'Use the current version input as the release version, skipping any version incrementing'
     required: false
     default: 'false'
-  keywords:
-    description: 'A comma-separated list of keywords to identify the type of release'
+  configFile:
+    description: 'location of the additional configuration file'
     required: false
-    default: 'major,minor,patch,premajor,preminor,prepatch,prerelease'
 ## ------------------------------
 outputs:
   versionTag: # id of output
