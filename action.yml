@@ -2,7 +2,7 @@
 # DOC: https://docs.github.com/en/actions/reference/workflows-and-actions/metadata-syntax
 name: 'GitHub Action Release Version'
 author: davekpatrick
-description: 'A GitHub Action to caculate a required release version'
+description: 'GitHub Action to caculate a required release version'
 ## ------------------------------
 inputs:
   apiToken:
