@@ -1,7 +1,8 @@
 # BOF 
+# DOC: https://docs.github.com/en/actions/reference/workflows-and-actions/metadata-syntax
 name: 'GitHub Action Release Version'
 author: davekpatrick
-description: 'A GitHub Action to create and tag a release version'
+description: 'A GitHub Action to caculate a required release version'
 ## ------------------------------
 inputs:
   apiToken:
@@ -23,7 +24,16 @@ inputs:
     required: false
     default: 'false'
   configFile:
-    description: 'location of the additional configuration file'
+    description: |
+      ## Additonal configuration file
+      
+      * Overide default fully qualifed location to the configuration file
+      * If not found at the specified path, interal specifications will be used
+     
+      Deafult: 
+      ```shell
+      ./github/actions/<actionPackageName>/config.yaml
+      ```
     required: false
 ## ------------------------------
 outputs:

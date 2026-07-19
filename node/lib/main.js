@@ -4,8 +4,8 @@ const packageName = '@@NPM_PACKAGE_NAME@@'
 const packageVersion = '@@NPM_PACKAGE_VERSION@@'
 // ------------------------------------
 const process = require('node:process')
-const path = require("node:path")
-const fs = require("node:fs")
+const path = require('node:path')
+const fs = require('node:fs')
 // ------------------------------------
 // External modules
 // ------------------------------------
@@ -25,9 +25,9 @@ module.exports = async function main() {
     // ------------------------------------
     // ------------------------------------
     // variables
-    const dirRoot = path.normalize(__dirname + path.sep + "..")
-    const dirGithub = path.resolve(dirRoot, ".github")
-    const dirGithubActions = path.resolve(dirGithub, "actions")
+    const dirRoot = path.normalize(__dirname, '..')
+    const dirGithub = path.resolve(dirRoot, '.github')
+    const dirGithubActions = path.resolve(dirGithub, 'actions')
     var currentVersion = null
     var outVersionTag = null
     // ------------------------------------
@@ -142,26 +142,51 @@ module.exports = async function main() {
     )
     // additional configuration file setup
     var configFile = null
-    var configFileExists = false
+    var schemaFile = null
     if (
       argConfigFile === null ||
       argConfigFile === '' ||
       argConfigFile === undefined
     ) {
-      configFile = path.resolve(dirGithubActions, packageName, "config.yml")
+      configFile = path.resolve(dirGithubActions, packageName, 'config.yml')
     } else {
       configFile = argConfigFile
     }
-    if (
-        ! fs.existsSync(configFile)
-      ) {
-        core.debug(
-            'Additional configuration file[' + configFile + '] does not exist'
-          )
-          configFileExists = false
-      } else {
-        configFileExists = true
-      }
+    if (!fs.existsSync(configFile)) {
+      core.debug(
+        'Additional configuration file[' + configFile + '] does not exist'
+      )
+      // use default config
+      /*
+      configFile = path.join(
+        
+        '..',
+        'etc',
+        'config.yml'
+      )
+      */
+      configFile = '../etc/config.yml'
+      configFile =  path.resolve(require.resolve(configFile));
+      core.info('default configuration file[' + configFile + ']')
+      //console.log(configFile)
+      
+      //console.log(typeof(configFile) )
+
+      //let testFile = path.resolve(require.resolve(configFile));
+      //console.log(testFile)
+      //schemaFile = path.join(dirRoot, 'etc', 'config.schema.json')
+      schemaFile = '../etc/config.schema.json'
+      schemaFile = path.resolve(require.resolve(schemaFile));
+      
+    }
+    //let tmp = '../etc/config.schema.json'
+    
+    
+    const schemaData = fs.readFileSync(schemaFile, 'utf8')
+    const configData = fs.readFileSync(configFile, 'utf8')
+    core.debug('schemaData[' + schemaData + ']')
+    core.debug('configData[' + configData + ']')
+
     core.endGroup()
     core.startGroup('Preparation')
     // ------------------------------------

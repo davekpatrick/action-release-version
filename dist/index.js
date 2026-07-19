@@ -997,15 +997,17 @@ if (currentVersion === null) {
 
 /***/ }),
 
-/***/ 4822:
+/***/ 3109:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 // BOF
 // ------------------------------------
 const packageName = '@davekpatrick/action-release-version'
-const packageVersion = '0.4.2'
+const packageVersion = '0.5.0'
 // ------------------------------------
 const process = __nccwpck_require__(7742)
+const path = __nccwpck_require__(9411)
+const fs = __nccwpck_require__(7561)
 // ------------------------------------
 // External modules
 // ------------------------------------
@@ -1025,6 +1027,9 @@ module.exports = async function main() {
     // ------------------------------------
     // ------------------------------------
     // variables
+    const dirRoot = path.normalize(__dirname, '..')
+    const dirGithub = path.resolve(dirRoot, '.github')
+    const dirGithubActions = path.resolve(dirGithub, 'actions')
     var currentVersion = null
     var outVersionTag = null
     // ------------------------------------
@@ -1038,6 +1043,7 @@ module.exports = async function main() {
     const argVersionInputAsReleaseVersion = core.getInput(
       'versionInputAsReleaseVersion'
     )
+    const argConfigFile = core.getInput('configFile')
     //
     // API token can be provided as an action input or via the GITHUB_TOKEN environment variable
     // input takes precedence over environment variable
@@ -1136,6 +1142,53 @@ module.exports = async function main() {
         gitHubRepoName +
         ']'
     )
+    // additional configuration file setup
+    var configFile = null
+    var schemaFile = null
+    if (
+      argConfigFile === null ||
+      argConfigFile === '' ||
+      argConfigFile === undefined
+    ) {
+      configFile = path.resolve(dirGithubActions, packageName, 'config.yml')
+    } else {
+      configFile = argConfigFile
+    }
+    if (!fs.existsSync(configFile)) {
+      core.debug(
+        'Additional configuration file[' + configFile + '] does not exist'
+      )
+      // use default config
+      /*
+      configFile = path.join(
+        
+        '..',
+        'etc',
+        'config.yml'
+      )
+      */
+      configFile = '../etc/config.yml'
+      configFile =  path.resolve(__nccwpck_require__.ab + "config.yml");
+      core.info('default configuration file[' + configFile + ']')
+      //console.log(configFile)
+      
+      //console.log(typeof(configFile) )
+
+      //let testFile = path.resolve(require.resolve(configFile));
+      //console.log(testFile)
+      //schemaFile = path.join(dirRoot, 'etc', 'config.schema.json')
+      schemaFile = '../etc/config.schema.json'
+      schemaFile = path.resolve(__nccwpck_require__.ab + "config.schema.json");
+      
+    }
+    //let tmp = '../etc/config.schema.json'
+    
+    
+    const schemaData = fs.readFileSync(schemaFile, 'utf8')
+    const configData = fs.readFileSync(configFile, 'utf8')
+    core.debug('schemaData[' + schemaData + ']')
+    core.debug('configData[' + configData + ']')
+
     core.endGroup()
     core.startGroup('Preparation')
     // ------------------------------------
@@ -1179,7 +1232,7 @@ module.exports = async function main() {
     //   - repository action variable, RELEASE_VERSION
     // cfg:
     //   - action configuration file
-    //   - get the latest version from the git repostory tags
+    //   - get the latest version from the git repository tags
     // def:
     //   - if no version found, use argInceptionVersionTag default
     // ------------------------------------
@@ -33315,6 +33368,22 @@ module.exports = require("node:events");
 
 /***/ }),
 
+/***/ 7561:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:fs");
+
+/***/ }),
+
+/***/ 9411:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:path");
+
+/***/ }),
+
 /***/ 7742:
 /***/ ((module) => {
 
@@ -35113,7 +35182,7 @@ var __webpack_exports__ = {};
 // ------------------------------------
 //
 // ------------------------------------
-const main = __nccwpck_require__(4822)
+const main = __nccwpck_require__(3109)
 main()
 // EOF
 
