@@ -1,6 +1,21 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 5049:
+/***/ ((module) => {
+
+function webpackEmptyContext(req) {
+	var e = new Error("Cannot find module '" + req + "'");
+	e.code = 'MODULE_NOT_FOUND';
+	throw e;
+}
+webpackEmptyContext.keys = () => ([]);
+webpackEmptyContext.resolve = webpackEmptyContext;
+webpackEmptyContext.id = 5049;
+module.exports = webpackEmptyContext;
+
+/***/ }),
+
 /***/ 6009:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -1026,6 +1041,29 @@ module.exports = async function main() {
     core.startGroup('Initialization')
     // ------------------------------------
     // ------------------------------------
+    // Node.js Native Environment Variables
+    const nodeEnvironmentVariables = {
+      env: {
+        key: 'NODE_ENV',
+        val: 'production',
+      },
+    }
+    // NODE_ENV
+    // - always use 'production'
+    // DOC: https://nodejs.org/learn/getting-started/nodejs-the-difference-between-development-and-production#why-is-node_env-considered-an-antipattern
+    process.env[nodeEnvironmentVariables['env']['key']] ??=
+      nodeEnvironmentVariables['env']['val']
+    if (
+      process.env[nodeEnvironmentVariables['env']['key']] !==
+      nodeEnvironmentVariables['env']['val']
+    ) {
+      core.info(
+        'Node.js variable[nodeEnvironmentVariables["env"]["key"]]' +
+          ' value[' +
+          process.env[nodeEnvironmentVariables['env']['key']] +
+          ']'
+      )
+    }
     // variables
     const dirRoot = path.normalize(__dirname, '..')
     const dirGithub = path.resolve(dirRoot, '.github')
@@ -1096,10 +1134,9 @@ module.exports = async function main() {
     //  - this used to exist but no longer appears in the payload for some reason
     // github.context.payload.repository.owner.login
     //  - is the login name
-    //  - can this different from the actual name e.g. for an organization
+    //  - can this be different from the actual name e.g. for an organization
     // github.context.payload.repository.owner.name
     //  - is the actual name
-    //  - was using this but no longer exists in payload for some reason
     const gitHubRepoOwnerLogin = githubContext.payload.repository.owner.login
     const gitHubRepoOwnerName = githubContext.payload.repository.owner.name
     var gitHubRepoOwner = null
@@ -1142,53 +1179,77 @@ module.exports = async function main() {
         gitHubRepoName +
         ']'
     )
-    // additional configuration file setup
+    // additional configuration file
+    //
+    //
+    // internal default changeType
+    // internal other changeTypes
+    // .github default location check
+    // action input location check
+    //
+    // - how and/or should internal defaults be overwritten
+    // - if specifing a configFile , should it supersied any internals
+    // - if we deep merge defaults, how do do users remove any undesireable defaults
+    //
     var configFile = null
-    var schemaFile = null
     if (
       argConfigFile === null ||
       argConfigFile === '' ||
       argConfigFile === undefined
     ) {
+      // no configuration file input specifed, check if a file exists at the
+      // default location
       configFile = path.resolve(dirGithubActions, packageName, 'config.yml')
+      if (!fs.existsSync(configFile)) {
+        // just use the internal default configuration file included
+        // with the action version
+        configFile = '../etc/config.yml'
+        // NOTE: with this approach the folder struction becomes flat
+        //       when we ncc transpile the action code. e.g we loose the ./etc directory
+        configFile = path.resolve(/*require.resolve*/(__nccwpck_require__(5049).resolve(configFile)))
+        if (!fs.existsSync(configFile)) {
+          throw new Error(
+            'Unable to locate default configuration file[' + configFile + ']'
+          )
+        }
+      }
     } else {
       configFile = argConfigFile
+      if (!fs.existsSync(configFile)) {
+        throw new Error('Configuration file[' + configFile + '] does not exist')
+      }
     }
-    if (!fs.existsSync(configFile)) {
-      core.debug(
-        'Additional configuration file[' + configFile + '] does not exist'
+    core.debug('Configuration file[' + configFile + ']')
+    // additional configuration file schema
+    var schemaFile = null
+    schemaFile = '../etc/config.schema.json'
+    // NOTE: with this approach the folder struction becomes flat in ./dist
+    //       when ncc transpiles the action code. e.g we loose the ./etc directory
+    schemaFile = path.resolve(/*require.resolve*/(__nccwpck_require__(5049).resolve(schemaFile)))
+    if (!fs.existsSync(schemaFile)) {
+      throw new Error(
+        'Unable to locate configuration schema[' + schemaFile + ']'
       )
-      // use default config
-      /*
-      configFile = path.join(
-        
-        '..',
-        'etc',
-        'config.yml'
-      )
-      */
-      configFile = '../etc/config.yml'
-      configFile =  path.resolve(__nccwpck_require__.ab + "config.yml");
-      core.info('default configuration file[' + configFile + ']')
-      //console.log(configFile)
-      
-      //console.log(typeof(configFile) )
-
-      //let testFile = path.resolve(require.resolve(configFile));
-      //console.log(testFile)
-      //schemaFile = path.join(dirRoot, 'etc', 'config.schema.json')
-      schemaFile = '../etc/config.schema.json'
-      schemaFile = path.resolve(__nccwpck_require__.ab + "config.schema.json");
-      
     }
-    //let tmp = '../etc/config.schema.json'
-    
-    
-    const schemaData = fs.readFileSync(schemaFile, 'utf8')
-    const configData = fs.readFileSync(configFile, 'utf8')
+    core.debug('Configuration schema[' + schemaFile + ']')
+    // configuration schema read
+    var schemaReadFile = null
+    try {
+      schemaReadFile = fs.readFileSync(schemaFile, 'utf8')
+    } catch (error) {
+      throw new Error('Failed to read file[' + error.message + ']')
+    }
+    const schemaData = schemaReadFile
     core.debug('schemaData[' + schemaData + ']')
+    // configuration file data
+    var configReadFile = null
+    try {
+      configReadFile = fs.readFileSync(schemaFile, 'utf8')
+    } catch (error) {
+      throw new Error('Failed to read file[' + error.message + ']')
+    }
+    const configData = configReadFile
     core.debug('configData[' + configData + ']')
-
     core.endGroup()
     core.startGroup('Preparation')
     // ------------------------------------
@@ -1220,6 +1281,10 @@ module.exports = async function main() {
         )
       }
     }
+    // ------------------------------------
+    // ------------------------------------
+    // validate configuration file
+
     // ------------------------------------
     // ------------------------------------
     // get the "current" version
@@ -35170,6 +35235,11 @@ module.exports = parseParams
 /******/ 	}
 /******/ 	
 /************************************************************************/
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
