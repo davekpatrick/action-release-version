@@ -614,8 +614,7 @@ describe("main.js", async function () {
           //
           console.log(path)
           if (
-            path ===
-            "/workspaces/action-release-version/node/etc/config.schema.json"
+            path === filePath
           ) {
             return false
           } else {
