@@ -462,6 +462,204 @@ describe("main.js", async function () {
       // Validate the test result
       expect(result).to.equal(expectedVersion) // incremented version
     })
+
+    it("Should use optional additional configruation file", async function (argTrace = cfgTrace) {
+      // ---------------------------------------------------
+      // Details
+      // ------------
+      // -
+      // ---------------------------------------------------
+      // fixture inputs
+      fixtureDir = process.env["TEST_FIXTURE_DIR"]
+      configurationFile = path.join(
+        fixtureDir,
+        "configurationFile",
+        "default.yml",
+      )
+      const currentVersion = "1.0.0"
+      const expectedVersion = "1.1.0"
+      // Mock getVersion to return a version
+      const getVersionStub = () =>
+        Promise.resolve({
+          version: currentVersion,
+          history: [currentVersion],
+        })
+      // Mock getReleaseType to return 'minor' type
+      const getReleaseTypeStub = () =>
+        Promise.resolve({
+          event: "push",
+          type: "releasing",
+          change: "minor",
+        })
+      // Mock incrementVersion to return expected version
+      const incrementVersionStub = () =>
+        Promise.resolve({
+          version: {
+            old: currentVersion,
+            new: expectedVersion,
+          },
+        })
+      // Mock core to return empty API token
+      const coreStub = {
+        getInput: (input) => {
+          switch (input) {
+            case "configFile":
+              return configurationFile
+            default:
+              return ""
+          }
+        },
+        startGroup: () => {},
+        endGroup: () => {},
+        debug: () => {},
+        info: () => {},
+        warning: () => {},
+        setSecret: () => {},
+        setOutput: () => {},
+        setFailed: () => {},
+      }
+      // Use proxyquire to inject mocks
+      const main = proxyquire(modulePath, {
+        "./get-version": getVersionStub,
+        "./get-release-type": getReleaseTypeStub,
+        "./increment-version": incrementVersionStub,
+        "@actions/core": coreStub,
+        "node:process": processMock,
+      })
+      // execute the test
+      const result = await main()
+      if (argTrace) {
+        console.log("result:[" + JSON.stringify(result) + "]")
+      }
+      // Validate the test result
+      expect(result).to.equal(expectedVersion) // incremented version
+    })
+
+    it("Should fail if optional additional configruation file is missing", async function (argTrace = cfgTrace) {
+      // ---------------------------------------------------
+      // Details
+      // ------------
+      // -
+      // ---------------------------------------------------
+      // fixture inputs
+      const fixtureDir = process.env["TEST_FIXTURE_DIR"]
+      const configurationFile = path.join(
+        fixtureDir,
+        "configurationFile",
+        "does-not-exist.yml",
+      )
+      const expectedError =
+        "Configuration file[" + configurationFile + "] does not exist"
+      const expectedExit = "Exiting with code[1]"
+      // capture setFailed messages
+      var setFailedCalls = []
+      // Mock core to return empty API token
+      const coreStub = {
+        getInput: (input) => {
+          switch (input) {
+            case "configFile":
+              return configurationFile
+            default:
+              return ""
+          }
+        },
+        startGroup: () => {},
+        endGroup: () => {},
+        debug: () => {},
+        info: () => {},
+        warning: () => {},
+        setSecret: () => {},
+        setOutput: () => {},
+        setFailed: (message) => {
+          setFailedCalls.push(message)
+        },
+      }
+      // Use proxyquire to inject mocks
+      const main = proxyquire(modulePath, {
+        "@actions/core": coreStub,
+        "node:process": processMock,
+      })
+      // execute the test
+      try {
+        const result = await main()
+        if (argTrace) {
+          console.log("result:[" + JSON.stringify(result) + "]")
+        }
+      } catch (error) {
+        expect(error.message).to.equal(expectedExit)
+      }
+      // Validate the test result
+      expect(setFailedCalls.length).to.equal(1)
+      expect(setFailedCalls[0]).to.equal(expectedError)
+    })
+
+    it("Should fail if additional configruation schema file is missing", async function (argTrace = cfgTrace) {
+      // ---------------------------------------------------
+      // Details
+      // ------------
+      // -
+      // ---------------------------------------------------
+      // fixture inputs
+      //fixtureDir = process.env["TEST_FIXTURE_DIR"]
+      schemaFile = path.join(dirNode, "etc", "config.schema.json")
+      filePath = path.resolve(schemaFile)
+      const expectedError =
+        "Unable to locate configuration schema[" + filePath + "]"
+      const expectedExit = "Exiting with code[1]"
+      // capture setFailed messages
+      var setFailedCalls = []
+      // Mock fs existsSync to return file does not exist
+      const fsExistsSyncStub = {
+        existsSync: (path) => {
+          //
+          if (
+            path ===
+            "/workspaces/action-release-version/node/etc/config.schema.json"
+          ) {
+            return false
+          } else {
+            return true
+          }
+        },
+      }
+      // Mock core to return empty API token
+      const coreStub = {
+        getInput: (input) => {
+          switch (input) {
+            default:
+              return ""
+          }
+        },
+        startGroup: () => {},
+        endGroup: () => {},
+        debug: () => {},
+        info: () => {},
+        warning: () => {},
+        setSecret: () => {},
+        setOutput: () => {},
+        setFailed: (message) => {
+          setFailedCalls.push(message)
+        },
+      }
+      // Use proxyquire to inject mocks
+      const main = proxyquire(modulePath, {
+        "@actions/core": coreStub,
+        "node:process": processMock,
+        "node:fs": fsExistsSyncStub,
+      })
+      // execute the test
+      try {
+        const result = await main()
+        if (argTrace) {
+          console.log("result:[" + JSON.stringify(result) + "]")
+        }
+      } catch (error) {
+        expect(error.message).to.equal(expectedExit)
+      }
+      // Validate the test result
+      expect(setFailedCalls.length).to.equal(1)
+      expect(setFailedCalls[0]).to.equal(expectedError)
+    })
   })
 })
 // EOF
