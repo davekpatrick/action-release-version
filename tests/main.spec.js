@@ -612,6 +612,7 @@ describe("main.js", async function () {
       const fsExistsSyncStub = {
         existsSync: (path) => {
           //
+          console.log(path)
           if (
             path ===
             "/workspaces/action-release-version/node/etc/config.schema.json"
