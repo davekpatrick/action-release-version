@@ -49,6 +49,7 @@ module.exports = async function main() {
     }
     // variables
     const dirRoot = path.normalize(__dirname, '..')
+    console.log(dirRoot)
     const dirGithub = path.resolve(dirRoot, '.github')
     const dirGithubActions = path.resolve(dirGithub, 'actions')
     var currentVersion = null
@@ -186,10 +187,12 @@ module.exports = async function main() {
       if (!fs.existsSync(configFile)) {
         // just use the internal default configuration file included
         // with the action version
-        configFile = 'etc/config.yml'
+        configFile = 'config.yml'
+        const searchPaths = require.resolve.paths(configFile);
+        console.log(searchPaths);
         // NOTE: with this approach the folder struction becomes flat
         //       when we ncc transpile the action code. e.g we loose the ./etc directory
-        configFile = path.resolve(require.resolve(configFile))
+        configFile = path.resolve(require.resolve(configFile,{paths: [ '../etc',  path.join(dirRoot, 'etc')]}))
         if (!fs.existsSync(configFile)) {
           throw new Error(
             'Unable to locate default configuration file[' + configFile + ']'
