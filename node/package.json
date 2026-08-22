@@ -18,8 +18,9 @@
   "scripts": {
     "format": "prettier --write  --no-semi ../node ../tests",
     "validate": "eslint ../node ../tests",
-    "add-metadata": "replace @@NPM_PACKAGE_NAME@@ $npm_package_name ../dist/index.js && replace @@NPM_PACKAGE_VERSION@@ $npm_package_version ../dist/index.js",
-    "build": "NODE_ENV=$npn_package_config_nodeenv; ncc build index.js --license licenses.txt --out ../dist && npm run add-metadata",
+    "build-add-metadata": "replace @@NPM_PACKAGE_NAME@@ $npm_package_name ../dist/index.js && replace @@NPM_PACKAGE_VERSION@@ $npm_package_version ../dist/index.js",
+    "build-add-config-files": "node -e \"require('fs').cpSync('etc', '../dist/etc', {recursive: true})\"",
+    "build": "NODE_ENV=$npn_package_config_nodeenv; ncc build index.js --license licenses.txt --out ../dist && npm run build-add-config-files && npm run build-add-metadata",
     "test": "mocha"
   },
   "dependencies": {
