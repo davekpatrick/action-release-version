@@ -1065,7 +1065,7 @@ module.exports = async function main() {
       )
     }
     // variables
-    const dirRoot = path.normalize(__dirname, '..')
+    const dirRoot = path.normalize(__dirname + path.sep + '..')
     console.log(dirRoot)
     const dirGithub = path.resolve(dirRoot, '.github')
     const dirGithubActions = path.resolve(dirGithub, 'actions')
@@ -1204,12 +1204,12 @@ module.exports = async function main() {
       if (!fs.existsSync(configFile)) {
         // just use the internal default configuration file included
         // with the action version
-        configFile = 'config.yml'
+        configFile = dirRoot + '/etc/config.yml'
         const searchPaths = __nccwpck_require__(5049).resolve.paths(configFile);
         console.log(searchPaths);
         // NOTE: with this approach the folder struction becomes flat
         //       when we ncc transpile the action code. e.g we loose the ./etc directory
-        configFile = path.resolve(__nccwpck_require__(5049).resolve(configFile,{paths: [ '../etc',  path.join(dirRoot, 'etc')]}))
+        configFile = path.resolve(/*require.resolve*/(__nccwpck_require__(5049).resolve(configFile)))
         if (!fs.existsSync(configFile)) {
           throw new Error(
             'Unable to locate default configuration file[' + configFile + ']'
