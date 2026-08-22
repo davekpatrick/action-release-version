@@ -1205,8 +1205,6 @@ module.exports = async function main() {
         // just use the internal default configuration file included
         // with the action version
         configFile = dirRoot + '/etc/config.yml'
-        const searchPaths = __nccwpck_require__(5049).resolve.paths(configFile);
-        console.log(searchPaths);
         // NOTE: with this approach the folder struction becomes flat
         //       when we ncc transpile the action code. e.g we loose the ./etc directory
         configFile = path.resolve(/*require.resolve*/(__nccwpck_require__(5049).resolve(configFile)))
@@ -1225,7 +1223,7 @@ module.exports = async function main() {
     core.debug('Configuration file[' + configFile + ']')
     // additional configuration file schema
     var schemaFile = null
-    schemaFile = '../etc/config.schema.json'
+    schemaFile = dirRoot + '/etc/config.schema.json'
     // NOTE: with this approach the folder struction becomes flat in ./dist
     //       when ncc transpiles the action code. e.g we loose the ./etc directory
     schemaFile = path.resolve(/*require.resolve*/(__nccwpck_require__(5049).resolve(schemaFile)))
