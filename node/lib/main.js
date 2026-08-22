@@ -186,7 +186,7 @@ module.exports = async function main() {
       if (!fs.existsSync(configFile)) {
         // just use the internal default configuration file included
         // with the action version
-        configFile = '../etc/config.yml'
+        configFile = 'etc/config.yml'
         // NOTE: with this approach the folder struction becomes flat
         //       when we ncc transpile the action code. e.g we loose the ./etc directory
         configFile = path.resolve(require.resolve(configFile))
