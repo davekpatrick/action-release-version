@@ -49,7 +49,7 @@ module.exports = async function main() {
     }
     // variables
     const dirRoot = path.normalize(__dirname + path.sep + '..')
-    console.log(dirRoot)
+    console.log(__filename)
     const dirGithub = path.resolve(dirRoot, '.github')
     const dirGithubActions = path.resolve(dirGithub, 'actions')
     var currentVersion = null
