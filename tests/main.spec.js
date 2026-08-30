@@ -593,7 +593,7 @@ describe("main.js", async function () {
       expect(setFailedCalls[0]).to.equal(expectedError)
     })
 
-    it("Should fail if additional configruation schema file is missing", async function (argTrace = cfgTrace) {
+    it("Should fail if additional configuration schema file is missing", async function (argTrace = cfgTrace) {
       // ---------------------------------------------------
       // Details
       // ------------
@@ -632,8 +632,8 @@ describe("main.js", async function () {
         },
         startGroup: () => {},
         endGroup: () => {},
-        debug: () => {},
-        info: () => {},
+        //debug: () => {},
+        //info: () => {},
         warning: () => {},
         setSecret: () => {},
         setOutput: () => {},

@@ -187,7 +187,7 @@ module.exports = async function main() {
         // just use the internal default configuration file included
         // with the action version
         core.debug( 'Configuration file not found at location[' + configFile + ']')
-        configFile = undefined
+        configFile = null
         const configFilePaths = [
           path.resolve(__dirname, 'etc', 'config.yml'),
           path.resolve(dirRoot, 'etc', 'config.yml'),
@@ -200,7 +200,7 @@ module.exports = async function main() {
             break;
           }
         }
-        if (configFile === undefined) {
+        if (configFile === null) {
           throw new Error(
             'Unable to locate default configuration file[' + configFile + ']'
           )
@@ -215,11 +215,19 @@ module.exports = async function main() {
     core.debug('Configuration file[' + configFile + ']')
     // additional configuration file schema
     var schemaFile = null
-    schemaFile = dirRoot + '/etc/config.schema.json'
-    // NOTE: with this approach the folder struction becomes flat in ./dist
-    //       when ncc transpiles the action code. e.g we loose the ./etc directory
-    schemaFile = path.resolve(require.resolve(schemaFile))
-    if (!fs.existsSync(schemaFile)) {
+    const schemaFilePaths = [
+          path.resolve(__dirname, 'etc', 'config.schema.json'),
+          path.resolve(dirRoot, 'etc', 'config.schema.json'),
+        ];
+    for (const filePath of schemaFilePaths) {
+      core.debug( 'Checking for configuration schema at default location[' + filePath + ']' )
+      if (fs.existsSync(filePath)) {
+        core.debug( 'Located configuration schema at location[' + filePath + ']' )
+        schemaFile = filePath;
+        break;
+      }
+    }
+    if (schemaFile === null) {
       throw new Error(
         'Unable to locate configuration schema[' + schemaFile + ']'
       )
