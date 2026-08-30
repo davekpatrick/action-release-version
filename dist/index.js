@@ -1066,9 +1066,6 @@ module.exports = async function main() {
     }
     // variables
     const dirRoot = path.normalize(__dirname + path.sep + '..')
-    console.log(dirRoot)
-    console.log(__dirname)
-    console.log(__filename)
     const dirGithub = path.resolve(dirRoot, '.github')
     const dirGithubActions = path.resolve(dirGithub, 'actions')
     var currentVersion = null
@@ -1201,16 +1198,26 @@ module.exports = async function main() {
       argConfigFile === undefined
     ) {
       // no configuration file input specifed, check if a file exists at the
-      // default location
+      // default github action location
       configFile = path.resolve(dirGithubActions, packageName, 'config.yml')
       if (!fs.existsSync(configFile)) {
         // just use the internal default configuration file included
         // with the action version
-        configFile = dirRoot + '/etc/config.yml'
-        // NOTE: with this approach the folder struction becomes flat
-        //       when we ncc transpile the action code. e.g we loose the ./etc directory
-        configFile = path.resolve(/*require.resolve*/(__nccwpck_require__(5049).resolve(configFile)))
-        if (!fs.existsSync(configFile)) {
+        core.debug( 'Configuration file not found at location[' + configFile + ']')
+        configFile = undefined
+        const configFilePaths = [
+          path.resolve(__dirname, 'etc', 'config.yml'),
+          path.resolve(dirRoot, 'etc', 'config.yml'),
+        ];
+        for (const filePath of configFilePaths) {
+          core.debug( 'Checking for configuration file at default location[' + filePath + ']' )
+          if (fs.existsSync(filePath)) {
+            core.debug( 'Located configuration file at location[' + filePath + ']' )
+            configFile = filePath;
+            break;
+          }
+        }
+        if (configFile === undefined) {
           throw new Error(
             'Unable to locate default configuration file[' + configFile + ']'
           )

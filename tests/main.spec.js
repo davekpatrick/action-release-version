@@ -612,7 +612,7 @@ describe("main.js", async function () {
       const fsExistsSyncStub = {
         existsSync: (path) => {
           //
-          console.log(path)
+          //console.log(path)
           if (
             path === filePath
           ) {
