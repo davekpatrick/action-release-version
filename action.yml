@@ -1,7 +1,8 @@
 # BOF 
+# DOC: https://docs.github.com/en/actions/reference/workflows-and-actions/metadata-syntax
 name: 'GitHub Action Release Version'
 author: davekpatrick
-description: 'A GitHub Action to create and tag a release version'
+description: 'GitHub Action to caculate a required release version'
 ## ------------------------------
 inputs:
   apiToken:
@@ -22,10 +23,18 @@ inputs:
     description: 'Use the current version input as the release version, skipping any version incrementing'
     required: false
     default: 'false'
-  keywords:
-    description: 'A comma-separated list of keywords to identify the type of release'
+  configFile:
+    description: |
+      ## Additonal configuration file
+      
+      * Overide default fully qualifed location to the configuration file
+      * If not found at the specified path, interal specifications will be used
+     
+      Deafult: 
+      ```shell
+      ./github/actions/<actionPackageName>/config.yaml
+      ```
     required: false
-    default: 'major,minor,patch,premajor,preminor,prepatch,prerelease'
 ## ------------------------------
 outputs:
   versionTag: # id of output

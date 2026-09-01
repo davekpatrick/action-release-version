@@ -3,7 +3,7 @@
   "name": "@davekpatrick/action-release-version",
   "license": "BSD-3-Clause",
   "version": "0.0.0",
-  "description": "GitHub Action used to version bump",
+  "description": "GitHub Action to caculate a required release version",
   "keywords": [
     "node",
     "github",
@@ -12,15 +12,19 @@
     "version"
   ],
   "main": "index.js",
+  "config": {
+    "NODE_ENV": "production"
+  },
   "scripts": {
     "format": "prettier --write  --no-semi ../node ../tests",
     "validate": "eslint ../node ../tests",
-    "add-metadata": "replace @@NPM_PACKAGE_NAME@@ $npm_package_name ../dist/index.js && replace @@NPM_PACKAGE_VERSION@@ $npm_package_version ../dist/index.js",
-    "build": "ncc build index.js --license licenses.txt --out ../dist && npm run add-metadata",
+    "build-add-metadata": "replace @@NPM_PACKAGE_NAME@@ $npm_package_name ../dist/index.js && replace @@NPM_PACKAGE_VERSION@@ $npm_package_version ../dist/index.js",
+    "build-add-config-files": "node -e \"require('fs').cpSync('etc', '../dist/etc', {recursive: true})\"",
+    "build": "NODE_ENV=$npn_package_config_nodeenv; ncc build index.js --license licenses.txt --out ../dist && npm run build-add-config-files && npm run build-add-metadata",
     "test": "mocha"
   },
   "dependencies": {
-    "@actions/core": "1.10.1",
+    "@actions/core": "1.11.1",
     "@actions/github": "6.0.0",
     "semver": "7.7.2"
   },

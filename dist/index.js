@@ -1,6 +1,21 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 5049:
+/***/ ((module) => {
+
+function webpackEmptyContext(req) {
+	var e = new Error("Cannot find module '" + req + "'");
+	e.code = 'MODULE_NOT_FOUND';
+	throw e;
+}
+webpackEmptyContext.keys = () => ([]);
+webpackEmptyContext.resolve = webpackEmptyContext;
+webpackEmptyContext.id = 5049;
+module.exports = webpackEmptyContext;
+
+/***/ }),
+
 /***/ 6009:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -293,10 +308,10 @@ module.exports = async function getReleaseType(
         core.info('Patch change detected')
       } else {
         // default to patch change
-        functionReturn.change = 'minor'
+        functionReturn.change = 'minor' // TODO: configurable option
         core.info('default to minor change')
       }
-      // check if the pull request is to the default branch
+      // check if the pull request is to the default branch // TODO: support non-default branch
       if (gitBaseRef === gitDefaultBranch) {
         core.info('Pull request to default branch detected')
         // TODO: add support for 'pre'
@@ -327,12 +342,11 @@ module.exports = async function getReleaseType(
       //  - Branch Creation
       // DOC: locate offical documentation (TODO)
       //      https://github.com/git/git/commit/f65fdf04a13d2252de8b2b4b161db7c43f2c28ad
-      functionReturn.type = 'noop' // no change as null parent detected
-      core.debug('type[' + functionReturn.type + ']')
+      functionReturn.type = 'noop' // no change as null parent detected (TODO: or should we do a build)
+      core.info('type[' + functionReturn.type + ']')
       core.info('non-existent git commit event')
     } else {
-      functionReturn.type = 'push'
-      core.info('type[' + functionReturn.type + ']')
+      // TODO: determine type based commit message e.g. [fix]
 
       // get the commit data before the push
       // https://docs.github.com/en/rest/git/commits?apiVersion=2022-11-28#get-a-commit
@@ -345,7 +359,7 @@ module.exports = async function getReleaseType(
         'gitBeforeCommitShaData[' + JSON.stringify(gitBeforeCommitShaData) + ']'
       )
       let gitBeforeCommitShaMessage = gitBeforeCommitShaData.data.message
-      core.info('beforeCommitShaMessage[' + gitBeforeCommitShaMessage + ']')
+      core.info('beforeCommitShaMessage[' + gitBeforeCommitShaMessage + ']') // TODO: reflect
       // get all branches where the given commit SHA is the latest commit
       // DOC: https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-branches-for-head-commit
       let getBeforeCommitBranches = await octokit.request(
@@ -368,24 +382,31 @@ module.exports = async function getReleaseType(
           ']'
       )
       // pull out just the branch names
-      let beforeCommitBranchList = getBeforeCommitBranches.data.map(data => 
-        data.name
+      let beforeCommitBranchList = getBeforeCommitBranches.data.map(
+        (data) => data.name
       )
       core.info(
         'beforeCommitBranchList[' + JSON.stringify(beforeCommitBranchList) + ']'
       )
-      //
-      if ( beforeCommitBranchList.includes(gitDefaultBranch) ) {
-        // 
+      // TODO: review the branches where the commit exists
+      //       what should we do next ...
+      if (beforeCommitBranchList.includes(gitDefaultBranch)) {
+        //
+        core.info(
+          'gitBeforeCommitSha is the latest commit on the gitDefaultBranch[' +
+            gitDefaultBranch +
+            '] branch'
+        )
       } else {
         //
+        core.info(
+          'gitBeforeCommitSha is NOT the latest commit on the gitDefaultBranch[' +
+            gitDefaultBranch +
+            '] branch'
+        )
       }
-
-      // TODO: review the branches where the commit exists
-
-
-
-      // To list the open or merged pull requests associated with a branch, you can set the commit_sha parameter to the branch name
+      // list the open or merged pull requests associated with the commit sha
+      // NOTE: you can also set the commit_sha parameter to a branch name
       // https://api.github.com/repos/OWNER/REPO/commits/COMMIT_SHA/pulls
       // DOC: https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-pull-requests-associated-with-a-commit
       let getPullRequest = await octokit.request(
@@ -393,11 +414,49 @@ module.exports = async function getReleaseType(
           githubRepoOwner +
           '/' +
           githubRepoName +
-          '/commits/' + gitDefaultBranch + '/pulls'
+          '/commits/' +
+          gitBeforeCommitSha +
+          '/pulls'
       )
-      core.info('getPullRequest[' + JSON.stringify(getPullRequest) + ']')
-
-
+      core.debug('getPullRequest[' + JSON.stringify(getPullRequest) + ']')
+      // get just the needed pull request details
+      let pullRequestList = getPullRequest.data.map((data) => ({
+        number: data.number,
+        state: data.state,
+        title: data.title,
+        labels: data.labels.map((label) => label.name),
+        head: { ref: data.head.ref },
+        base: { ref: data.base.ref },
+        merged_at: data.merged_at,
+      }))
+      core.info('pullRequestList[' + JSON.stringify(pullRequestList) + ']')
+      // check for closed and merged pull requests
+      if (pullRequestList.length > 0) {
+        core.info('pullRequestNum[' + pullRequestList.length + ']')
+        // use pull request data to determine change
+        let pullRequestClosedList = pullRequestList.filter(
+          (data) =>
+            data.state.toLowerCase() === 'closed' && data.merged_at != null
+        )
+        //
+        if (pullRequestClosedList.length > 0) {
+          functionReturn.type = 'push'
+          core.info('type[' + functionReturn.type + ']')
+          // use pull request data to determine change
+          core.info('closed pull request handling')
+          let tmp = getPullRequestChange(pullRequestClosedList)
+          functionReturn.change = tmp
+        } else {
+          functionReturn.type = 'build'
+          core.info('type[' + functionReturn.type + ']')
+          core.info('Open pull request handling')
+          let tmp = getPullRequestChange(pullRequestList)
+          functionReturn.change = tmp
+        }
+      } else {
+        // no pull request open or merged
+        core.info('no pull request open or merged')
+      }
     }
   } else {
     functionReturn.event = 'unknown'
@@ -412,6 +471,149 @@ module.exports = async function getReleaseType(
     change: functionReturn.change,
   }
 } // getReleaseType
+
+function getPullRequestChange(pullRequestList, { cfgFile = null } = {}) {
+  const functionName = getPullRequestChange.name
+  core.debug('Start ' + functionName)
+  // ------------------------------------
+  // ------------------------------------
+  // argument(input) variable setup
+  const functionArguments = {
+    pullRequestList: pullRequestList,
+    cfgFile: cfgFile, // TODO: configurable options input
+  }
+  // ------------------------------------
+  // ------------------------------------
+  // return(output) variable setup
+  var functionReturn = {
+    change: null,
+  }
+  // ------------------------------------
+  // ------------------------------------
+  const defaultSemverInc = 'minor' // TODO: configurable option
+  const defaultBranchNamePrefixDelimiter = '/' // TODO: configurable option
+  const changeIdentifiers = {
+    // TODO: configurable options
+    major: {
+      semverInc: 'major',
+      //
+      titleKeywords: ['[major version]', '[breaking change]'],
+      labelNames: ['major', 'breaking'],
+      //
+      branchNamePrefixDelimiter: defaultBranchNamePrefixDelimiter,
+      branchNamePrefixes: ['major'],
+    },
+    minor: {
+      semverInc: 'minor',
+      //
+      titleKeywords: ['[minor version]', '[feature]'],
+      labelNames: ['minor', 'feature'],
+      //
+      branchNamePrefixDelimiter: defaultBranchNamePrefixDelimiter,
+      branchNamePrefixes: ['feature'],
+    },
+    patch: {
+      semverInc: 'patch',
+      //
+      titleKeywords: ['[patch version]', '[fix]'],
+      labelNames: ['patch', 'fix', 'bug'],
+      //
+      branchNamePrefixDelimiter: defaultBranchNamePrefixDelimiter,
+      branchNamePrefixes: ['fix'],
+    },
+  }
+  // ------------------------------------
+  // ------------------------------------
+  console.log('pullList ' + JSON.stringify(functionArguments.pullRequestList))
+  // major
+  if (
+    functionArguments.pullRequestList.some((data) =>
+      changeIdentifiers.major.branchNamePrefixes.some((branch) =>
+        data.head.ref
+          .toLowerCase()
+          .startsWith(
+            branch.toLowerCase() +
+              changeIdentifiers.major.branchNamePrefixDelimiter
+          )
+      )
+    ) ||
+    functionArguments.pullRequestList.some((data) =>
+      changeIdentifiers.major.titleKeywords.some((title) =>
+        data.title.toLowerCase().includes(title.toLowerCase())
+      )
+    ) ||
+    functionArguments.pullRequestList.filter((data) =>
+      data.labels.some(
+        (label) => changeIdentifiers.major.labelNames.includes(label) === true
+      )
+    ).length > 0
+  ) {
+    //
+    core.info('major match')
+    functionReturn.change = changeIdentifiers.major.semverInc
+  }
+  //  minor
+  else if (
+    functionArguments.pullRequestList.some((data) =>
+      changeIdentifiers.minor.branchNamePrefixes.some((branch) =>
+        data.head.ref
+          .toLowerCase()
+          .startsWith(
+            branch.toLowerCase() +
+              changeIdentifiers.minor.branchNamePrefixDelimiter
+          )
+      )
+    ) ||
+    functionArguments.pullRequestList.some((data) =>
+      changeIdentifiers.minor.titleKeywords.some((title) =>
+        data.title.toLowerCase().includes(title.toLowerCase())
+      )
+    ) ||
+    functionArguments.pullRequestList.filter((data) =>
+      data.labels.some(
+        (label) => changeIdentifiers.minor.labelNames.includes(label) === true
+      )
+    ).length > 0
+  ) {
+    core.info('minor match')
+    functionReturn.change = changeIdentifiers.minor.semverInc
+  }
+  // patch
+  else if (
+    functionArguments.pullRequestList.some((data) =>
+      changeIdentifiers.patch.branchNamePrefixes.some((branch) =>
+        data.head.ref
+          .toLowerCase()
+          .startsWith(
+            branch.toLowerCase() +
+              changeIdentifiers.patch.branchNamePrefixDelimiter
+          )
+      )
+    ) ||
+    functionArguments.pullRequestList.some((data) =>
+      changeIdentifiers.patch.titleKeywords.some((title) =>
+        data.title.toLowerCase().includes(title.toLowerCase())
+      )
+    ) ||
+    functionArguments.pullRequestList.filter((data) =>
+      data.labels.some(
+        (label) => changeIdentifiers.patch.labelNames.includes(label) === true
+      )
+    ).length > 0
+  ) {
+    core.info('patch match')
+    functionReturn.change = changeIdentifiers.patch.semverInc
+  } else {
+    // default change
+    functionReturn.change = defaultSemverInc
+    core.info('Using default SemverInc')
+  }
+  core.info(functionReturn.change + ' change detected')
+
+  // ------------------------------------
+  core.debug('End ' + functionName)
+  return functionReturn.change
+} // getPullRequestChange
 // EOF
 
 
@@ -810,15 +1012,17 @@ if (currentVersion === null) {
 
 /***/ }),
 
-/***/ 4822:
+/***/ 3109:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 // BOF
 // ------------------------------------
 const packageName = '@davekpatrick/action-release-version'
-const packageVersion = '0.4.1'
+const packageVersion = '0.5.0'
 // ------------------------------------
 const process = __nccwpck_require__(7742)
+const path = __nccwpck_require__(9411)
+const fs = __nccwpck_require__(7561)
 // ------------------------------------
 // External modules
 // ------------------------------------
@@ -837,7 +1041,33 @@ module.exports = async function main() {
     core.startGroup('Initialization')
     // ------------------------------------
     // ------------------------------------
+    // Node.js Native Environment Variables
+    const nodeEnvironmentVariables = {
+      env: {
+        key: 'NODE_ENV',
+        val: 'production',
+      },
+    }
+    // NODE_ENV
+    // - always use 'production'
+    // DOC: https://nodejs.org/learn/getting-started/nodejs-the-difference-between-development-and-production#why-is-node_env-considered-an-antipattern
+    process.env[nodeEnvironmentVariables['env']['key']] ??=
+      nodeEnvironmentVariables['env']['val']
+    if (
+      process.env[nodeEnvironmentVariables['env']['key']] !==
+      nodeEnvironmentVariables['env']['val']
+    ) {
+      core.info(
+        'Node.js variable[nodeEnvironmentVariables["env"]["key"]]' +
+          ' value[' +
+          process.env[nodeEnvironmentVariables['env']['key']] +
+          ']'
+      )
+    }
     // variables
+    const dirRoot = path.normalize(__dirname + path.sep + '..')
+    const dirGithub = path.resolve(dirRoot, '.github')
+    const dirGithubActions = path.resolve(dirGithub, 'actions')
     var currentVersion = null
     var outVersionTag = null
     // ------------------------------------
@@ -851,6 +1081,7 @@ module.exports = async function main() {
     const argVersionInputAsReleaseVersion = core.getInput(
       'versionInputAsReleaseVersion'
     )
+    const argConfigFile = core.getInput('configFile')
     //
     // API token can be provided as an action input or via the GITHUB_TOKEN environment variable
     // input takes precedence over environment variable
@@ -903,10 +1134,9 @@ module.exports = async function main() {
     //  - this used to exist but no longer appears in the payload for some reason
     // github.context.payload.repository.owner.login
     //  - is the login name
-    //  - can this different from the actual name e.g. for an organization
+    //  - can this be different from the actual name e.g. for an organization
     // github.context.payload.repository.owner.name
     //  - is the actual name
-    //  - was using this but no longer exists in payload for some reason
     const gitHubRepoOwnerLogin = githubContext.payload.repository.owner.login
     const gitHubRepoOwnerName = githubContext.payload.repository.owner.name
     var gitHubRepoOwner = null
@@ -949,6 +1179,87 @@ module.exports = async function main() {
         gitHubRepoName +
         ']'
     )
+    // additional configuration file
+    //
+    //
+    // internal default changeType
+    // internal other changeTypes
+    // .github default location check
+    // action input location check
+    //
+    // - how and/or should internal defaults be overwritten
+    // - if specifing a configFile , should it supersied any internals
+    // - if we deep merge defaults, how do do users remove any undesireable defaults
+    //
+    var configFile = null
+    if (
+      argConfigFile === null ||
+      argConfigFile === '' ||
+      argConfigFile === undefined
+    ) {
+      // no configuration file input specifed, check if a file exists at the
+      // default github action location
+      configFile = path.resolve(dirGithubActions, packageName, 'config.yml')
+      if (!fs.existsSync(configFile)) {
+        // just use the internal default configuration file included
+        // with the action version
+        core.debug( 'Configuration file not found at location[' + configFile + ']')
+        configFile = undefined
+        const configFilePaths = [
+          path.resolve(__dirname, 'etc', 'config.yml'),
+          path.resolve(dirRoot, 'etc', 'config.yml'),
+        ];
+        for (const filePath of configFilePaths) {
+          core.debug( 'Checking for configuration file at default location[' + filePath + ']' )
+          if (fs.existsSync(filePath)) {
+            core.debug( 'Located configuration file at location[' + filePath + ']' )
+            configFile = filePath;
+            break;
+          }
+        }
+        if (configFile === undefined) {
+          throw new Error(
+            'Unable to locate default configuration file[' + configFile + ']'
+          )
+        }
+      }
+    } else {
+      configFile = argConfigFile
+      if (!fs.existsSync(configFile)) {
+        throw new Error('Configuration file[' + configFile + '] does not exist')
+      }
+    }
+    core.debug('Configuration file[' + configFile + ']')
+    // additional configuration file schema
+    var schemaFile = null
+    schemaFile = dirRoot + '/etc/config.schema.json'
+    // NOTE: with this approach the folder struction becomes flat in ./dist
+    //       when ncc transpiles the action code. e.g we loose the ./etc directory
+    schemaFile = path.resolve(/*require.resolve*/(__nccwpck_require__(5049).resolve(schemaFile)))
+    if (!fs.existsSync(schemaFile)) {
+      throw new Error(
+        'Unable to locate configuration schema[' + schemaFile + ']'
+      )
+    }
+    core.debug('Configuration schema[' + schemaFile + ']')
+    // configuration schema read
+    var schemaReadFile = null
+    try {
+      schemaReadFile = fs.readFileSync(schemaFile, 'utf8')
+    } catch (error) {
+      throw new Error('Failed to read file[' + error.message + ']')
+    }
+    const schemaData = schemaReadFile
+    core.debug('schemaData[' + schemaData + ']')
+    // configuration file data
+    var configReadFile = null
+    try {
+      configReadFile = fs.readFileSync(schemaFile, 'utf8')
+    } catch (error) {
+      throw new Error('Failed to read file[' + error.message + ']')
+    }
+    const configData = configReadFile
+    core.debug('configData[' + configData + ']')
     core.endGroup()
     core.startGroup('Preparation')
     // ------------------------------------
@@ -982,6 +1293,10 @@ module.exports = async function main() {
     }
     // ------------------------------------
     // ------------------------------------
+    // validate configuration file
+
+    // ------------------------------------
+    // ------------------------------------
     // get the "current" version
     // methods in order of precedence (arg -> env -> cfg -> def)
     // arg:
@@ -992,7 +1307,7 @@ module.exports = async function main() {
     //   - repository action variable, RELEASE_VERSION
     // cfg:
     //   - action configuration file
-    //   - get the latest version from the git repostory tags
+    //   - get the latest version from the git repository tags
     // def:
     //   - if no version found, use argInceptionVersionTag default
     // ------------------------------------
@@ -33128,6 +33443,22 @@ module.exports = require("node:events");
 
 /***/ }),
 
+/***/ 7561:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:fs");
+
+/***/ }),
+
+/***/ 9411:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:path");
+
+/***/ }),
+
 /***/ 7742:
 /***/ ((module) => {
 
@@ -34914,6 +35245,11 @@ module.exports = parseParams
 /******/ 	}
 /******/ 	
 /************************************************************************/
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
@@ -34926,7 +35262,7 @@ var __webpack_exports__ = {};
 // ------------------------------------
 //
 // ------------------------------------
-const main = __nccwpck_require__(4822)
+const main = __nccwpck_require__(3109)
 main()
 // EOF
 

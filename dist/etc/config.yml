@@ -1,0 +1,72 @@
+%YAML 1.2
+---
+$schema: "https://davekpatrick.dev/github/action/release-version/v1/config.schema.json"
+
+changeTypes:
+- name: default
+  priority: 0
+  increment: minor
+  description: "default handling"
+  locations:
+    pullRequest: 
+    - type: label
+      enable: true
+      definitive:  true
+      weight: 100
+    - type: title
+      enable: true
+      regex: "\\[[^]]+\\]"
+      weight: 50
+    git:
+    - type: branch
+      enable: true
+      weight: 0
+    - type: commit
+      enable: false
+      definitive:  false
+      weight: 25
+- name: major
+  priority: 100
+  increment: major
+  description: "Major release"
+  locations:
+    git:
+    - type: branch
+      enable: true
+      definitive:  false
+      weight: 0
+    - type: commit
+      enable: false
+  identifiers:
+  - phrase: "BREAKING"
+    locations:
+      git:
+      - type: branch
+        enable: true
+        definitive:  false
+        weight: 0
+    caseSensitive: true
+  - phrase: "break"
+  - phrase: "major"
+- name: minor
+  priority: 50
+  increment: minor
+  description: "Minor release"
+  identifiers:
+  - phrase: "feature"
+  - phrase: "enhancement"
+  - phrase: "minor"
+- name: patch
+  priority: 25
+  increment: patch
+  description: "Patch release"
+  locations:
+    pullRequest:
+    - type: 'title'
+      enable: false
+  identifiers:
+  - phrase: "bugfix"
+  - phrase: "fix"
+  - phrase: "patch"
+    caseSensitive: false
+...

@@ -2,14 +2,17 @@
 const path = require("node:path")
 // project directories
 const dirRoot = path.normalize(__dirname + path.sep + "..")
-const dirNode = path.resolve(dirRoot, "node")
-const dirNodeModules = path.resolve(dirNode, "node_modules")
+const dirSrc = path.resolve(dirRoot, "node")
+const dirSrcModules = path.resolve(dirSrc, "node_modules")
 // project files
 const actionYamlFile = path.resolve(dirRoot, "action.yml")
-const packageJsonFile = path.resolve(dirNode, "package.json")
+const packageJsonFile = path.resolve(dirSrc, "package.json")
+// project test directories
+const dirTest = path.normalize(__dirname + path.sep)
+const dirFixtures = path.resolve(dirTest, "fixtures")
 // utility modules
 const fs = require("node:fs")
-const jsYaml = require(dirNodeModules + path.sep + "js-yaml")
+const jsYaml = require(dirSrcModules + path.sep + "js-yaml")
 /**
  * create a random GitHub token
  */
@@ -42,7 +45,7 @@ function createFakeGitHubToken() {
  * Read the `action.yml` and include the default values for each input
  * as an environment variable, just like the Actions runtime does
  */
-function getDefaultEnvironmentValues() {
+function getActionInputDefaultEnvironmentValues() {
   const actionYamlData = fs.readFileSync(actionYamlFile, "utf8")
   const { inputs } = jsYaml.load(actionYamlData)
   return Object.keys(inputs).reduce(
@@ -56,6 +59,22 @@ function getDefaultEnvironmentValues() {
   )
 }
 /**
+ *
+ *
+ */
+function setTestEnvironmentValues() {
+  const env = process.env
+  // NODE_ENV
+  // - always use production
+  // DOC: https://nodejs.org/learn/getting-started/nodejs-the-difference-between-development-and-production#why-is-node_env-considered-an-antipattern
+  const nodeEnvironment = (env["NODE_ENV"] ??= "production")
+  return {
+    NODE_ENV: nodeEnvironment,
+    TEST_FIXTURE_DIR: path.join(dirFixtures),
+  }
+}
+/**
+ *
  *
  */
 function setLocalTestEnvironmentValues(data) {
@@ -73,7 +92,7 @@ function setLocalTestEnvironmentValues(data) {
       // The webhook event that triggered the workflow
       GITHUB_EVENT_NAME: "release",
       // The path to a temporary file that contains the JSON payload of the event
-      GITHUB_EVENT_PATH: path.join(__dirname, "fixtures", "release.json"),
+      GITHUB_EVENT_PATH: path.join(dirFixtures, "release.json"),
       GITHUB_REF: "refs/heads/main",
       // davekpatrick/action-release-version
       //GITHUB_REPOSITORY: data.name.replace(/@.*\//, ""),
@@ -88,18 +107,13 @@ function setLocalTestEnvironmentValues(data) {
       GITHUB_WORKFLOW: "default",
       // The default working directory on the runner for steps in a job
       // doc: https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
-      GITHUB_WORKSPACE: path.join(__dirname, "fixtures", "workspace"),
+      GITHUB_WORKSPACE: path.join(dirFixtures, "workspace"),
       HOME: "?",
       ACTIONS_STEP_DEBUG: "true",
       // SRC: https://github.com/actions/toolkit/blob/8c90e2297afbb441a5d0a345e901fe83516ab42f/packages/core/src/file-command.ts#L11
       //     issueFileCommand() function
-      GITHUB_OUTPUT: path.join(
-        __dirname,
-        "fixtures",
-        "issueFileCommand",
-        "output",
-      ),
-      GITHUB_ENV: path.join(__dirname, "fixtures", "issueFileCommand", "env"),
+      GITHUB_OUTPUT: path.join(dirFixtures, "issueFileCommand", "output"),
+      GITHUB_ENV: path.join(dirFixtures, "issueFileCommand", "env"),
     }
   } else {
     console.log("runningIn:[continuousIntegration]")
@@ -109,7 +123,6 @@ function setLocalTestEnvironmentValues(data) {
 /**
  * Setup the test environment
  */
-
 // ---------------------------------------------------
 before(async () => {
   // runs once before the first test
@@ -118,8 +131,9 @@ before(async () => {
   // set the environment variables
   Object.assign(
     process.env,
+    setTestEnvironmentValues(),
     setLocalTestEnvironmentValues(this.packageJsonData),
-    getDefaultEnvironmentValues(),
+    getActionInputDefaultEnvironmentValues(),
   )
   console.log("Unit Tests Starting")
   console.log("---------------------------------------------------")
