@@ -223,6 +223,7 @@ module.exports = async function main() {
         ];
     for (const filePath of schemaFilePaths) {
       core.debug( 'Checking for configuration schema at default location[' + filePath + ']' )
+      console.log(fs.existsSync(schemaFile))
       if (fs.existsSync(filePath)) {
         core.debug( 'Located configuration schema at location[' + filePath + ']' )
         schemaFile = filePath;
