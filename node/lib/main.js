@@ -183,6 +183,8 @@ module.exports = async function main() {
       // no configuration file input specifed, check if a file exists at the
       // default github action location
       configFile = path.resolve(dirGithubActions, packageName, 'config.yml')
+      core.debug( 'Checking for configuration file at location[' + configFile + ']' )
+      console.log(fs.existsSync(configFile))
       if (!fs.existsSync(configFile)) {
         // just use the internal default configuration file included
         // with the action version
