@@ -601,10 +601,11 @@ describe("main.js", async function () {
       // ---------------------------------------------------
       // fixture inputs
       //fixtureDir = process.env["TEST_FIXTURE_DIR"]
-      schemaFile = path.join(dirNode, "etc", "config.schema.json")
-      filePath = path.resolve(schemaFile)
-      const expectedError =
-        "Unable to locate configuration schema[" + filePath + "]"
+      const schemaFilePaths = [
+        path.resolve(dirNode, 'lib', 'etc', 'config.schema.json'),
+        path.resolve(dirNode, 'etc', 'config.schema.json'),
+      ];
+      const expectedError = "Unable to locate configuration schema"
       const expectedExit = "Exiting with code[1]"
       // capture setFailed messages
       var setFailedCalls = []
@@ -614,7 +615,7 @@ describe("main.js", async function () {
           //
           //console.log(path)
           if (
-            path === filePath
+            schemaFilePaths.includes(path)
           ) {
             return false
           } else {
@@ -632,8 +633,8 @@ describe("main.js", async function () {
         },
         startGroup: () => {},
         endGroup: () => {},
-        //debug: () => {},
-        //info: () => {},
+        debug: () => {},
+        info: () => {},
         warning: () => {},
         setSecret: () => {},
         setOutput: () => {},

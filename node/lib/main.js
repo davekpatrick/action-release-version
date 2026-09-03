@@ -184,7 +184,6 @@ module.exports = async function main() {
       // default github action location
       configFile = path.resolve(dirGithubActions, packageName, 'config.yml')
       core.debug( 'Checking for configuration file at location[' + configFile + ']' )
-      console.log(fs.existsSync(configFile))
       if (!fs.existsSync(configFile)) {
         // just use the internal default configuration file included
         // with the action version
@@ -223,7 +222,6 @@ module.exports = async function main() {
         ];
     for (const filePath of schemaFilePaths) {
       core.debug( 'Checking for configuration schema at default location[' + filePath + ']' )
-      console.log(fs.existsSync(schemaFile))
       if (fs.existsSync(filePath)) {
         core.debug( 'Located configuration schema at location[' + filePath + ']' )
         schemaFile = filePath;
@@ -232,7 +230,7 @@ module.exports = async function main() {
     }
     if (schemaFile === null) {
       throw new Error(
-        'Unable to locate configuration schema[' + schemaFile + ']'
+        'Unable to locate configuration schema'
       )
     }
     core.debug('Configuration schema[' + schemaFile + ']')
