@@ -2,7 +2,7 @@
   "author": "davekpatrick",
   "name": "@davekpatrick/action-release-version",
   "license": "BSD-3-Clause",
-  "version": "0.5.0",
+  "version": "0.0.0",
   "description": "GitHub Action to caculate a required release version",
   "keywords": [
     "node",
