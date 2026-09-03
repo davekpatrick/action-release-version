@@ -602,9 +602,9 @@ describe("main.js", async function () {
       // fixture inputs
       //fixtureDir = process.env["TEST_FIXTURE_DIR"]
       const schemaFilePaths = [
-        path.resolve(dirNode, 'lib', 'etc', 'config.schema.json'),
-        path.resolve(dirNode, 'etc', 'config.schema.json'),
-      ];
+        path.resolve(dirNode, "lib", "etc", "config.schema.json"),
+        path.resolve(dirNode, "etc", "config.schema.json"),
+      ]
       const expectedError = "Unable to locate configuration schema"
       const expectedExit = "Exiting with code[1]"
       // capture setFailed messages
@@ -614,9 +614,7 @@ describe("main.js", async function () {
         existsSync: (path) => {
           //
           //console.log(path)
-          if (
-            schemaFilePaths.includes(path)
-          ) {
+          if (schemaFilePaths.includes(path)) {
             return false
           } else {
             return true

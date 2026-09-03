@@ -183,22 +183,32 @@ module.exports = async function main() {
       // no configuration file input specifed, check if a file exists at the
       // default github action location
       configFile = path.resolve(dirGithubActions, packageName, 'config.yml')
-      core.debug( 'Checking for configuration file at location[' + configFile + ']' )
+      core.debug(
+        'Checking for configuration file at location[' + configFile + ']'
+      )
       if (!fs.existsSync(configFile)) {
         // just use the internal default configuration file included
         // with the action version
-        core.debug( 'Configuration file not found at location[' + configFile + ']')
+        core.debug(
+          'Configuration file not found at location[' + configFile + ']'
+        )
         configFile = null
         const configFilePaths = [
           path.resolve(__dirname, 'etc', 'config.yml'),
           path.resolve(dirRoot, 'etc', 'config.yml'),
-        ];
+        ]
         for (const filePath of configFilePaths) {
-          core.debug( 'Checking for configuration file at default location[' + filePath + ']' )
+          core.debug(
+            'Checking for configuration file at default location[' +
+              filePath +
+              ']'
+          )
           if (fs.existsSync(filePath)) {
-            core.debug( 'Located configuration file at location[' + filePath + ']' )
-            configFile = filePath;
-            break;
+            core.debug(
+              'Located configuration file at location[' + filePath + ']'
+            )
+            configFile = filePath
+            break
           }
         }
         if (configFile === null) {
@@ -217,21 +227,23 @@ module.exports = async function main() {
     // additional configuration file schema
     var schemaFile = null
     const schemaFilePaths = [
-          path.resolve(__dirname, 'etc', 'config.schema.json'),
-          path.resolve(dirRoot, 'etc', 'config.schema.json'),
-        ];
+      path.resolve(__dirname, 'etc', 'config.schema.json'),
+      path.resolve(dirRoot, 'etc', 'config.schema.json'),
+    ]
     for (const filePath of schemaFilePaths) {
-      core.debug( 'Checking for configuration schema at default location[' + filePath + ']' )
+      core.debug(
+        'Checking for configuration schema at default location[' +
+          filePath +
+          ']'
+      )
       if (fs.existsSync(filePath)) {
-        core.debug( 'Located configuration schema at location[' + filePath + ']' )
-        schemaFile = filePath;
-        break;
+        core.debug('Located configuration schema at location[' + filePath + ']')
+        schemaFile = filePath
+        break
       }
     }
     if (schemaFile === null) {
-      throw new Error(
-        'Unable to locate configuration schema'
-      )
+      throw new Error('Unable to locate configuration schema')
     }
     core.debug('Configuration schema[' + schemaFile + ']')
     // configuration schema read
