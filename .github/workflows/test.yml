@@ -19,7 +19,7 @@ jobs:
         operatingSystem:
         - ubuntu-24.04
         nodeVersion:
-        - 20
+        - 24
       fail-fast: true
     runs-on: ${{ matrix.operatingSystem }}
     #
@@ -67,7 +67,7 @@ jobs:
         operatingSystem:
         - ubuntu-24.04
         nodeVersion:
-        - 20
+        - 24
       fail-fast: false
     runs-on: ${{ matrix.operatingSystem }}
     needs: [build]
