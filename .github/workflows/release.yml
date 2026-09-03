@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         operatingSystem: [ubuntu-24.04]
-        nodeVersion: [20]
+        nodeVersion: [24]
       fail-fast: false
     runs-on: ${{ matrix.operatingSystem }}
     #
@@ -76,7 +76,7 @@ jobs:
     strategy:
       matrix:
         operatingSystem: [ubuntu-24.04]
-        nodeVersion: [20]
+        nodeVersion: [24]
       fail-fast: false
     needs: [ build ]
     runs-on: ${{ matrix.operatingSystem }}

@@ -1,0 +1,9 @@
+%YAML 1.2
+---
+$schema: "https://davekpatrick.dev/github/action/release-version/v1/config.schema.json"
+
+changeTypes:
+- name: "default test"
+  priority: 100
+  increment: major
+...

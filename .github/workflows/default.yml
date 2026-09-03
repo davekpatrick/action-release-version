@@ -33,7 +33,7 @@ jobs:
     strategy:
       matrix:
         operatingSystem: [ubuntu-24.04]
-        nodeVersion: [20]
+        nodeVersion: [24]
       fail-fast: false
     runs-on: ${{ matrix.operatingSystem }}
     #
@@ -63,7 +63,7 @@ jobs:
     - name: Calculate Version
       id: version
       # use main branch for latest for now
-      uses: davekpatrick/action-release-version@main 
+      uses: davekpatrick/action-release-version@development
       with:
         apiToken: ${{ secrets.GITHUB_TOKEN }}
     #- name: Calculate a short git SHA
@@ -106,12 +106,12 @@ jobs:
         - ubuntu-24.04
         - macos-14
         - macos-15
+        - macos-26
         - windows-2022
         - windows-2025
         nodeVersion:
-        - 18
-        - 20
         - 22
+        - 24
       fail-fast: false # do not cancel other jobs if one fails
     runs-on: ${{ matrix.operatingSystem }}
     needs: [build]
