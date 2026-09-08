@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Locate the release artifact Run
         id: getReleaseRunId
-        uses: actions/github-script@v6
+        uses: actions/github-script@v9
         with:
           script: |
             const { data: runs } = await github.rest.actions.listWorkflowRuns({
@@ -33,7 +33,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Download Release Artifact
         if: ${{ steps.getReleaseRunId.outputs.run_id != '' }}
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: ${{ github.event.repository.name }}_release_${{ github.event.release.tag_name }}
           repository: ${{ github.repository }}
