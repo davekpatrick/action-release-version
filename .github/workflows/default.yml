@@ -44,21 +44,21 @@ jobs:
     - uses: actions/checkout@v7
     - name: Install dependencies
       run: |
-        cd node
+        cd src
         npm ci
     - name: Validate
       run: |
-        cd node
+        cd src
         npm run validate
     - name: Format
       run: |
-        cd node
+        cd src
         npm run format
     - name: Unit Test
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        cd node
+        cd src
         npm run test
     - name: Calculate Version
       id: version
@@ -73,11 +73,11 @@ jobs:
     - name: Set Version
       # npm version ${{ steps.version.outputs.versionTag }}+build-${{ steps.git-sha-short.outputs.GITHUB_SHA_SHORT }}-${{ github.run_number }}${{ github.run_attempt }}
       run: |
-        cd node
+        cd src
         npm version ${{ steps.version.outputs.versionTag }}
     - name: Compile
       run: |
-        cd node
+        cd src
         npm run build
     - name: Smoke Test
       uses: ./
@@ -91,7 +91,7 @@ jobs:
         if-no-files-found: error
         path: |
           dist/
-          node/package-lock.json
+          src/package-lock.json
           README.md
           action.yml
     outputs:

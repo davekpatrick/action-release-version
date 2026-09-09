@@ -33,7 +33,7 @@ jobs:
       run: echo "GITHUB_SHA_SHORT=$(echo ${{ github.sha }} | cut -c1-8)" >> $GITHUB_OUTPUT
     - name: Install dependencies
       run: |
-        cd node
+        cd src
         npm ci
     - name: Calculate Version
       id: version
@@ -42,19 +42,19 @@ jobs:
         apiToken: ${{ secrets.GITHUB_TOKEN }}
     - name: Build Version
       run: |
-        cd node
+        cd src
         npm version ${{ steps.version.outputs.versionTag }}+build-${{ steps.git-sha-short.outputs.GITHUB_SHA_SHORT }}-${{ github.run_number }}${{ github.run_attempt }}
     - name: Compile
       run: |
-        cd node
+        cd src
         npm run build
     - uses: actions/upload-artifact@v4
       with:
         name: ${{ github.event.repository.name }}-build
         if-no-files-found: error
         path: |
-          node/dist/
-          node/package-lock.json
+          dist/
+          src/package-lock.json
           README.md
           action.yml
     outputs:

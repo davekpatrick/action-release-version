@@ -16,8 +16,8 @@
     "NODE_ENV": "production"
   },
   "scripts": {
-    "format": "prettier --write  --no-semi ../node ../tests",
-    "validate": "eslint ../node ../tests",
+    "format": "prettier --write  --no-semi ../src ../tests",
+    "validate": "eslint ../src ../tests",
     "build-add-metadata": "replace @@NPM_PACKAGE_NAME@@ $npm_package_name ../dist/index.js && replace @@NPM_PACKAGE_VERSION@@ $npm_package_version ../dist/index.js",
     "build-add-config-files": "node -e \"require('fs').cpSync('etc', '../dist/etc', {recursive: true})\"",
     "build": "NODE_ENV=$npn_package_config_nodeenv; ncc build index.js --license licenses.txt --out ../dist && npm run build-add-config-files && npm run build-add-metadata",
@@ -32,8 +32,8 @@
     "@vercel/ncc": "0.38.1",
     "chai": "4.3.10",
     "eslint": "8.53.0",
-    "js-yaml": "4.3.1",
-    "mocha": "11.7.2",
+    "js-yaml": "4.3.2",
+    "mocha": "12.0.0",
     "prettier": "3.0.3",
     "proxyquire": "2.1.3",
     "replace": "1.2.2"
