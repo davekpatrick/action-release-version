@@ -2,7 +2,7 @@
 const path = require("node:path")
 // project directories
 const dirRoot = path.normalize(__dirname + path.sep + "..")
-const dirNode = path.resolve(dirRoot, "node")
+const dirNode = path.resolve(dirRoot, "src")
 const dirNodeModules = path.resolve(dirNode, "node_modules")
 // test required modules
 const { describe } = require("node:test")
