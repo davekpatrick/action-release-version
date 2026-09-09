@@ -4,6 +4,8 @@ const packageName = '@@NPM_PACKAGE_NAME@@'
 const packageVersion = '@@NPM_PACKAGE_VERSION@@'
 // ------------------------------------
 const process = require('node:process')
+const path = require('node:path')
+const fs = require('node:fs')
 // ------------------------------------
 // External modules
 // ------------------------------------
@@ -22,7 +24,33 @@ module.exports = async function main() {
     core.startGroup('Initialization')
     // ------------------------------------
     // ------------------------------------
+    // Node.js Native Environment Variables
+    const nodeEnvironmentVariables = {
+      env: {
+        key: 'NODE_ENV',
+        val: 'production',
+      },
+    }
+    // NODE_ENV
+    // - always use 'production'
+    // DOC: https://nodejs.org/learn/getting-started/nodejs-the-difference-between-development-and-production#why-is-node_env-considered-an-antipattern
+    process.env[nodeEnvironmentVariables['env']['key']] ??=
+      nodeEnvironmentVariables['env']['val']
+    if (
+      process.env[nodeEnvironmentVariables['env']['key']] !==
+      nodeEnvironmentVariables['env']['val']
+    ) {
+      core.info(
+        'Node.js variable[nodeEnvironmentVariables["env"]["key"]]' +
+          ' value[' +
+          process.env[nodeEnvironmentVariables['env']['key']] +
+          ']'
+      )
+    }
     // variables
+    const dirRoot = path.normalize(__dirname + path.sep + '..')
+    const dirGithub = path.resolve(dirRoot, '.github')
+    const dirGithubActions = path.resolve(dirGithub, 'actions')
     var currentVersion = null
     var outVersionTag = null
     // ------------------------------------
@@ -36,6 +64,7 @@ module.exports = async function main() {
     const argVersionInputAsReleaseVersion = core.getInput(
       'versionInputAsReleaseVersion'
     )
+    const argConfigFile = core.getInput('configFile')
     //
     // API token can be provided as an action input or via the GITHUB_TOKEN environment variable
     // input takes precedence over environment variable
@@ -88,10 +117,9 @@ module.exports = async function main() {
     //  - this used to exist but no longer appears in the payload for some reason
     // github.context.payload.repository.owner.login
     //  - is the login name
-    //  - can this different from the actual name e.g. for an organization
+    //  - can this be different from the actual name e.g. for an organization
     // github.context.payload.repository.owner.name
     //  - is the actual name
-    //  - was using this but no longer exists in payload for some reason
     const gitHubRepoOwnerLogin = githubContext.payload.repository.owner.login
     const gitHubRepoOwnerName = githubContext.payload.repository.owner.name
     var gitHubRepoOwner = null
@@ -134,6 +162,108 @@ module.exports = async function main() {
         gitHubRepoName +
         ']'
     )
+    // additional configuration file
+    //
+    //
+    // internal default changeType
+    // internal other changeTypes
+    // .github default location check
+    // action input location check
+    //
+    // - how and/or should internal defaults be overwritten
+    // - if specifing a configFile , should it supersied any internals
+    // - if we deep merge defaults, how do do users remove any undesireable defaults
+    //
+    var configFile = null
+    if (
+      argConfigFile === null ||
+      argConfigFile === '' ||
+      argConfigFile === undefined
+    ) {
+      // no configuration file input specifed, check if a file exists at the
+      // default github action location
+      configFile = path.resolve(dirGithubActions, packageName, 'config.yml')
+      core.debug(
+        'Checking for configuration file at location[' + configFile + ']'
+      )
+      if (!fs.existsSync(configFile)) {
+        // just use the internal default configuration file included
+        // with the action version
+        core.debug(
+          'Configuration file not found at location[' + configFile + ']'
+        )
+        configFile = null
+        const configFilePaths = [
+          path.resolve(__dirname, 'etc', 'config.yml'),
+          path.resolve(dirRoot, 'etc', 'config.yml'),
+        ]
+        for (const filePath of configFilePaths) {
+          core.debug(
+            'Checking for configuration file at default location[' +
+              filePath +
+              ']'
+          )
+          if (fs.existsSync(filePath)) {
+            core.debug(
+              'Located configuration file at location[' + filePath + ']'
+            )
+            configFile = filePath
+            break
+          }
+        }
+        if (configFile === null) {
+          throw new Error(
+            'Unable to locate default configuration file[' + configFile + ']'
+          )
+        }
+      }
+    } else {
+      configFile = argConfigFile
+      if (!fs.existsSync(configFile)) {
+        throw new Error('Configuration file[' + configFile + '] does not exist')
+      }
+    }
+    core.debug('Configuration file[' + configFile + ']')
+    // additional configuration file schema
+    var schemaFile = null
+    const schemaFilePaths = [
+      path.resolve(__dirname, 'etc', 'config.schema.json'),
+      path.resolve(dirRoot, 'etc', 'config.schema.json'),
+    ]
+    for (const filePath of schemaFilePaths) {
+      core.debug(
+        'Checking for configuration schema at default location[' +
+          filePath +
+          ']'
+      )
+      if (fs.existsSync(filePath)) {
+        core.debug('Located configuration schema at location[' + filePath + ']')
+        schemaFile = filePath
+        break
+      }
+    }
+    if (schemaFile === null) {
+      throw new Error('Unable to locate configuration schema')
+    }
+    core.debug('Configuration schema[' + schemaFile + ']')
+    // configuration schema read
+    var schemaReadFile = null
+    try {
+      schemaReadFile = fs.readFileSync(schemaFile, 'utf8')
+    } catch (error) {
+      throw new Error('Failed to read file[' + error.message + ']')
+    }
+    const schemaData = schemaReadFile
+    core.debug('schemaData[' + schemaData + ']')
+    // configuration file data
+    var configReadFile = null
+    try {
+      configReadFile = fs.readFileSync(schemaFile, 'utf8')
+    } catch (error) {
+      throw new Error('Failed to read file[' + error.message + ']')
+    }
+    const configData = configReadFile
+    core.debug('configData[' + configData + ']')
     core.endGroup()
     core.startGroup('Preparation')
     // ------------------------------------
@@ -167,6 +297,10 @@ module.exports = async function main() {
     }
     // ------------------------------------
     // ------------------------------------
+    // validate configuration file
+
+    // ------------------------------------
+    // ------------------------------------
     // get the "current" version
     // methods in order of precedence (arg -> env -> cfg -> def)
     // arg:
@@ -177,7 +311,7 @@ module.exports = async function main() {
     //   - repository action variable, RELEASE_VERSION
     // cfg:
     //   - action configuration file
-    //   - get the latest version from the git repostory tags
+    //   - get the latest version from the git repository tags
     // def:
     //   - if no version found, use argInceptionVersionTag default
     // ------------------------------------

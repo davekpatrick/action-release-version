@@ -18,15 +18,15 @@ jobs:
     strategy:
       matrix:
         operatingSystem: [ubuntu-24.04]
-        nodeVersion: [20]
+        nodeVersion: [24]
       fail-fast: false
     runs-on: ${{ matrix.operatingSystem }}
     #
     steps:
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@v7
       with:
         node-version: ${{ matrix.nodeVersion }}
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v7
     - name: Install dependencies
       run: |
         cd node
@@ -59,7 +59,7 @@ jobs:
       run: |
         cd node
         npm run build
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: ${{ github.event.repository.name }}_release_${{ steps.build-version.outputs.versionTag }}
         if-no-files-found: error
@@ -76,13 +76,13 @@ jobs:
     strategy:
       matrix:
         operatingSystem: [ubuntu-24.04]
-        nodeVersion: [20]
+        nodeVersion: [24]
       fail-fast: false
     needs: [ build ]
     runs-on: ${{ matrix.operatingSystem }}
     # 
     steps:
-    - uses: actions/download-artifact@v5
+    - uses: actions/download-artifact@v8
       with:
         name: ${{ github.event.repository.name }}_release_${{ needs.build.outputs.versionTag }}
     - name: Validate
@@ -97,7 +97,7 @@ jobs:
         & node --version
         Get-ChildItem -Recurse
     - name: Release
-      uses: davekpatrick/action-release-create@main
+      uses: davekpatrick/action-release-create@main # temporary, use main branch for latest
       with:
         versionTag: ${{ needs.build.outputs.versionTag }}
 ...

@@ -1,25 +1,60 @@
 # BOF
-# Add 'repo' label to any root file changes
+---
+#
 repo:
-- '*'
+- any:
+  - changed-files:
+    - any-glob-to-any-file: '*'
 # 
 git:
-- any: ['**/.gitignore']
+- any:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/.gitignore'
+      - '**/.gitattributes'
 #
 workflow:
-- any: ['.github/**/*']
+- any:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/workflow/*.yaml'
+      - '.github/workflow/*.yml'
 #
 project:
-- any: ['actions.yml']
+- any:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'actions.yml'
 #
 code:
-- any: ['actions.yml', 'node/package.json', 'node/**/*']
+- any:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'node/package.json'
+      - 'node/**/*'
+      - 'actions.yml'
 #
 test:
-- any: ['.mocharc.yml', 'tests/**/*']
+- any:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.mocharc.yml'
+      - 'tests/**/*'
 #
 documentation:
-- any: ['**/*.md']
-
+- any:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.md'
+#
+feature:
+- any:
+  - head-branch: 
+    - '^feature'
+#
+release:
+- any:
+  - base-branch: 
+    - 'main'
 ...
 # EOF
