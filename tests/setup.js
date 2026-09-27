@@ -2,7 +2,7 @@
 const path = require("node:path")
 // project directories
 const dirRoot = path.normalize(__dirname + path.sep + "..")
-const dirSrc = path.resolve(dirRoot, "node")
+const dirSrc = path.resolve(dirRoot, "src")
 const dirSrcModules = path.resolve(dirSrc, "node_modules")
 // project files
 const actionYamlFile = path.resolve(dirRoot, "action.yml")
