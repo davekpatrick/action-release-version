@@ -15,7 +15,7 @@ module.exports = async function incrementVersion(
     releaseType = 'initial',
     releaseChange = 'minor', // TODO: think about this
     buildMetadata = {
-      // add suport for git sha
+      // add support for git sha
       // $(echo 3d91209a0aab66bcefa0b733abd456da3f109fd2 | cut -c1-8)
       inst: new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, ''),
       num: 1,
